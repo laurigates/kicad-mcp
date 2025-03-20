@@ -207,12 +207,11 @@ Want to contribute to the KiCad MCP Server? Here's how you can help improve this
 
 Interested in contributing? Here are some ideas for future development:
 
-1. Add Design Rule Check (DRC) report generation and parsing
-2. Implement 3D model visualization tools
-3. Create PCB review tools with annotations
-4. Add support for generating manufacturing files
-5. Implement component search tools
-6. Add tests!
+1. Implement 3D model visualization tools
+2. Create PCB review tools with annotations
+3. Add support for generating manufacturing files
+4. Implement component search tools
+5. Add tests!
 
 ## License
 
