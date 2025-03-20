@@ -38,8 +38,8 @@ def create_server() -> FastMCP:
         logger.warning("KiCad Python modules not available - some features will be disabled")
 
     # Initialize FastMCP server
-    mcp = FastMCP("KiCad")
-    logger.info("Created FastMCP server instance")
+    mcp = FastMCP("KiCad", lifespan=kicad_lifespan)
+    logger.info("Created FastMCP server instance with lifespan management")
     
     # Register resources
     logger.debug("Registering resources...")
@@ -51,8 +51,8 @@ def create_server() -> FastMCP:
     logger.debug("Registering tools...")
     register_project_tools(mcp)
     register_analysis_tools(mcp)
-    register_export_tools(mcp, kicad_modules_available)
-    register_drc_tools(mcp, kicad_modules_available)
+    register_export_tools(mcp)
+    register_drc_tools(mcp)
     
     # Register prompts
     logger.debug("Registering prompts...")
