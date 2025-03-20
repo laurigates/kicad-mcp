@@ -5,6 +5,7 @@ This will allow users to compare DRC results over time.
 """
 import os
 import json
+import platform
 import time
 from datetime import datetime
 from typing import Dict, List, Any, Optional
@@ -16,8 +17,12 @@ from kicad_mcp.utils.logger import Logger
 logger = Logger()
 
 # Directory for storing DRC history
-DRC_HISTORY_DIR = os.path.expanduser("~/.kicad_mcp/drc_history")
-
+if platform.system() == "Windows":
+    # Windows: Use APPDATA or LocalAppData
+    DRC_HISTORY_DIR = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), "kicad_mcp", "drc_history")
+else:
+    # macOS/Linux: Use ~/.kicad_mcp/drc_history
+    DRC_HISTORY_DIR = os.path.expanduser("~/.kicad_mcp/drc_history")
 
 def ensure_history_dir() -> None:
     """Ensure the DRC history directory exists."""
