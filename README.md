@@ -231,7 +231,8 @@ Interested in contributing? Here are some ideas for future development:
 2. Create PCB review tools with annotations
 3. Add support for generating manufacturing files
 4. Implement component search tools
-5. Add tests!
+5. Enhance BOM capabilities with supplier integration
+6. Add tests!
 
 ## License
 
