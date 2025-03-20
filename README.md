@@ -1,4 +1,4 @@
-# KiCad MCP Server - Setup Guide
+# KiCad MCP Server
 
 This guide will help you set up a Model Context Protocol (MCP) server for KiCad on macOS, allowing you to interact with KiCad projects through Claude Desktop or other MCP-compatible clients.
 
@@ -9,11 +9,31 @@ This guide will help you set up a Model Context Protocol (MCP) server for KiCad 
 - Claude Desktop (or another MCP client)
 - Basic familiarity with the terminal
 
+## Project Structure
+
+The KiCad MCP Server is organized into a modular structure for better maintainability:
+
+```
+kicad-mcp/
+├── README.md                       # Project documentation
+├── main.py                         # Entry point that runs the server
+├── config.py                       # Configuration constants and settings
+├── requirements.txt                # Python dependencies
+├── kicad_mcp/                      # Main package directory
+│   ├── __init__.py                 # Package initialization
+│   ├── server.py                   # MCP server setup
+│   ├── resources/                  # Resource handlers
+│   ├── tools/                      # Tool handlers
+│   ├── prompts/                    # Prompt templates
+│   └── utils/                      # Utility functions
+└── tests/                          # Unit tests
+```
+
 ## Installation Steps
 
 ### 1. Set Up Your Python Environment
 
-First, let's install `uv` (a fast Python package installer) and set up our environment:
+First, let's install `pip` and set up our environment:
 
 ```bash
 # Create a new directory for our project
@@ -24,34 +44,23 @@ cd ~/Projects/kicad-mcp
 python3 -m venv venv
 source venv/bin/activate
 
-# Install the MCP SDK
-pip install "mcp[cli]"
+# Install the MCP SDK and other dependencies
+pip install -r requirements.txt
 ```
 
-### 2. Save the KiCad MCP Server Script
+### 2. Run the Server
 
-Create a new file called `kicad_mcp.py` in your project directory and paste the contents of the KiCad MCP Server script.
+Once the environment is set up, you can run the server:
 
 ```bash
-# Make the file executable (optional, but helpful)
-chmod +x kicad_mcp.py
+# Run in development mode
+python -m mcp.dev main.py
 
-# Run the server in development mode
-python -m mcp.dev kicad_mcp.py
+# Or run directly
+python main.py
 ```
 
-### 3. Test Your Server
-
-Let's make sure your server works correctly before integrating it with Claude Desktop:
-
-```bash
-# Check if the file exists and has content
-cat kicad_mcp.py | head -n 5
-```
-
-You should see the server start up and display information about the available tools and resources.
-
-### 4. Configure Claude Desktop
+### 3. Configure Claude Desktop
 
 Now, let's configure Claude Desktop to use our MCP server:
 
@@ -73,7 +82,7 @@ nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
         "kicad": {
             "command": "/ABSOLUTE/PATH/TO/YOUR/PROJECT/kicad-mcp/venv/bin/python",
             "args": [
-                "/ABSOLUTE/PATH/TO/YOUR/PROJECT/kicad-mcp/kicad_mcp.py"
+                "/ABSOLUTE/PATH/TO/YOUR/PROJECT/kicad-mcp/main.py"
             ]
         }
     }
@@ -84,24 +93,89 @@ Replace `/ABSOLUTE/PATH/TO/YOUR/PROJECT/kicad-mcp` with the actual path to your 
 
 3. Save the file and exit the editor.
 
-### 5. Restart Claude Desktop
+### 4. Restart Claude Desktop
 
 Close and reopen Claude Desktop to load the new configuration.
 
-## Usage
+## Understanding MCP Components
 
-Once the server is properly configured, you can interact with KiCad through Claude Desktop:
+The Model Context Protocol (MCP) defines three primary ways to provide capabilities:
 
-1. Open Claude Desktop
-2. Look for the tools icon (hammer symbol) in the Claude interface
-3. You should see the KiCad MCP tools available in the menu
+### Resources vs Tools vs Prompts
 
-Here are some example prompts you can use:
+**Resources** are read-only data sources that LLMs can reference:
+- Similar to GET endpoints in REST APIs
+- Provide data without performing significant computation
+- Used when the LLM needs to read information
+- Typically accessed programmatically by the client application
+- Example: `kicad://projects` returns a list of all KiCad projects
 
-- "What KiCad projects do I have on my Mac?"
-- "Can you help me open my latest KiCad project?"
-- "Extract the bill of materials from my project at [path]"
-- "Validate my KiCad project at [path]"
+**Tools** are functions that perform actions or computations:
+- Similar to POST/PUT endpoints in REST APIs
+- Can have side effects (like opening applications or generating files)
+- Used when the LLM needs to perform actions in the world
+- Typically invoked directly by the LLM (with user approval)
+- Example: `open_project()` launches KiCad with a specific project
+
+**Prompts** are reusable templates for common interactions:
+- Pre-defined conversation starters or instructions
+- Help users articulate common questions or tasks
+- Invoked by user choice (typically from a menu)
+- Example: The `debug_pcb_issues` prompt helps users troubleshoot PCB problems
+
+## Available Features
+
+The KiCad MCP Server provides several capabilities:
+
+### Resources
+- `kicad://projects` - List all KiCad projects
+- `kicad://project/{path}` - Get details about a specific project
+- `kicad://schematic/{path}` - Extract information from a schematic file
+
+### Tools
+- Project management tools (find projects, get structure, open in KiCad)
+- Analysis tools (validate projects, generate thumbnails)
+- Export tools (extract bill of materials)
+
+### Prompts
+- Create new component guide
+- Debug PCB issues guide
+- PCB manufacturing checklist
+
+## Development Guide
+
+### Adding New Features
+
+To add new features to the KiCad MCP Server, follow these steps:
+
+1. Identify the category for your feature (resource, tool, or prompt)
+2. Add your implementation to the appropriate module
+3. Register your feature in the corresponding register function
+4. Test your changes with the development tools
+
+Example for adding a new tool:
+
+```python
+# kicad_mcp/tools/analysis_tools.py
+
+@mcp.tool()
+def new_analysis_tool(project_path: str) -> Dict[str, Any]:
+    """Description of your new tool."""
+    # Implementation goes here
+    return {"result": "success"}
+```
+
+### Running Tests
+
+This project uses pytest for testing:
+
+```bash
+# Install development dependencies
+pip install pytest
+
+# Run tests
+pytest
+```
 
 ## Troubleshooting
 
@@ -110,108 +184,33 @@ If you encounter issues:
 1. **Server Not Appearing in Claude Desktop:**
    - Check your `claude_desktop_config.json` file for errors
    - Make sure the path to your project and Python interpreter is correct
-   - Ensure Python can access the `mcp` package (check by running `python -c "import mcp; print(mcp.__version__)"` in your venv)
+   - Ensure Python can access the `mcp` package
 
 2. **Server Errors:**
    - Check the terminal output when running the server in development mode
    - Make sure all required Python packages are installed
    - Verify that your KiCad installation is in the standard location
-   - Run `pip install -U "mcp[cli]"` to ensure you have the latest version
-
-3. **Permission Issues:**
-   - Make sure the script is executable (`chmod +x kicad_mcp.py`)
-   - Check if Claude Desktop has permission to run the script
-   - If you get permission errors, try using the full path to your Python interpreter in the configuration
-
-## Extending the Server
-
-The provided MCP server implements basic KiCad functionality. To extend it:
-
-1. Add new tools using the `@mcp.tool()` decorator
-2. Add new resources using the `@mcp.resource()` decorator
-3. Add new prompts using the `@mcp.prompt()` decorator
-
-The MCP SDK provides a command-line interface for development and deployment. With your virtual environment activated, you can use commands like:
-
-```bash
-# Test your server in development mode
-python -m mcp.dev kicad_mcp.py
-
-# Install your server for use with Claude Desktop
-python -m mcp.install kicad_mcp.py --name "KiCad"
-```
-
-## Additional Resources
-
-- [MCP Documentation](https://modelcontextprotocol.io/introduction)
-- [KiCad Python API Documentation](https://docs.kicad.org/doxygen-python/namespacepcbnew.html)
 
 ## Contributing
 
 Want to contribute to the KiCad MCP Server? Here's how you can help improve this project:
 
-### Getting Started
+1. Fork the repository
+2. Create a feature branch
+3. Add your changes
+4. Submit a pull request
 
-The project currently consists of just two files:
+## Future Development Ideas
 
-- kicad_mcp.py - The main MCP server implementation
+Interested in contributing? Here are some ideas for future development:
 
-- This setup guide
+1. Add Design Rule Check (DRC) report generation and parsing
+2. Implement 3D model visualization tools
+3. Create PCB review tools with annotations
+4. Add support for generating manufacturing files
+5. Implement component search tools
+6. Add tests!
 
-If you want to make improvements:
+## License
 
-1. Set up your environment as described in the installation steps
-
-2. Make your changes to the kicad_mcp.py file
-
-3. Test your changes with Claude Desktop
-
-### How to Contribute
-
-#### Improving the Existing Server
-
-You can improve the existing server by:
-
-- Adding more tools and resources for KiCad
-
-- Fixing bugs in the current implementation
-
-- Improving error handling and user experience
-
-- Adding support for more KiCad features
-
-#### Testing Your Changes
-
-Before sharing your changes, test them thoroughly:
-
-```bash
-
-# Run the server in development mode to check for errors
-
-python -m mcp.dev kicad_mcp.py
-
-# Test your changes with Claude Desktop
-
-```
-
-### Future Development Ideas
-
-If you're looking for ways to improve the server, consider:
-
-1. Adding support for KiCad's Python API (`pcbnew`) for deeper integration
-
-2. Creating more specialized tools for PCB design review
-
-3. Adding visualization capabilities for schematics and layouts
-
-4. Improving project organization as the codebase grows
-
-### Best Practices
-
-- Keep the code simple and focused
-
-- Document your functions with clear docstrings
-
-- Handle errors gracefully with informative messages
-
-- Test with different KiCad project structures
+This project is open source under the MIT license.
