@@ -1,6 +1,25 @@
 # KiCad MCP Server
 
+> ⚠️ **WARNING**: This project was quickly hacked together and is largely untested. Expect things to break. Use at your own risk. I plan on improving it over time, but if you find bugs, please open an issue or submit a pull request to fix them (see Contributing section below).
+
 This guide will help you set up a Model Context Protocol (MCP) server for KiCad on macOS, allowing you to interact with KiCad projects through Claude Desktop or other MCP-compatible clients.
+
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [Project Structure](#project-structure)
+- [Installation Steps](#installation-steps)
+  - [1. Set Up Your Python Environment](#1-set-up-your-python-environment)
+  - [2. Run the Server](#2-run-the-server)
+  - [3. Configure Claude Desktop](#3-configure-claude-desktop)
+  - [4. Restart Claude Desktop](#4-restart-claude-desktop)
+- [Understanding MCP Components](#understanding-mcp-components)
+- [Available Features](#available-features)
+- [Development Guide](#development-guide)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Future Development Ideas](#future-development-ideas)
+- [License](#license)
 
 ## Prerequisites
 
