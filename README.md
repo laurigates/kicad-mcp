@@ -44,11 +44,12 @@ The KiCad MCP Server is organized into a modular structure for better maintainab
 kicad-mcp/
 ├── README.md                       # Project documentation
 ├── main.py                         # Entry point that runs the server
-├── config.py                       # Configuration constants and settings
 ├── requirements.txt                # Python dependencies
+├── .env.example                    # Example environment configuration
 ├── kicad_mcp/                      # Main package directory
 │   ├── __init__.py                 # Package initialization
 │   ├── server.py                   # MCP server setup
+│   ├── config.py                   # Configuration constants and settings
 │   ├── context.py                  # Lifespan management and shared context
 │   ├── resources/                  # Resource handlers
 │   ├── tools/                      # Tool handlers
@@ -78,7 +79,28 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Run the Server
+### 2. Configure Your Environment
+
+Create a `.env` file to customize where the server looks for your KiCad projects:
+
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit the .env file
+vim .env
+```
+
+In the `.env` file, add your custom project directories:
+
+```
+# Add paths to your KiCad projects (comma-separated)
+KICAD_SEARCH_PATHS=~/pcb,~/Electronics,~/Projects/KiCad
+```
+
+This will tell the server to look for KiCad projects in your custom directories in addition to the standard KiCad user directory.
+
+### 3. Run the Server
 
 Once the environment is set up, you can run the server:
 
@@ -90,9 +112,13 @@ python -m mcp.dev main.py
 python main.py
 ```
 
-### 3. Configure an MCP Client
+The server will automatically detect KiCad projects in:
 
-The server can be used with any MCP-compatible client. Here's how to set it up with Claude Desktop as an example:
+- The standard KiCad user directory (e.g., ~/Documents/KiCad)
+- Any custom directories specified in your .env file
+- Common project directories (automatically detected)
+
+### 4. Configure an MCP Client
 
 Now, let's configure Claude Desktop to use our MCP server:
 
@@ -142,7 +168,7 @@ On Windows, the configuration would look like:
 
 The configuration should be stored in `%APPDATA%\Claude\claude_desktop_config.json`.
 
-### 4. Restart Your MCP Client
+### 5. Restart Your MCP Client
 
 Close and reopen your MCP client (e.g., Claude Desktop) to load the new configuration. The KiCad server should appear in the tools dropdown menu or equivalent interface in your client.
 
@@ -328,6 +354,44 @@ Claude will generate and display a thumbnail of your PCB. Then you might ask:
 Let's run a full DRC check on this project to identify all the issues I need to fix.
 ```
 
+## Configuration Options
+
+The KiCad MCP Server can be configured using environment variables or a `.env` file:
+
+### Key Configuration Options
+| Environment Variable | Description | Example |
+|---------------------|-------------|---------|
+| `KICAD_SEARCH_PATHS` | Comma-separated list of directories to search for KiCad projects | `~/pcb,~/Electronics,~/Projects` |
+| `KICAD_USER_DIR` | Override the default KiCad user directory | `~/Documents/KiCadProjects` |
+| `KICAD_APP_PATH` | Override the default KiCad application path | `/Applications/KiCad7/KiCad.app` |
+| `LOG_LEVEL` | Set logging verbosity | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| `LOG_DIR` | Directory for log files | `logs` or `~/.kicad_mcp/logs` |
+
+### Using Environment Variables Directly
+
+You can set environment variables when launching the server:
+
+```bash
+KICAD_SEARCH_PATHS=~/pcb,~/Electronics LOG_LEVEL=DEBUG python main.py
+```
+
+### Using a .env File (Recommended)
+
+Create a `.env` file in the project root with your configuration by copying and renaming `.env.example`:
+
+```
+# KiCad MCP Server Configuration
+
+# Directories to search for KiCad projects (comma-separated)
+KICAD_SEARCH_PATHS=~/pcb,~/Electronics,~/Projects/KiCad
+
+# Logging configuration
+LOG_LEVEL=INFO
+LOG_DIR=logs
+```
+
+The server automatically detects and loads this configuration on startup.
+
 ## Development Guide
 
 ### Adding New Features
@@ -375,16 +439,24 @@ If you encounter issues:
 
 2. **Server Errors:**
    - Check the terminal output when running the server in development mode
-   - Look for errors in the logs at `~/.kicad_mcp/logs` or `logs/` directory
+   - Check Claude logs at:
+     - `~/Library/Logs/Claude/mcp-server-kicad.log` (server-specific logs)
+     - `~/Library/Logs/Claude/mcp.log` (general MCP logs)
    - Make sure all required Python packages are installed
    - Verify that your KiCad installation is in the standard location
 
 3. **KiCad Python Modules Not Found:**
    - This is a common issue. The server will still work but with limited functionality
    - Ensure KiCad is installed properly
-   - Check if the right paths are set in `config.py`
+   - Check if the right paths are set in `kicad_mcp/config.py`
    
-4. **DRC History Not Saving:**
+4. 4. **Projects Not Found:**
+   - Check your `.env` file to ensure your project directories are correctly specified
+   - Verify the paths exist and have KiCad project files (.kicad_pro)
+   - Use absolute paths instead of `~` if there are issues with path expansion
+   - Check the Claude logs mentioned above to see if there are errors when searching for projects
+
+5. **DRC History Not Saving:**
    - Check if the `~/.kicad_mcp/drc_history/` directory exists and is writable
    - Verify that the project path used is consistent between runs
    - Check for errors in the logs related to DRC history saving

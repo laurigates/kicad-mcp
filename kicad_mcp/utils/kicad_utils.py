@@ -5,8 +5,7 @@ import os
 import subprocess
 from typing import Dict, List, Any
 
-from kicad_mcp.config import KICAD_USER_DIR, KICAD_APP_PATH, KICAD_EXTENSIONS
-
+from kicad_mcp.config import KICAD_USER_DIR, KICAD_APP_PATH, KICAD_EXTENSIONS, ADDITIONAL_SEARCH_PATHS
 
 def find_kicad_projects() -> List[Dict[str, Any]]:
     """Find KiCad projects in the user's directory.
@@ -15,23 +14,33 @@ def find_kicad_projects() -> List[Dict[str, Any]]:
         List of dictionaries with project information
     """
     projects = []
-    
-    for root, _, files in os.walk(KICAD_USER_DIR):
-        for file in files:
-            if file.endswith(KICAD_EXTENSIONS["project"]):
-                project_path = os.path.join(root, file)
-                rel_path = os.path.relpath(project_path, KICAD_USER_DIR)
-                project_name = get_project_name_from_path(project_path)
-                
-                projects.append({
-                    "name": project_name,
-                    "path": project_path,
-                    "relative_path": rel_path,
-                    "modified": os.path.getmtime(project_path)
-                })
-    
-    return projects
 
+    # Search directories to look for KiCad projects
+    search_dirs = [KICAD_USER_DIR] + ADDITIONAL_SEARCH_PATHS
+
+    for search_dir in search_dirs:
+        if not os.path.exists(search_dir):
+            print(f"Search directory does not exist: {search_dir}")
+            continue
+        
+        print(f"Scanning directory: {search_dir}")
+        for root, _, files in os.walk(search_dir):
+            for file in files:
+                if file.endswith(KICAD_EXTENSIONS["project"]):
+                    project_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(project_path, search_dir)
+                    project_name = get_project_name_from_path(project_path)
+
+                    print(f"Found KiCad project: {project_path}")
+                    projects.append({
+                        "name": project_name,
+                        "path": project_path,
+                        "relative_path": rel_path,
+                        "modified": os.path.getmtime(project_path)
+                    })
+    
+    print(f"Found {len(projects)} KiCad projects")
+    return projects
 
 def get_project_name_from_path(project_path: str) -> str:
     """Extract the project name from a .kicad_pro file path.
