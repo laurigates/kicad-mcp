@@ -158,6 +158,7 @@ The KiCad MCP Server provides several capabilities:
 - Analysis tools (validate projects, generate thumbnails)
 - Export tools (extract bill of materials)
 - Design Rule Check tools (run DRC checks, get detailed violation reports, track DRC history and improvements over time)
+- PCB Visualization - Generate thumbnails of PCB layouts for easy project identification ([see guide](docs/thumbnail_guide.md))
 
 ### Prompts
 - Create new component guide

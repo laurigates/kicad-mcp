@@ -51,7 +51,7 @@ def create_server() -> FastMCP:
     logger.debug("Registering tools...")
     register_project_tools(mcp)
     register_analysis_tools(mcp)
-    register_export_tools(mcp)
+    register_export_tools(mcp, kicad_modules_available)
     register_drc_tools(mcp, kicad_modules_available)
     
     # Register prompts
