@@ -6,7 +6,7 @@ This server allows Claude and other MCP clients to interact with KiCad projects.
 from kicad_mcp.server import create_server
 from kicad_mcp.utils.logger import Logger
 
-logger = Logger(log_dir="logs")
+logger = Logger()
 
 if __name__ == "__main__":
     try:

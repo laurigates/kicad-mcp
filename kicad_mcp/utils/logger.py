@@ -23,7 +23,7 @@ class Logger:
     """
     Simple logger that automatically tracks function-level context.
     """
-    def __init__(self, name=None, log_dir="logs", console_level=logging.INFO, file_level=logging.DEBUG):
+    def __init__(self, name=None, log_dir=None, console_level=logging.INFO, file_level=logging.DEBUG):
         """
         Initialize a logger with automatic function-level context.
         
