@@ -1,6 +1,7 @@
 # KiCad MCP Server
 
 > ⚠️ **WARNING**: This project is a work in progress. The basic functionality of finding KiCad projects has been tested on macOS, but more advanced features (like running DRC checks, generating thumbnails) have not been thoroughly tested yet. If you encounter bugs, please open an issue or submit a pull request to fix them (see Contributing section below).
+
 > ⚠️ **WARNING**: This project is optimized for Mac. While there exists some basic support for Windows and Linux, not all functionality is guaranteed to work.
 
 This guide will help you set up a Model Context Protocol (MCP) server for KiCad. While the examples in this guide often reference Claude Desktop, the server is compatible with **any MCP-compliant client**. You can use it with Claude Desktop, your own custom MCP clients, or any other application that implements the Model Context Protocol.
