@@ -1,2 +1,3 @@
 mcp[cli]
 httpx
+pytest
