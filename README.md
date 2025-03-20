@@ -71,7 +71,7 @@ Now, let's configure Claude Desktop to use our MCP server:
 mkdir -p ~/Library/Application\ Support/Claude
 
 # Edit the configuration file (or create it if it doesn't exist)
-nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
+vim ~/Library/Application\ Support/Claude/claude_desktop_config.json
 ```
 
 2. Add the KiCad MCP server to the configuration:
