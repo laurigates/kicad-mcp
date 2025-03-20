@@ -6,21 +6,24 @@ from mcp.server.fastmcp import FastMCP
 # Import resource handlers
 from kicad_mcp.resources.projects import register_project_resources
 from kicad_mcp.resources.files import register_file_resources
+from kicad_mcp.resources.drc_resources import register_drc_resources
 
 # Import tool handlers
 from kicad_mcp.tools.project_tools import register_project_tools
 from kicad_mcp.tools.analysis_tools import register_analysis_tools
 from kicad_mcp.tools.export_tools import register_export_tools
+from kicad_mcp.tools.drc_tools import register_drc_tools
 
 # Import prompt handlers
 from kicad_mcp.prompts.templates import register_prompts
+from kicad_mcp.prompts.drc_prompt import register_drc_prompts
 
 # Import utils
 from kicad_mcp.utils.logger import Logger
 from kicad_mcp.utils.python_path import setup_kicad_python_path
 
 # Create logger for this module
-logger = Logger(log_dir="logs")
+logger = Logger()
 
 def create_server() -> FastMCP:
     """Create and configure the KiCad MCP server."""
@@ -42,16 +45,19 @@ def create_server() -> FastMCP:
     logger.debug("Registering resources...")
     register_project_resources(mcp)
     register_file_resources(mcp)
+    register_drc_resources(mcp)
     
     # Register tools
     logger.debug("Registering tools...")
     register_project_tools(mcp)
     register_analysis_tools(mcp)
     register_export_tools(mcp)
+    register_drc_tools(mcp, kicad_modules_available)
     
     # Register prompts
     logger.debug("Registering prompts...")
     register_prompts(mcp)
+    register_drc_prompts(mcp)
     
     logger.info("Server initialization complete")
     return mcp

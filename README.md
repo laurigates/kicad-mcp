@@ -131,11 +131,14 @@ The KiCad MCP Server provides several capabilities:
 - `kicad://projects` - List all KiCad projects
 - `kicad://project/{path}` - Get details about a specific project
 - `kicad://schematic/{path}` - Extract information from a schematic file
+- `kicad://drc/{path}` - Get a detailed Design Rule Check report for a PCB
+- `kicad://drc/history/{path}` - Get DRC history report with trend analysis
 
 ### Tools
 - Project management tools (find projects, get structure, open in KiCad)
 - Analysis tools (validate projects, generate thumbnails)
 - Export tools (extract bill of materials)
+- Design Rule Check tools (run DRC checks, get detailed violation reports, track DRC history and improvements over time)
 
 ### Prompts
 - Create new component guide
