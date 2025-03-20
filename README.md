@@ -449,7 +449,7 @@ If you encounter issues:
    - Ensure KiCad is installed properly
    - Check if the right paths are set in `kicad_mcp/config.py`
    
-4. 4. **Projects Not Found:**
+4. **Projects Not Found:**
    - Check your `.env` file to ensure your project directories are correctly specified
    - Verify the paths exist and have KiCad project files (.kicad_pro)
    - Use absolute paths instead of `~` if there are issues with path expansion
