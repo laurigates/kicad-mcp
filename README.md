@@ -67,10 +67,6 @@ kicad-mcp/
 First, let's install dependencies and set up our environment:
 
 ```bash
-# Create a new directory for our project
-mkdir -p ~/Projects/kicad-mcp
-cd ~/Projects/kicad-mcp
-
 # Clone the repository
 git clone https://github.com/lamaalrajih/kicad-mcp.git .
 
