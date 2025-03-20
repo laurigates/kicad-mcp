@@ -22,6 +22,9 @@ from kicad_mcp.prompts.drc_prompt import register_drc_prompts
 from kicad_mcp.utils.logger import Logger
 from kicad_mcp.utils.python_path import setup_kicad_python_path
 
+# Import context management
+from kicad_mcp.context import kicad_lifespan
+
 # Create logger for this module
 logger = Logger()
 
