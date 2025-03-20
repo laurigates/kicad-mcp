@@ -5,9 +5,9 @@ import os
 import sys
 import glob
 import platform
+
 from kicad_mcp.utils.logger import Logger
 
-# Create logger for this module
 logger = Logger()
 
 def setup_kicad_python_path():
@@ -91,7 +91,16 @@ def setup_kicad_python_path():
                     sys.path.append(path)
                     logger.info(f"Added KiCad Python path: {path}")
                     logger.info(f"Found pcbnew module at: {pcbnew_path}")
-                    return True
+                    
+                    # Try to actually import it to verify compatibility
+                    try:
+                        import pcbnew
+                        logger.info(f"Successfully imported pcbnew module version: {getattr(pcbnew, 'GetBuildVersion', lambda: 'unknown')()}")
+                        return True
+                    except ImportError as e:
+                        logger.error(f"Found pcbnew but failed to import: {str(e)}")
+                        # Remove from path as it's not usable
+                        sys.path.remove(path)
             else:
                 logger.debug(f"Found site-packages at {path} but no pcbnew module")
     
