@@ -15,21 +15,43 @@ from kicad_mcp.tools.export_tools import register_export_tools
 # Import prompt handlers
 from kicad_mcp.prompts.templates import register_prompts
 
+# Import utils
+from kicad_mcp.utils.logger import Logger
+from kicad_mcp.utils.python_path import setup_kicad_python_path
+
+# Create logger for this module
+logger = Logger(log_dir="logs")
+
 def create_server() -> FastMCP:
     """Create and configure the KiCad MCP server."""
+    logger.info("Initializing KiCad MCP server")
+
+    # Try to set up KiCad Python path
+    kicad_modules_available = setup_kicad_python_path()
+
+    if kicad_modules_available:
+        logger.info("KiCad Python modules successfully configured")
+    else:
+        logger.warning("KiCad Python modules not available - some features will be disabled")
+
     # Initialize FastMCP server
     mcp = FastMCP("KiCad")
+    logger.info("Created FastMCP server instance")
     
     # Register resources
+    logger.debug("Registering resources...")
     register_project_resources(mcp)
     register_file_resources(mcp)
     
     # Register tools
+    logger.debug("Registering tools...")
     register_project_tools(mcp)
     register_analysis_tools(mcp)
     register_export_tools(mcp)
     
     # Register prompts
+    logger.debug("Registering prompts...")
     register_prompts(mcp)
     
+    logger.info("Server initialization complete")
     return mcp

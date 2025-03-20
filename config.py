@@ -3,9 +3,28 @@ Configuration settings for the KiCad MCP server.
 """
 import os
 
-# KiCad paths
-KICAD_USER_DIR = os.path.expanduser("~/Documents/KiCad")
-KICAD_APP_PATH = "/Applications/KiCad/KiCad.app"
+import platform
+
+# Determine operating system
+system = platform.system()
+
+# KiCad paths based on operating system
+if system == "Darwin":  # macOS
+    KICAD_USER_DIR = os.path.expanduser("~/Documents/KiCad")
+    KICAD_APP_PATH = "/Applications/KiCad/KiCad.app"
+elif system == "Windows":
+    KICAD_USER_DIR = os.path.expanduser("~/Documents/KiCad")
+    KICAD_APP_PATH = r"C:\Program Files\KiCad"
+elif system == "Linux":
+    KICAD_USER_DIR = os.path.expanduser("~/kicad")
+    KICAD_APP_PATH = "/usr/share/kicad"
+else:
+    # Default to macOS paths if system is unknown
+    KICAD_USER_DIR = os.path.expanduser("~/Documents/KiCad")
+    KICAD_APP_PATH = "/Applications/KiCad/KiCad.app"
+
+# Base path to KiCad's Python framework
+KICAD_PYTHON_BASE = os.path.join(KICAD_APP_PATH, "Contents/Frameworks/Python.framework/Versions")
 
 # File extensions
 KICAD_EXTENSIONS = {
