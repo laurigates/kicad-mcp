@@ -10,7 +10,7 @@ from mcp.server.fastmcp import FastMCP
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.logger import Logger
 from kicad_mcp.utils.drc_history import get_drc_history
-from kicad_mcp.tools.drc_tools import run_drc_via_cli
+from kicad_mcp.tools.drc_impl.cli_drc import run_drc_via_cli
 
 # Create logger for this module
 logger = Logger()

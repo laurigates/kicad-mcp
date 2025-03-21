@@ -2,3 +2,4 @@ mcp[cli]
 httpx
 pytest
 pandas
+kicad-python
