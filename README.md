@@ -1,6 +1,6 @@
 # KiCad MCP Server
 
-> ⚠️ **WARNING**: This project is a work in progress. The basic functionality of finding KiCad projects has been tested on macOS, but more advanced features (like running DRC checks, generating thumbnails) have not been thoroughly tested yet. If you encounter bugs, please open an issue or submit a pull request to fix them (see Contributing section below).
+> ⚠️ **WARNING**: This project was quickly hacked together and is largely untested. Expect things to break. Use at your own risk. I plan on improving it over time, but if you find bugs, please open an issue or submit a pull request to fix them (see Contributing section below).
 
 > ⚠️ **WARNING**: This project is optimized for Mac. While there exists some basic support for Windows and Linux, not all functionality is guaranteed to work.
 
@@ -9,31 +9,12 @@ This guide will help you set up a Model Context Protocol (MCP) server for KiCad.
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
-- [Project Structure](#project-structure)
 - [Installation Steps](#installation-steps)
-  - [1. Set Up Your Python Environment](#1-set-up-your-python-environment)
-  - [2. Configure Your Environment](#2-configure-your-environment)
-  - [3. Run the Server](#3-run-the-server)
-  - [4. Configure an MCP Client](#4-configure-an-mcp-client)
-  - [5. Restart Your MCP Client](#5-restart-your-mcp-client)
 - [Understanding MCP Components](#understanding-mcp-components)
-  - [Resources vs Tools vs Prompts](#resources-vs-tools-vs-prompts)
-- [Features and Usage Guide](#features-and-usage-guide)
-  - [Project Management](#project-management)
-  - [PCB Design Analysis](#pcb-design-analysis)
-  - [Design Rule Checking (DRC)](#design-rule-checking-drc)
-  - [PCB Visualization](#pcb-visualization)
-  - [Templates and Prompts](#templates-and-prompts)
-- [Usage Examples](#usage-examples)
-  - [Example 1: Basic Project Workflow](#example-1-basic-project-workflow)
-  - [Example 2: Getting PCB Design Help](#example-2-getting-pcb-design-help)
-- [Configuration Options](#configuration-options)
-  - [Key Configuration Options](#key-configuration-options)
-  - [Using Environment Variables Directly](#using-environment-variables-directly)
-  - [Using a .env File (Recommended)](#using-a-env-file-recommended)
+- [Feature Highlights](#feature-highlights)
+- [Documentation](#documentation)
+- [Configuration](#configuration)
 - [Development Guide](#development-guide)
-  - [Adding New Features](#adding-new-features)
-  - [Running Tests](#running-tests)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [Future Development Ideas](#future-development-ideas)
@@ -45,31 +26,6 @@ This guide will help you set up a Model Context Protocol (MCP) server for KiCad.
 - Python 3.10 or higher
 - Claude Desktop (or another MCP client)
 - Basic familiarity with the terminal
-
-## Project Structure
-
-The KiCad MCP Server is organized into a modular structure for better maintainability:
-
-```
-kicad-mcp/
-├── README.md                       # Project documentation
-├── main.py                         # Entry point that runs the server
-├── requirements.txt                # Python dependencies
-├── .env.example                    # Example environment configuration
-├── kicad_mcp/                      # Main package directory
-│   ├── __init__.py                 # Package initialization
-│   ├── server.py                   # MCP server setup
-│   ├── config.py                   # Configuration constants and settings
-│   ├── context.py                  # Lifespan management and shared context
-│   ├── resources/                  # Resource handlers
-│   ├── tools/                      # Tool handlers
-│   ├── prompts/                    # Prompt templates
-│   └── utils/                      # Utility functions
-├── docs/                           # Documentation
-│   ├── drc_guide.md                # Design Rule Check guide
-│   └── thumbnail_guide.md          # PCB Thumbnail feature guide
-└── tests/                          # Unit tests
-```
 
 ## Installation Steps
 
@@ -108,8 +64,6 @@ In the `.env` file, add your custom project directories:
 KICAD_SEARCH_PATHS=~/pcb,~/Electronics,~/Projects/KiCad
 ```
 
-This will tell the server to look for KiCad projects in your custom directories in addition to the standard KiCad user directory.
-
 ### 3. Run the Server
 
 Once the environment is set up, you can run the server:
@@ -122,12 +76,6 @@ python -m mcp.dev main.py
 python main.py
 ```
 
-The server will automatically detect KiCad projects in:
-
-- The standard KiCad user directory (e.g., ~/Documents/KiCad)
-- Any custom directories specified in your .env file
-- Common project directories (automatically detected)
-
 ### 4. Configure an MCP Client
 
 Now, let's configure Claude Desktop to use our MCP server:
@@ -138,7 +86,7 @@ Now, let's configure Claude Desktop to use our MCP server:
 # Create the directory if it doesn't exist
 mkdir -p ~/Library/Application\ Support/Claude
 
-# Edit the configuration file (or create it if it doesn't exist)
+# Edit the configuration file
 vim ~/Library/Application\ Support/Claude/claude_desktop_config.json
 ```
 
@@ -157,30 +105,11 @@ vim ~/Library/Application\ Support/Claude/claude_desktop_config.json
 }
 ```
 
-Replace `/ABSOLUTE/PATH/TO/YOUR/PROJECT/kicad-mcp` with the actual path to your project directory (e.g., `/Users/yourusername/Projects/kicad-mcp`).
-
-#### Windows Configuration
-
-On Windows, the configuration would look like:
-
-```json
-{
-    "mcpServers": {
-        "kicad": {
-            "command": "C:\\Path\\To\\Your\\Project\\kicad-mcp\\venv\\Scripts\\python.exe",
-            "args": [
-                "C:\\Path\\To\\Your\\Project\\kicad-mcp\\main.py"
-            ]
-        }
-    }
-}
-```
-
-The configuration should be stored in `%APPDATA%\Claude\claude_desktop_config.json`.
+Replace `/ABSOLUTE/PATH/TO/YOUR/PROJECT/kicad-mcp` with the actual path to your project directory.
 
 ### 5. Restart Your MCP Client
 
-Close and reopen your MCP client (e.g., Claude Desktop) to load the new configuration. The KiCad server should appear in the tools dropdown menu or equivalent interface in your client.
+Close and reopen your MCP client to load the new configuration.
 
 ## Understanding MCP Components
 
@@ -208,163 +137,30 @@ The Model Context Protocol (MCP) defines three primary ways to provide capabilit
 - Invoked by user choice (typically from a menu)
 - Example: The `debug_pcb_issues` prompt helps users troubleshoot PCB problems
 
-## Features and Usage Guide
+## Feature Highlights
 
-Here's how to use each of the key features of the KiCad MCP Server through any MCP-compatible client (examples show prompts for Claude Desktop, but the concepts apply to any MCP client):
+The KiCad MCP Server provides several key features:
 
-### Project Management
+- **Project Management**: List, examine, and open KiCad projects
+- **PCB Design Analysis**: Get insights about your PCB designs and schematics
+- **BOM Management**: Analyze and export Bills of Materials
+- **Design Rule Checking**: Run DRC checks and track your progress over time
+- **PCB Visualization**: Generate visual representations of your PCB layouts
 
-#### Listing Projects
+For detailed usage guides, see the [documentation](#documentation).
 
-To see all KiCad projects available on your system:
+## Documentation
 
-```
-Could you list all my KiCad projects?
-```
+Detailed documentation for each feature is available in the `docs/` directory:
 
-Claude will use the `kicad://projects` resource to display a formatted list of your KiCad projects, including their paths and last modified dates.
+- [Project Management](docs/project_guide.md)
+- [PCB Design Analysis](docs/analysis_guide.md)
+- [Bill of Materials (BOM)](docs/bom_guide.md)
+- [Design Rule Checking (DRC)](docs/drc_guide.md)
+- [PCB Visualization](docs/thumbnail_guide.md)
+- [Prompt Templates](docs/prompt_guide.md)
 
-#### Project Details
-
-To get details about a specific project:
-
-```
-Show me details about my KiCad project at /path/to/your/project.kicad_pro
-```
-
-Claude will display project information including available files, settings, and metadata.
-
-#### Opening Projects
-
-To open a KiCad project:
-
-```
-Can you open my KiCad project at /path/to/your/project.kicad_pro?
-```
-
-This will launch KiCad with the specified project open. Note that this requires KiCad to be properly installed.
-
-### PCB Design Analysis
-
-#### Validating Projects
-
-To validate a KiCad project for issues:
-
-```
-Validate my KiCad project at /path/to/your/project.kicad_pro
-```
-
-Claude will check for missing files, incorrect formats, and other common issues.
-
-#### Schematic Information
-
-To extract information from a schematic:
-
-```
-What components are in my schematic at /path/to/your/project.kicad_sch?
-```
-
-This will display component information extracted from the schematic file.
-
-### Design Rule Checking (DRC)
-
-#### Running DRC Checks
-
-To check your PCB layout for design rule violations:
-
-```
-Run a DRC check on my KiCad project at /path/to/your/project.kicad_pro
-```
-
-Claude will analyze your PCB layout for violations of design rules and provide a detailed report.
-
-#### Viewing DRC History
-
-To see how DRC violations have changed over time:
-
-```
-Show me the DRC history for my KiCad project at /path/to/your/project.kicad_pro
-```
-
-This displays a trend of violations over time, helping you track your progress as you fix issues.
-
-DRC history is persistently stored on your filesystem at `~/.kicad_mcp/drc_history/` and is preserved across sessions. Each project's history is saved in a JSON file with a format like `projectname_[hash]_drc_history.json`. The system keeps track of up to 10 most recent DRC checks per project, allowing you to monitor your progress in fixing design rule violations over time.
-
-#### Getting Help with DRC Violations
-
-For help with fixing DRC issues, use the Fix DRC Violations prompt:
-
-```
-I need help fixing DRC violations in my KiCad project at /path/to/your/project.kicad_pro
-```
-
-Claude will guide you through understanding and resolving each type of violation.
-
-### PCB Visualization
-
-#### Generating PCB Thumbnails
-
-To visualize your PCB layout:
-
-```
-Generate a thumbnail for my KiCad PCB at /path/to/your/project.kicad_pro
-```
-
-Claude will create a visual representation of your PCB board, showing layers, traces, and components.
-
-### Templates and Prompts
-
-#### Using Prompt Templates
-
-Claude Desktop provides several specialized prompts for common KiCad workflows. Access these by clicking the "Prompt Templates" button in Claude Desktop, then selecting one of the KiCad templates:
-
-- **Create New Component** - Guides you through creating a new KiCad component
-- **Debug PCB Issues** - Helps troubleshoot common PCB design problems
-- **PCB Manufacturing Checklist** - Prepares your design for manufacturing
-- **Fix DRC Violations** - Assists with resolving design rule violations
-- **Custom Design Rules** - Helps create specialized design rules for your project
-
-## Usage Examples
-
-Here are some complete examples of how to interact with the KiCad MCP Server through Claude Desktop:
-
-### Example 1: Basic Project Workflow
-
-```
-Claude, I've just started a new KiCad project but I need some guidance. Can you list my existing KiCad projects first so I can see what I've already worked on?
-```
-
-Claude will list your KiCad projects. Then you might ask:
-
-```
-Great, can you show me details about the project at /Users/me/Documents/KiCad/amplifier/amplifier.kicad_pro?
-```
-
-Claude will display information about that specific project. Then you could continue:
-
-```
-I need to check if there are any design rule violations. Can you run a DRC check on that project?
-```
-
-### Example 2: Getting PCB Design Help
-
-```
-I'm having trouble with my PCB design in KiCad. I keep getting clearance errors between traces. Can you help me understand how to fix this?
-```
-
-Claude will explain clearance errors and suggest solutions. You could continue:
-
-```
-Can you show me a thumbnail of my PCB layout at /Users/me/Documents/KiCad/amplifier/amplifier.kicad_pro so I can see the problematic areas?
-```
-
-Claude will generate and display a thumbnail of your PCB. Then you might ask:
-
-```
-Let's run a full DRC check on this project to identify all the issues I need to fix.
-```
-
-## Configuration Options
+## Configuration
 
 The KiCad MCP Server can be configured using environment variables or a `.env` file:
 
@@ -374,35 +170,33 @@ The KiCad MCP Server can be configured using environment variables or a `.env` f
 | `KICAD_SEARCH_PATHS` | Comma-separated list of directories to search for KiCad projects | `~/pcb,~/Electronics,~/Projects` |
 | `KICAD_USER_DIR` | Override the default KiCad user directory | `~/Documents/KiCadProjects` |
 | `KICAD_APP_PATH` | Override the default KiCad application path | `/Applications/KiCad7/KiCad.app` |
-| `LOG_LEVEL` | Set logging verbosity | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
-| `LOG_DIR` | Directory for log files | `logs` or `~/.kicad_mcp/logs` |
 
-### Using Environment Variables Directly
-
-You can set environment variables when launching the server:
-
-```bash
-KICAD_SEARCH_PATHS=~/pcb,~/Electronics LOG_LEVEL=DEBUG python main.py
-```
-
-### Using a .env File (Recommended)
-
-Create a `.env` file in the project root with your configuration by copying and renaming `.env.example`:
-
-```
-# KiCad MCP Server Configuration
-
-# Directories to search for KiCad projects (comma-separated)
-KICAD_SEARCH_PATHS=~/pcb,~/Electronics,~/Projects/KiCad
-
-# Logging configuration
-LOG_LEVEL=INFO
-LOG_DIR=logs
-```
-
-The server automatically detects and loads this configuration on startup.
+See [Configuration Guide](docs/configuration.md) for more details.
 
 ## Development Guide
+
+### Project Structure
+
+The KiCad MCP Server is organized into a modular structure:
+
+```
+kicad-mcp/
+├── README.md                       # Project documentation
+├── main.py                         # Entry point that runs the server
+├── requirements.txt                # Python dependencies
+├── .env.example                    # Example environment configuration
+├── kicad_mcp/                      # Main package directory
+│   ├── __init__.py
+│   ├── server.py                   # MCP server setup
+│   ├── config.py                   # Configuration constants and settings
+│   ├── context.py                  # Lifespan management and shared context
+│   ├── resources/                  # Resource handlers
+│   ├── tools/                      # Tool handlers
+│   ├── prompts/                    # Prompt templates
+│   └── utils/                      # Utility functions
+├── docs/                           # Documentation
+└── tests/                          # Unit tests
+```
 
 ### Adding New Features
 
@@ -413,36 +207,14 @@ To add new features to the KiCad MCP Server, follow these steps:
 3. Register your feature in the corresponding register function
 4. Test your changes with the development tools
 
-Example for adding a new tool:
-
-```python
-# kicad_mcp/tools/analysis_tools.py
-
-@mcp.tool()
-def new_analysis_tool(project_path: str) -> Dict[str, Any]:
-    """Description of your new tool."""
-    # Implementation goes here
-    return {"result": "success"}
-```
-
-### Running Tests
-
-This project uses pytest for testing:
-
-```bash
-# Install development dependencies
-pip install pytest
-
-# Run tests
-pytest
-```
+See [Development Guide](docs/development.md) for more details.
 
 ## Troubleshooting
 
 If you encounter issues:
 
 1. **Server Not Appearing in MCP Client:**
-   - Check your client's configuration file for errors (e.g., `claude_desktop_config.json` for Claude Desktop)
+   - Check your client's configuration file for errors
    - Make sure the path to your project and Python interpreter is correct
    - Ensure Python can access the `mcp` package
    - Check if your KiCad installation is detected
@@ -452,24 +224,13 @@ If you encounter issues:
    - Check Claude logs at:
      - `~/Library/Logs/Claude/mcp-server-kicad.log` (server-specific logs)
      - `~/Library/Logs/Claude/mcp.log` (general MCP logs)
-   - Make sure all required Python packages are installed
-   - Verify that your KiCad installation is in the standard location
 
-3. **KiCad Python Modules Not Found:**
-   - This is a common issue. The server will still work but with limited functionality
-   - Ensure KiCad is installed properly
-   - Check if the right paths are set in `kicad_mcp/config.py`
-   
-4. **Projects Not Found:**
-   - Check your `.env` file to ensure your project directories are correctly specified
-   - Verify the paths exist and have KiCad project files (.kicad_pro)
-   - Use absolute paths instead of `~` if there are issues with path expansion
-   - Check the Claude logs mentioned above to see if there are errors when searching for projects
+3. **Working Directory Issues:**
+   - The working directory for servers launched via client configs may be undefined
+   - Always use absolute paths in your configuration and .env files
+   - For testing servers via command line, the working directory will be where you run the command
 
-5. **DRC History Not Saving:**
-   - Check if the `~/.kicad_mcp/drc_history/` directory exists and is writable
-   - Verify that the project path used is consistent between runs
-   - Check for errors in the logs related to DRC history saving
+See [Troubleshooting Guide](docs/troubleshooting.md) for more details.
 
 ## Contributing
 
@@ -480,25 +241,21 @@ Want to contribute to the KiCad MCP Server? Here's how you can help improve this
 3. Add your changes
 4. Submit a pull request
 
-Key areas that need work:
-- Improving cross-platform compatibility
-- Adding more comprehensive tests
-- Enhancing error handling
-- Adding support for more KiCad features
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines.
 
 ## Future Development Ideas
 
 Interested in contributing? Here are some ideas for future development:
 
-1. Implement 3D model visualization tools
-2. Create PCB review tools with annotations
-3. Add support for generating manufacturing files
-4. Implement component search tools
-5. Enhance BOM capabilities with supplier integration
-6. Add support for interactive design checks
-7. Implement a simple web UI for configuration and monitoring
-8. Add automated circuit analysis features
-9. Add tests!
+1. **3D Model Visualization** - Implement tools to visualize 3D models of PCBs
+2. **PCB Review Tools** - Create annotation features for design reviews
+3. **Manufacturing File Generation** - Add support for generating Gerber files and other manufacturing outputs
+4. **Component Search** - Implement search functionality for components across KiCad libraries
+5. **BOM Enhancement** - Add supplier integration for component sourcing and pricing
+6. **Interactive Design Checks** - Develop interactive tools for checking design quality
+7. **Web UI** - Create a simple web interface for configuration and monitoring
+8. **Circuit Analysis** - Add automated circuit analysis features
+9. **Test Coverage** - Improve test coverage across the codebase
 
 ## License
 
