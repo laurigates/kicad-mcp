@@ -12,6 +12,7 @@ This guide will help you set up a Model Context Protocol (MCP) server for KiCad.
 - [Installation Steps](#installation-steps)
 - [Understanding MCP Components](#understanding-mcp-components)
 - [Feature Highlights](#feature-highlights)
+- [Natural Language Interaction](#natural-language-interaction)
 - [Documentation](#documentation)
 - [Configuration](#configuration)
 - [Development Guide](#development-guide)
@@ -139,16 +140,54 @@ The Model Context Protocol (MCP) defines three primary ways to provide capabilit
 
 ## Feature Highlights
 
-The KiCad MCP Server provides several key features:
+The KiCad MCP Server provides several key features, each with detailed documentation:
 
 - **Project Management**: List, examine, and open KiCad projects
+  - *Example:* "Show me all my recent KiCad projects" → Lists all projects sorted by modification date
+  
 - **PCB Design Analysis**: Get insights about your PCB designs and schematics
+  - *Example:* "Analyze the component density of my temperature sensor board" → Provides component spacing analysis
+  
 - **Netlist Extraction**: Extract and analyze component connections from schematics
+  - *Example:* "What components are connected to the MCU in my Arduino shield?" → Shows all connections to the microcontroller
+  
 - **BOM Management**: Analyze and export Bills of Materials
+  - *Example:* "Generate a BOM for my smart watch project" → Creates a detailed bill of materials
+  
 - **Design Rule Checking**: Run DRC checks and track your progress over time
+  - *Example:* "Run DRC on my power supply board and compare to last week" → Shows progress in fixing violations
+  
 - **PCB Visualization**: Generate visual representations of your PCB layouts
+  - *Example:* "Show me a thumbnail of my audio amplifier PCB" → Displays a visual render of the board
+  
+- **Circuit Pattern Recognition**: Automatically identify common circuit patterns in your schematics
+  - *Example:* "What power supply topologies am I using in my IoT device?" → Identifies buck, boost, or linear regulators
 
-For detailed usage guides, see the [documentation](#documentation).
+For more examples and details on each feature, see the dedicated guides in the documentation.
+
+## Natural Language Interaction
+
+While our documentation often shows examples like:
+
+```
+Show me the DRC report for /Users/username/Documents/KiCad/my_project/my_project.kicad_pro
+```
+
+You don't need to type the full path to your files! The LLM can understand more natural language requests.
+
+For example, instead of the formal command above, you can simply ask:
+
+```
+Can you check if there are any design rule violations in my Arduino shield project?
+```
+
+Or:
+
+```
+I'm working on the temperature sensor circuit. Can you identify what patterns it uses?
+```
+
+The LLM will understand your intent and request the relevant information from the KiCad MCP Server. If it needs clarification about which project you're referring to, it will ask.
 
 ## Documentation
 
@@ -160,6 +199,7 @@ Detailed documentation for each feature is available in the `docs/` directory:
 - [Bill of Materials (BOM)](docs/bom_guide.md)
 - [Design Rule Checking (DRC)](docs/drc_guide.md)
 - [PCB Visualization](docs/thumbnail_guide.md)
+- [Circuit Pattern Recognition](docs/pattern_guide.md)
 - [Prompt Templates](docs/prompt_guide.md)
 
 ## Configuration
@@ -243,6 +283,12 @@ Want to contribute to the KiCad MCP Server? Here's how you can help improve this
 3. Add your changes
 4. Submit a pull request
 
+Key areas for contribution:
+- Adding support for more component patterns in the Circuit Pattern Recognition system
+- Improving documentation and examples
+- Adding new features or enhancing existing ones
+- Fixing bugs and improving error handling
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines.
 
 ## Future Development Ideas
@@ -258,6 +304,7 @@ Interested in contributing? Here are some ideas for future development:
 7. **Web UI** - Create a simple web interface for configuration and monitoring
 8. **Circuit Analysis** - Add automated circuit analysis features
 9. **Test Coverage** - Improve test coverage across the codebase
+10. **Circuit Pattern Recognition** - Expand the pattern database with more component types and circuit topologies
 
 ## License
 
