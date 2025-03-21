@@ -8,6 +8,7 @@ from kicad_mcp.resources.projects import register_project_resources
 from kicad_mcp.resources.files import register_file_resources
 from kicad_mcp.resources.drc_resources import register_drc_resources
 from kicad_mcp.resources.bom_resources import register_bom_resources
+from kicad_mcp.resources.netlist_resources import register_netlist_resources
 
 # Import tool handlers
 from kicad_mcp.tools.project_tools import register_project_tools
@@ -15,6 +16,7 @@ from kicad_mcp.tools.analysis_tools import register_analysis_tools
 from kicad_mcp.tools.export_tools import register_export_tools
 from kicad_mcp.tools.drc_tools import register_drc_tools
 from kicad_mcp.tools.bom_tools import register_bom_tools
+from kicad_mcp.tools.netlist_tools import register_netlist_tools
 
 # Import prompt handlers
 from kicad_mcp.prompts.templates import register_prompts
@@ -53,6 +55,7 @@ def create_server() -> FastMCP:
     register_file_resources(mcp)
     register_drc_resources(mcp)
     register_bom_resources(mcp)
+    register_netlist_resources(mcp)
     
     # Register tools
     logger.debug("Registering tools...")
@@ -61,6 +64,7 @@ def create_server() -> FastMCP:
     register_export_tools(mcp)
     register_drc_tools(mcp)
     register_bom_tools(mcp)
+    register_netlist_tools(mcp)
     
     # Register prompts
     logger.debug("Registering prompts...")

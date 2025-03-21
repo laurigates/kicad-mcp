@@ -143,6 +143,7 @@ The KiCad MCP Server provides several key features:
 
 - **Project Management**: List, examine, and open KiCad projects
 - **PCB Design Analysis**: Get insights about your PCB designs and schematics
+- **Netlist Extraction**: Extract and analyze component connections from schematics
 - **BOM Management**: Analyze and export Bills of Materials
 - **Design Rule Checking**: Run DRC checks and track your progress over time
 - **PCB Visualization**: Generate visual representations of your PCB layouts
@@ -155,6 +156,7 @@ Detailed documentation for each feature is available in the `docs/` directory:
 
 - [Project Management](docs/project_guide.md)
 - [PCB Design Analysis](docs/analysis_guide.md)
+- [Netlist Extraction](docs/netlist_guide.md)
 - [Bill of Materials (BOM)](docs/bom_guide.md)
 - [Design Rule Checking (DRC)](docs/drc_guide.md)
 - [PCB Visualization](docs/thumbnail_guide.md)
