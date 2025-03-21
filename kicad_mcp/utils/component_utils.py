@@ -2,7 +2,7 @@
 Utility functions for working with KiCad component values and properties.
 """
 import re
-from typing import Optional, Tuple, Union, Dict
+from typing import Any, Optional, Tuple, Union, Dict
 
 def extract_voltage_from_regulator(value: str) -> str:
     """Extract output voltage from a voltage regulator part number or description.

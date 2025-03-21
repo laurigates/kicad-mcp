@@ -2,7 +2,7 @@
 Netlist extraction and analysis tools for KiCad schematics.
 """
 import os
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 from mcp.server.fastmcp import FastMCP, Context
 
 from kicad_mcp.utils.file_utils import get_project_files
@@ -53,75 +53,6 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             
             if "error" in netlist_data:
                 logger.error(f"Error extracting netlist: {netlist_data['error']}")
-                ctx.info(f"Error extracting netlist: {netlist_data['error']}")
-                return {"success": False, "error": netlist_data['error']}
-            
-            await ctx.report_progress(50, 100)
-            
-            # Check if the component exists
-            components = netlist_data.get("components", {})
-            if component_ref not in components:
-                logger.error(f"Component {component_ref} not found in schematic")
-                ctx.info(f"Component {component_ref} not found in schematic")
-                return {
-                    "success": False, 
-                    "error": f"Component {component_ref} not found in schematic",
-                    "available_components": list(components.keys())
-                }
-            
-            component_info = components[component_ref]
-            ctx.info(f"Found component: {component_ref} ({component_info.get('lib_id', 'unknown type')})")
-            
-            # Find all nets connected to this component
-            await ctx.report_progress(70, 100)
-            ctx.info("Analyzing component connections...")
-            
-            # Build connection information
-            connections = []
-            connected_components = set()
-            
-            nets = netlist_data.get("nets", {})
-            for net_name, pins in nets.items():
-                # Check if any pin belongs to our component
-                component_pins = [pin for pin in pins if pin.get('component') == component_ref]
-                
-                if component_pins:
-                    # This net connects to our component
-                    net_info = {
-                        "net_name": net_name,
-                        "pins": component_pins,
-                        "connected_to": []
-                    }
-                    
-                    # Find other components connected to this net
-                    for pin in pins:
-                        other_component = pin.get('component')
-                        if other_component and other_component != component_ref:
-                            connected_components.add(other_component)
-                            net_info["connected_to"].append({
-                                "component": other_component,
-                                "pin": pin.get('pin', 'unknown')
-                            })
-                    
-                    connections.append(net_info)
-            
-            await ctx.report_progress(90, 100)
-            
-            # Build result
-            result = {
-                "success": True,
-                "component_ref": component_ref,
-                "component_info": component_info,
-                "connections": connections,
-                "connected_component_count": len(connected_components),
-                "connected_components": list(connected_components)
-            }
-            
-            # Complete progress
-            await ctx.report_progress(100, 100)
-            ctx.info(f"Found {len(connections)} connections to component {component_ref}")
-            
-            return resultf"Error extracting netlist: {netlist_data['error']}")
                 ctx.info(f"Error extracting netlist: {netlist_data['error']}")
                 return {"success": False, "error": netlist_data['error']}
             
@@ -368,4 +299,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             netlist_data = extract_netlist(schematic_path)
             
             if "error" in netlist_data:
-                logger.error(
+                logger.error("Failed to extract netlist")
+        
+        except Exception as e:
+            raise e
