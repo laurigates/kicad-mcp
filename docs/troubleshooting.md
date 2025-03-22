@@ -194,14 +194,6 @@ To diagnose issues, check the server logs:
      %APPDATA%\Claude\Logs\
      ```
 
-### Enabling Debug Logging
-
-For more detailed logs, set the logging level to DEBUG in your `.env` file:
-
-```
-LOG_LEVEL=DEBUG
-```
-
 ## DRC and Export Feature Issues
 
 ### DRC Checks Failing

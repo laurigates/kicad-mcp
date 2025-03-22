@@ -105,25 +105,7 @@ def register_export_tools(mcp: FastMCP) -> None:
             await ctx.report_progress(10, 100)
             ctx.info(f"Generating thumbnail for {os.path.basename(pcb_file)}")
 
-            # Method 1: Try to use pcbnew Python module if available
-            if kicad_modules_available:
-                try:
-                    thumbnail = await generate_thumbnail_with_pcbnew(pcb_file, ctx)
-                    if thumbnail:
-                        # Cache the result if possible
-                        if hasattr(app_context, 'cache'):
-                            app_context.cache[cache_key] = thumbnail
-                        return thumbnail
-
-                    # If pcbnew method failed, log it but continue to try alternative method
-                    print("Failed to generate thumbnail with pcbnew, trying CLI method")
-                except Exception as e:
-                    print(f"Error using pcbnew for thumbnail: {str(e)}", exc_info=True)
-                    ctx.info(f"Error with pcbnew method, trying alternative approach")
-            else:
-                print("KiCad Python modules not available, trying CLI method")
-
-            # Method 2: Try to use command-line tools
+            # Try to use command-line tools
             try:
                 thumbnail = await generate_thumbnail_with_cli(pcb_file, ctx)
                 if thumbnail:
@@ -135,7 +117,7 @@ def register_export_tools(mcp: FastMCP) -> None:
                 print(f"Error using CLI for thumbnail: {str(e)}", exc_info=True)
                 ctx.info(f"Error generating thumbnail with CLI method")
 
-            # If all methods fail, inform the user
+            # If it fails, inform the user
             ctx.info("Could not generate thumbnail for PCB - all methods failed")
             return None
             

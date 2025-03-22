@@ -17,7 +17,7 @@ if __name__ == "__main__":
     try:
         print("Starting KiCad MCP server")
 
-        # Log search paths from config
+        # Print search paths from config
         print(f"Using KiCad user directory: {KICAD_USER_DIR}")
         if ADDITIONAL_SEARCH_PATHS:
             print(f"Additional search paths: {', '.join(ADDITIONAL_SEARCH_PATHS)}")

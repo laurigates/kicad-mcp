@@ -29,15 +29,6 @@ These settings control how the server locates KiCad:
 |---------------------|-------------|---------------|---------|
 | `KICAD_APP_PATH` | Path to the KiCad application | `/Applications/KiCad/KiCad.app` (macOS)<br>`C:\Program Files\KiCad` (Windows)<br>`/usr/share/kicad` (Linux) | `/Applications/KiCad7/KiCad.app` |
 
-### Logging Configuration
-
-These settings control server logging behavior:
-
-| Environment Variable | Description | Default Value | Example |
-|---------------------|-------------|---------------|---------|
-| `LOG_LEVEL` | Sets logging verbosity | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
-| `LOG_DIR` | Directory for log files | `logs` | `~/.kicad_mcp/logs` |
-
 ## Using a .env File (Recommended)
 
 The recommended way to configure the server is by creating a `.env` file in the project root:
@@ -69,10 +60,6 @@ The recommended way to configure the server is by creating a `.env` file in the 
    # KICAD_APP_PATH=C:\Program Files\KiCad
    # Linux:
    # KICAD_APP_PATH=/usr/share/kicad
-   
-   # Logging configuration
-   LOG_LEVEL=INFO
-   LOG_DIR=logs
    ```
 
 ## Directory Structure and Project Discovery
@@ -147,7 +134,7 @@ You can also set environment variables directly in the client configuration:
             ],
             "env": {
                 "KICAD_SEARCH_PATHS": "/custom/path1,/custom/path2",
-                "LOG_LEVEL": "DEBUG"
+                "KICAD_APP_PATH": "/custom/path"
             }
         }
     }
@@ -222,19 +209,14 @@ KICAD_APP_PATH=/opt/kicad
 
 If you're having configuration problems:
 
-1. Run the server with debug logging:
+1. Run the server:
    ```bash
-   LOG_LEVEL=DEBUG python main.py
+   python main.py
    ```
 
-2. Check the logs for configuration-related messages:
-   ```bash
-   cat logs/kicad_mcp_*.log | grep "config"
-   ```
-
-3. Verify environment variables are being loaded:
+2. Verify environment variables are being loaded:
    ```bash
    python -c "import os; print(os.environ.get('KICAD_SEARCH_PATHS', 'Not set'))"
    ```
 
-4. Try absolute paths to eliminate path resolution issues
+3. Try absolute paths to eliminate path resolution issues

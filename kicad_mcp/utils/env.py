@@ -2,9 +2,7 @@
 Environment variable handling for KiCad MCP Server.
 """
 import os
-import logging
-from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 
 def load_dotenv(env_file: str = ".env") -> Dict[str, str]:
     """Load environment variables from .env file.
@@ -54,7 +52,7 @@ def load_dotenv(env_file: str = ".env") -> Dict[str, str]:
                     env_vars[key] = value
     
     except Exception as e:
-        logging.warning(f"Error loading .env file: {str(e)}")
+        print(f"Error loading .env file: {str(e)}")
     
     return env_vars
 
