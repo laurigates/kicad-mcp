@@ -1,6 +1,10 @@
 """
 MCP server creation and configuration.
 """
+import atexit
+import os
+import signal
+from typing import Callable
 from mcp.server.fastmcp import FastMCP
 
 # Import resource handlers
@@ -32,6 +36,86 @@ from kicad_mcp.utils.python_path import setup_kicad_python_path
 
 # Import context management
 from kicad_mcp.context import kicad_lifespan
+
+# Track cleanup handlers
+cleanup_handlers = []
+
+# Flag to track whether we're already in shutdown process
+_shutting_down = False
+
+# Store server instance for clean shutdown
+_server_instance = None
+
+def add_cleanup_handler(handler: Callable) -> None:
+    """Register a function to be called during cleanup.
+    
+    Args:
+        handler: Function to call during cleanup
+    """
+    cleanup_handlers.append(handler)
+
+def run_cleanup_handlers() -> None:
+    """Run all registered cleanup handlers."""
+    print("Running cleanup handlers...")
+
+    global _shutting_down
+    
+    # Prevent running cleanup handlers multiple times
+    if _shutting_down:
+        return
+
+    _shutting_down = True
+    print("Running cleanup handlers...")
+    
+    for handler in cleanup_handlers:
+        try:
+            handler()
+            print(f"Cleanup handler {handler.__name__} completed successfully")
+        except Exception as e:
+            print(f"Error in cleanup handler {handler.__name__}: {str(e)}", exc_info=True)
+
+def shutdown_server():
+    """Properly shutdown the server if it exists."""
+    global _server_instance
+    
+    if _server_instance:
+        try:
+            print("Shutting down KiCad MCP server")
+            # The server should handle its own shutdown through its lifespan context
+            # This is mostly a placeholder for any additional server shutdown code
+            _server_instance = None
+            print("KiCad MCP server shutdown complete")
+        except Exception as e:
+            print(f"Error shutting down server: {str(e)}", exc_info=True)
+
+
+def register_signal_handlers(server: FastMCP) -> None:
+    """Register handlers for system signals to ensure clean shutdown.
+    
+    Args:
+        server: The FastMCP server instance
+    """
+    def handle_exit_signal(signum, frame):
+        print(f"Received signal {signum}, initiating shutdown...")
+        
+        # Run cleanup first
+        run_cleanup_handlers()
+        
+        # Then shutdown server
+        shutdown_server()
+        
+        # Exit without waiting for stdio processes which might be blocking
+        os._exit(0)
+    
+    # Register for common termination signals
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            signal.signal(sig, handle_exit_signal)
+            print(f"Registered handler for signal {sig}")
+        except (ValueError, AttributeError) as e:
+            # Some signals may not be available on all platforms
+            print(f"Could not register handler for signal {sig}: {str(e)}")
+
 
 def create_server() -> FastMCP:
     """Create and configure the KiCad MCP server."""
@@ -74,6 +158,32 @@ def create_server() -> FastMCP:
     register_drc_prompts(mcp)
     register_bom_prompts(mcp)
     register_pattern_prompts(mcp)
+
+    # Register signal handlers and cleanup
+    register_signal_handlers(mcp)
+    atexit.register(run_cleanup_handlers)
+    
+    # Add specific cleanup handlers
+    add_cleanup_handler(lambda: print("KiCad MCP server shutdown complete"))
+
+    # Add temp directory cleanup
+    def cleanup_temp_dirs():
+        """Clean up any temporary directories created by the server."""
+        import shutil
+        from kicad_mcp.utils.temp_dir_manager import get_temp_dirs
+        
+        temp_dirs = get_temp_dirs()
+        print(f"Cleaning up {len(temp_dirs)} temporary directories")
+        
+        for temp_dir in temp_dirs:
+            try:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+                    print(f"Removed temporary directory: {temp_dir}")
+            except Exception as e:
+                print(f"Error cleaning up temporary directory {temp_dir}: {str(e)}")
+    
+    add_cleanup_handler(cleanup_temp_dirs)
     
     print("Server initialization complete")
     return mcp
