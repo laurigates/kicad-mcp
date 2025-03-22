@@ -8,11 +8,7 @@ import tempfile
 from typing import Dict, Any, Optional
 from mcp.server.fastmcp import Context
 
-from kicad_mcp.utils.logger import Logger
 from kicad_mcp.config import system
-
-# Create logger for this module
-logger = Logger()
 
 async def run_drc_via_cli(pcb_file: str, ctx: Context) -> Dict[str, Any]:
     """Run DRC using KiCad command line tools.
@@ -39,7 +35,7 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> Dict[str, Any]:
             # Find kicad-cli executable
             kicad_cli = find_kicad_cli()
             if not kicad_cli:
-                logger.error("kicad-cli not found in PATH or common installation locations")
+                print("kicad-cli not found in PATH or common installation locations")
                 results["error"] = "kicad-cli not found. Please ensure KiCad 9.0+ is installed and kicad-cli is available."
                 return results
             
@@ -57,19 +53,19 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> Dict[str, Any]:
                 pcb_file
             ]
             
-            logger.info(f"Running command: {' '.join(cmd)}")
+            print(f"Running command: {' '.join(cmd)}")
             process = subprocess.run(cmd, capture_output=True, text=True)
             
             # Check if the command was successful
             if process.returncode != 0:
-                logger.error(f"DRC command failed with code {process.returncode}")
-                logger.error(f"Error output: {process.stderr}")
+                print(f"DRC command failed with code {process.returncode}")
+                print(f"Error output: {process.stderr}")
                 results["error"] = f"DRC command failed: {process.stderr}"
                 return results
             
             # Check if the output file was created
             if not os.path.exists(output_file):
-                logger.error("DRC report file not created")
+                print("DRC report file not created")
                 results["error"] = "DRC report file not created"
                 return results
             
@@ -78,14 +74,14 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> Dict[str, Any]:
                 try:
                     drc_report = json.load(f)
                 except json.JSONDecodeError:
-                    logger.error("Failed to parse DRC report JSON")
+                    print("Failed to parse DRC report JSON")
                     results["error"] = "Failed to parse DRC report JSON"
                     return results
             
             # Process the DRC report
             violations = drc_report.get("violations", [])
             violation_count = len(violations)
-            logger.info(f"DRC completed with {violation_count} violations")
+            print(f"DRC completed with {violation_count} violations")
             await ctx.report_progress(70, 100)
             ctx.info(f"DRC completed with {violation_count} violations")
             
@@ -111,7 +107,7 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> Dict[str, Any]:
             return results
             
     except Exception as e:
-        logger.error(f"Error in CLI DRC: {str(e)}", exc_info=True)
+        print(f"Error in CLI DRC: {str(e)}", exc_info=True)
         results["error"] = f"Error in CLI DRC: {str(e)}"
         return results
 
@@ -136,7 +132,7 @@ def find_kicad_cli() -> Optional[str]:
                 return result.stdout.strip()
     
     except Exception as e:
-        logger.error(f"Error finding kicad-cli: {str(e)}")
+        print(f"Error finding kicad-cli: {str(e)}")
     
     # If we get here, kicad-cli is not in PATH
     # Try common installation locations

@@ -6,11 +6,7 @@ import subprocess
 import shutil
 from typing import Tuple, Optional, Literal
 
-from kicad_mcp.utils.logger import Logger
 from kicad_mcp.config import system
-
-# Create logger for this module
-logger = Logger()
 
 def check_for_cli_api() -> bool:
     """Check if KiCad CLI API is available.
@@ -36,7 +32,7 @@ def check_for_cli_api() -> bool:
                 
             result = subprocess.run(cmd, capture_output=True, text=True)
             if result.returncode == 0:
-                logger.info(f"Found working kicad-cli: {kicad_cli}")
+                print(f"Found working kicad-cli: {kicad_cli}")
                 return True
         
         # Check common installation locations if not found in PATH
@@ -63,14 +59,14 @@ def check_for_cli_api() -> bool:
         # Check each potential path
         for path in potential_paths:
             if os.path.exists(path) and os.access(path, os.X_OK):
-                logger.info(f"Found kicad-cli at common location: {path}")
+                print(f"Found kicad-cli at common location: {path}")
                 return True
         
-        logger.info("KiCad CLI API is not available")
+        print("KiCad CLI API is not available")
         return False
         
     except Exception as e:
-        logger.error(f"Error checking for KiCad CLI API: {str(e)}")
+        print(f"Error checking for KiCad CLI API: {str(e)}")
         return False
 
 
@@ -83,13 +79,13 @@ def check_for_ipc_api() -> bool:
     try:
         # Try to import the kipy module
         import kipy
-        logger.info("KiCad IPC API (kicad-python) is available")
+        print("KiCad IPC API (kicad-python) is available")
         return True
     except ImportError:
-        logger.info("KiCad IPC API (kicad-python) is not available")
+        print("KiCad IPC API (kicad-python) is not available")
         return False
     except Exception as e:
-        logger.error(f"Error checking for KiCad IPC API: {str(e)}")
+        print(f"Error checking for KiCad IPC API: {str(e)}")
         return False
 
 
@@ -106,9 +102,9 @@ def check_ipc_api_environment() -> Tuple[bool, Optional[str]]:
     socket_path = os.environ.get("KICAD_SOCKET_PATH")
     
     if is_plugin:
-        logger.info("Running as a KiCad plugin")
+        print("Running as a KiCad plugin")
     elif socket_path:
-        logger.info(f"KiCad IPC socket path found: {socket_path}")
+        print(f"KiCad IPC socket path found: {socket_path}")
     
     return (is_plugin, socket_path)
 
@@ -131,5 +127,5 @@ def get_best_api_approach() -> Literal["cli", "ipc", "none"]:
         return "cli"
     
     # No API available
-    logger.warning("No KiCad API available")
+    print("No KiCad API available")
     return "none"

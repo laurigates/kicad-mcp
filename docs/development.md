@@ -61,8 +61,7 @@ kicad-mcp/
 │       ├── kicad_utils.py          # KiCad-specific functions
 │       ├── python_path.py          # Python path setup for KiCad modules
 │       ├── drc_history.py          # DRC history tracking
-│       ├── env.py                  # Environment variable handling
-│       └── logger.py               # Logging utilities
+│       └── env.py                  # Environment variable handling
 ```
 
 ## Adding New Features
@@ -254,8 +253,7 @@ For debugging, use:
 
 1. The Python debugger (pdb)
 2. Print statements to the console (captured in Claude Desktop logs)
-3. Structured logging via the Logger class
-4. The MCP Inspector tool
+3. The MCP Inspector tool
 
 ## Performance Considerations
 

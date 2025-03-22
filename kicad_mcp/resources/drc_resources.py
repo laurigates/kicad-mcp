@@ -2,18 +2,12 @@
 Design Rule Check (DRC) resources for KiCad PCB files.
 """
 import os
-import json
-import tempfile
-from typing import Dict, Any, List
+
 from mcp.server.fastmcp import FastMCP
 
 from kicad_mcp.utils.file_utils import get_project_files
-from kicad_mcp.utils.logger import Logger
 from kicad_mcp.utils.drc_history import get_drc_history
 from kicad_mcp.tools.drc_impl.cli_drc import run_drc_via_cli
-
-# Create logger for this module
-logger = Logger()
 
 def register_drc_resources(mcp: FastMCP) -> None:
     """Register DRC resources with the MCP server.
@@ -32,7 +26,7 @@ def register_drc_resources(mcp: FastMCP) -> None:
         Returns:
             Markdown-formatted DRC history report
         """
-        logger.info(f"Generating DRC history report for project: {project_path}")
+        print(f"Generating DRC history report for project: {project_path}")
         
         if not os.path.exists(project_path):
             return f"Project not found: {project_path}"
@@ -151,7 +145,7 @@ def register_drc_resources(mcp: FastMCP) -> None:
         Returns:
             Markdown-formatted DRC report
         """
-        logger.info(f"Generating DRC report for project: {project_path}")
+        print(f"Generating DRC report for project: {project_path}")
         
         if not os.path.exists(project_path):
             return f"Project not found: {project_path}"
@@ -162,7 +156,7 @@ def register_drc_resources(mcp: FastMCP) -> None:
             return "PCB file not found in project"
         
         pcb_file = files["pcb"]
-        logger.info(f"Found PCB file: {pcb_file}")
+        print(f"Found PCB file: {pcb_file}")
         
         # Try to run DRC via command line
         drc_results = run_drc_via_cli(pcb_file)

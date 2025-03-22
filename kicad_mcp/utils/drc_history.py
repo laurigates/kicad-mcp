@@ -9,12 +9,6 @@ import platform
 import time
 from datetime import datetime
 from typing import Dict, List, Any, Optional
-from pathlib import Path
-
-from kicad_mcp.utils.logger import Logger
-
-# Create logger for this module
-logger = Logger()
 
 # Directory for storing DRC history
 if platform.system() == "Windows":
@@ -73,7 +67,7 @@ def save_drc_result(project_path: str, drc_result: Dict[str, Any]) -> None:
             with open(history_path, 'r') as f:
                 history = json.load(f)
         except (json.JSONDecodeError, IOError) as e:
-            logger.error(f"Error loading DRC history: {str(e)}")
+            print(f"Error loading DRC history: {str(e)}")
             history = {"project_path": project_path, "entries": []}
     else:
         history = {"project_path": project_path, "entries": []}
@@ -92,9 +86,9 @@ def save_drc_result(project_path: str, drc_result: Dict[str, Any]) -> None:
     try:
         with open(history_path, 'w') as f:
             json.dump(history, f, indent=2)
-        logger.info(f"Saved DRC history entry to {history_path}")
+        print(f"Saved DRC history entry to {history_path}")
     except IOError as e:
-        logger.error(f"Error saving DRC history: {str(e)}")
+        print(f"Error saving DRC history: {str(e)}")
 
 
 def get_drc_history(project_path: str) -> List[Dict[str, Any]]:
@@ -109,7 +103,7 @@ def get_drc_history(project_path: str) -> List[Dict[str, Any]]:
     history_path = get_project_history_path(project_path)
     
     if not os.path.exists(history_path):
-        logger.info(f"No DRC history found for {project_path}")
+        print(f"No DRC history found for {project_path}")
         return []
     
     try:
@@ -125,7 +119,7 @@ def get_drc_history(project_path: str) -> List[Dict[str, Any]]:
         
         return entries
     except (json.JSONDecodeError, IOError) as e:
-        logger.error(f"Error reading DRC history: {str(e)}")
+        print(f"Error reading DRC history: {str(e)}")
         return []
 
 

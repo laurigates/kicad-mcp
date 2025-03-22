@@ -6,16 +6,12 @@ from typing import Dict, Any
 from mcp.server.fastmcp import FastMCP, Context
 
 from kicad_mcp.utils.file_utils import get_project_files
-from kicad_mcp.utils.logger import Logger
 from kicad_mcp.utils.drc_history import save_drc_result, get_drc_history, compare_with_previous
 from kicad_mcp.utils.kicad_api_detection import get_best_api_approach
 
 # Import implementations
 from kicad_mcp.tools.drc_impl.cli_drc import run_drc_via_cli
 from kicad_mcp.tools.drc_impl.ipc_drc import run_drc_with_ipc_api
-
-# Create logger for this module
-logger = Logger()
 
 def register_drc_tools(mcp: FastMCP) -> None:
     """Register DRC tools with the MCP server.
@@ -34,10 +30,10 @@ def register_drc_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with DRC history entries
         """
-        logger.info(f"Getting DRC history for project: {project_path}")
+        print(f"Getting DRC history for project: {project_path}")
         
         if not os.path.exists(project_path):
-            logger.error(f"Project not found: {project_path}")
+            print(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
         
         # Get history entries
@@ -78,20 +74,20 @@ def register_drc_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with DRC results and statistics
         """
-        logger.info(f"Running DRC check for project: {project_path}")
+        print(f"Running DRC check for project: {project_path}")
         
         if not os.path.exists(project_path):
-            logger.error(f"Project not found: {project_path}")
+            print(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
         
         # Get PCB file from project
         files = get_project_files(project_path)
         if "pcb" not in files:
-            logger.error("PCB file not found in project")
+            print("PCB file not found in project")
             return {"success": False, "error": "PCB file not found in project"}
         
         pcb_file = files["pcb"]
-        logger.info(f"Found PCB file: {pcb_file}")
+        print(f"Found PCB file: {pcb_file}")
         
         # Report progress to user
         await ctx.report_progress(10, 100)
@@ -106,19 +102,19 @@ def register_drc_tools(mcp: FastMCP) -> None:
         
         if api_approach == "cli":
             # Use CLI approach (kicad-cli)
-            logger.info("Using kicad-cli for DRC")
+            print("Using kicad-cli for DRC")
             ctx.info("Using KiCad CLI for DRC check...")
             drc_results = await run_drc_via_cli(pcb_file, ctx)
         
         elif api_approach == "ipc":
             # Use IPC API approach (kicad-python)
-            logger.info("Using IPC API for DRC")
+            print("Using IPC API for DRC")
             ctx.info("Using KiCad IPC API for DRC check...")
             drc_results = await run_drc_with_ipc_api(pcb_file, ctx)
         
         else:
             # No API available
-            logger.error("No KiCad API available for DRC")
+            print("No KiCad API available for DRC")
             return {
                 "success": False,
                 "error": "No KiCad API available for DRC. Please install KiCad 9.0 or later."

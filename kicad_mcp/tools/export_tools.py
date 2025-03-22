@@ -10,11 +10,7 @@ from typing import Dict, Any, Optional
 from mcp.server.fastmcp import FastMCP, Context, Image
 
 from kicad_mcp.utils.file_utils import get_project_files
-from kicad_mcp.utils.logger import Logger
 from kicad_mcp.config import KICAD_APP_PATH, system
-
-# Create logger for this module
-logger = Logger()
 
 def register_export_tools(mcp: FastMCP) -> None:
     """Register export tools with the MCP server.
@@ -26,10 +22,10 @@ def register_export_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def validate_project(project_path: str) -> Dict[str, Any]:
         """Basic validation of a KiCad project."""
-        logger.info(f"Validating project: {project_path}")
+        print(f"Validating project: {project_path}")
         
         if not os.path.exists(project_path):
-            logger.error(f"Project not found: {project_path}")
+            print(f"Project not found: {project_path}")
             return {"valid": False, "error": f"Project not found: {project_path}"}
         
         issues = []
@@ -37,11 +33,11 @@ def register_export_tools(mcp: FastMCP) -> None:
         
         # Check for essential files
         if "pcb" not in files:
-            logger.warning("Missing PCB layout file")
+            print("Missing PCB layout file")
             issues.append("Missing PCB layout file")
         
         if "schematic" not in files:
-            logger.warning("Missing schematic file")
+            print("Missing schematic file")
             issues.append("Missing schematic file")
         
         # Validate project file
@@ -49,12 +45,12 @@ def register_export_tools(mcp: FastMCP) -> None:
             with open(project_path, 'r') as f:
                 import json
                 json.load(f)
-                logger.debug("Project file validated successfully")
+                print("Project file validated successfully")
         except json.JSONDecodeError:
-            logger.error("Invalid project file format (JSON parsing error)")
+            print("Invalid project file format (JSON parsing error)")
             issues.append("Invalid project file format (JSON parsing error)")
         except Exception as e:
-            logger.error(f"Error reading project file: {str(e)}")
+            print(f"Error reading project file: {str(e)}")
             issues.append(f"Error reading project file: {str(e)}")
         
         result = {
@@ -64,7 +60,7 @@ def register_export_tools(mcp: FastMCP) -> None:
             "files_found": list(files.keys())
         }
         
-        logger.info(f"Validation result: {'valid' if result['valid'] else 'invalid'}")
+        print(f"Validation result: {'valid' if result['valid'] else 'invalid'}")
         return result
 
     @mcp.tool()
@@ -83,27 +79,27 @@ def register_export_tools(mcp: FastMCP) -> None:
             app_context = ctx.request_context.lifespan_context
             kicad_modules_available = app_context.kicad_modules_available
             
-            logger.info(f"Generating thumbnail for project: {project_path}")
+            print(f"Generating thumbnail for project: {project_path}")
 
             if not os.path.exists(project_path):
-                logger.error(f"Project not found: {project_path}")
+                print(f"Project not found: {project_path}")
                 ctx.info(f"Project not found: {project_path}")
                 return None
 
             # Get PCB file from project
             files = get_project_files(project_path)
             if "pcb" not in files:
-                logger.error("PCB file not found in project")
+                print("PCB file not found in project")
                 ctx.info("PCB file not found in project")
                 return None
 
             pcb_file = files["pcb"]
-            logger.info(f"Found PCB file: {pcb_file}")
+            print(f"Found PCB file: {pcb_file}")
 
             # Check cache
             cache_key = f"thumbnail_{pcb_file}_{os.path.getmtime(pcb_file)}"
             if hasattr(app_context, 'cache') and cache_key in app_context.cache:
-                logger.info(f"Using cached thumbnail for {pcb_file}")
+                print(f"Using cached thumbnail for {pcb_file}")
                 return app_context.cache[cache_key]
 
             await ctx.report_progress(10, 100)
@@ -120,12 +116,12 @@ def register_export_tools(mcp: FastMCP) -> None:
                         return thumbnail
 
                     # If pcbnew method failed, log it but continue to try alternative method
-                    logger.warning("Failed to generate thumbnail with pcbnew, trying CLI method")
+                    print("Failed to generate thumbnail with pcbnew, trying CLI method")
                 except Exception as e:
-                    logger.error(f"Error using pcbnew for thumbnail: {str(e)}", exc_info=True)
+                    print(f"Error using pcbnew for thumbnail: {str(e)}", exc_info=True)
                     ctx.info(f"Error with pcbnew method, trying alternative approach")
             else:
-                logger.info("KiCad Python modules not available, trying CLI method")
+                print("KiCad Python modules not available, trying CLI method")
 
             # Method 2: Try to use command-line tools
             try:
@@ -136,7 +132,7 @@ def register_export_tools(mcp: FastMCP) -> None:
                         app_context.cache[cache_key] = thumbnail
                     return thumbnail
             except Exception as e:
-                logger.error(f"Error using CLI for thumbnail: {str(e)}", exc_info=True)
+                print(f"Error using CLI for thumbnail: {str(e)}", exc_info=True)
                 ctx.info(f"Error generating thumbnail with CLI method")
 
             # If all methods fail, inform the user
@@ -144,10 +140,10 @@ def register_export_tools(mcp: FastMCP) -> None:
             return None
             
         except asyncio.CancelledError:
-            logger.info("Thumbnail generation cancelled")
+            print("Thumbnail generation cancelled")
             raise  # Re-raise to let MCP know the task was cancelled
         except Exception as e:
-            logger.error(f"Unexpected error in thumbnail generation: {str(e)}")
+            print(f"Unexpected error in thumbnail generation: {str(e)}")
             ctx.info(f"Error: {str(e)}")
             return None
 
@@ -159,44 +155,44 @@ def register_export_tools(mcp: FastMCP) -> None:
             app_context = ctx.request_context.lifespan_context
             kicad_modules_available = app_context.kicad_modules_available
             
-            logger.info(f"Generating thumbnail for project: {project_path}")
+            print(f"Generating thumbnail for project: {project_path}")
             
             if not os.path.exists(project_path):
-                logger.error(f"Project not found: {project_path}")
+                print(f"Project not found: {project_path}")
                 ctx.info(f"Project not found: {project_path}")
                 return None
             
             # Get PCB file
             files = get_project_files(project_path)
             if "pcb" not in files:
-                logger.error("PCB file not found in project")
+                print("PCB file not found in project")
                 ctx.info("PCB file not found in project")
                 return None
             
             pcb_file = files["pcb"]
-            logger.info(f"Found PCB file: {pcb_file}")
+            print(f"Found PCB file: {pcb_file}")
             
             if not kicad_modules_available:
-                logger.warning("KiCad Python modules are not available - cannot generate thumbnail")
+                print("KiCad Python modules are not available - cannot generate thumbnail")
                 ctx.info("KiCad Python modules are not available")
                 return None
             
             # Check cache
             cache_key = f"project_thumbnail_{pcb_file}_{os.path.getmtime(pcb_file)}"
             if hasattr(app_context, 'cache') and cache_key in app_context.cache:
-                logger.info(f"Using cached project thumbnail for {pcb_file}")
+                print(f"Using cached project thumbnail for {pcb_file}")
                 return app_context.cache[cache_key]
             
             try:
                 # Try to import pcbnew
                 import pcbnew
-                logger.info("Successfully imported pcbnew module")
+                print("Successfully imported pcbnew module")
                 
                 # Load the PCB file
-                logger.debug(f"Loading PCB file: {pcb_file}")
+                print(f"Loading PCB file: {pcb_file}")
                 board = pcbnew.LoadBoard(pcb_file)
                 if not board:
-                    logger.error("Failed to load PCB file")
+                    print("Failed to load PCB file")
                     ctx.info("Failed to load PCB file")
                     return None
                     
@@ -205,12 +201,12 @@ def register_export_tools(mcp: FastMCP) -> None:
                 width = board_box.GetWidth() / 1000000.0  # Convert to mm
                 height = board_box.GetHeight() / 1000000.0
                 
-                logger.info(f"PCB dimensions: {width:.2f}mm x {height:.2f}mm")
+                print(f"PCB dimensions: {width:.2f}mm x {height:.2f}mm")
                 ctx.info(f"PCB dimensions: {width:.2f}mm x {height:.2f}mm")
                 
                 # Create temporary directory for output
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    logger.debug(f"Created temporary directory: {temp_dir}")
+                    print(f"Created temporary directory: {temp_dir}")
                     
                     # Create PLOT_CONTROLLER for plotting
                     pctl = pcbnew.PLOT_CONTROLLER(board)
@@ -241,7 +237,7 @@ def register_export_tools(mcp: FastMCP) -> None:
                     plot_basename = "thumbnail"
                     output_filename = os.path.join(temp_dir, f"{plot_basename}.png")
                     
-                    logger.debug(f"Plotting PCB to: {output_filename}")
+                    print(f"Plotting PCB to: {output_filename}")
                     
                     # Plot PNG
                     pctl.OpenPlotfile(plot_basename, pcbnew.PLOT_FORMAT_PNG, "Thumbnail")
@@ -252,7 +248,7 @@ def register_export_tools(mcp: FastMCP) -> None:
                     plot_file = os.path.join(temp_dir, f"{plot_basename}.png")
                     
                     if not os.path.exists(plot_file):
-                        logger.error(f"Expected plot file not found: {plot_file}")
+                        print(f"Expected plot file not found: {plot_file}")
                         ctx.info("Failed to generate PCB image")
                         return None
                     
@@ -260,7 +256,7 @@ def register_export_tools(mcp: FastMCP) -> None:
                     with open(plot_file, 'rb') as f:
                         img_data = f.read()
                     
-                    logger.info(f"Successfully generated thumbnail, size: {len(img_data)} bytes")
+                    print(f"Successfully generated thumbnail, size: {len(img_data)} bytes")
                     
                     # Create and cache the image
                     thumbnail = Image(data=img_data, format="png")
@@ -270,19 +266,19 @@ def register_export_tools(mcp: FastMCP) -> None:
                     return thumbnail
                 
             except ImportError as e:
-                logger.error(f"Failed to import pcbnew module: {str(e)}")
+                print(f"Failed to import pcbnew module: {str(e)}")
                 ctx.info(f"Failed to import pcbnew module: {str(e)}")
                 return None
             except Exception as e:
-                logger.error(f"Error generating thumbnail: {str(e)}", exc_info=True)
+                print(f"Error generating thumbnail: {str(e)}", exc_info=True)
                 ctx.info(f"Error generating thumbnail: {str(e)}")
                 return None
                 
         except asyncio.CancelledError:
-            logger.info("Project thumbnail generation cancelled")
+            print("Project thumbnail generation cancelled")
             raise
         except Exception as e:
-            logger.error(f"Unexpected error in project thumbnail generation: {str(e)}", exc_info=True)
+            print(f"Unexpected error in project thumbnail generation: {str(e)}", exc_info=True)
             ctx.info(f"Error: {str(e)}")
             return None
 
@@ -299,14 +295,14 @@ async def generate_thumbnail_with_pcbnew(pcb_file: str, ctx: Context) -> Optiona
     """
     try:
         import pcbnew
-        logger.info("Successfully imported pcbnew module")
+        print("Successfully imported pcbnew module")
         await ctx.report_progress(20, 100)
 
         # Load the PCB file
-        logger.debug(f"Loading PCB file with pcbnew: {pcb_file}")
+        print(f"Loading PCB file with pcbnew: {pcb_file}")
         board = pcbnew.LoadBoard(pcb_file)
         if not board:
-            logger.error("Failed to load PCB file with pcbnew")
+            print("Failed to load PCB file with pcbnew")
             return None
 
         # Report progress
@@ -318,11 +314,11 @@ async def generate_thumbnail_with_pcbnew(pcb_file: str, ctx: Context) -> Optiona
         width_mm = board_box.GetWidth() / 1000000.0  # Convert to mm
         height_mm = board_box.GetHeight() / 1000000.0
 
-        logger.info(f"PCB dimensions: {width_mm:.2f}mm x {height_mm:.2f}mm")
+        print(f"PCB dimensions: {width_mm:.2f}mm x {height_mm:.2f}mm")
 
         # Create temporary directory for output
         with tempfile.TemporaryDirectory() as temp_dir:
-            logger.debug(f"Created temporary directory: {temp_dir}")
+            print(f"Created temporary directory: {temp_dir}")
 
             # Create PLOT_CONTROLLER for plotting
             pctl = pcbnew.PLOT_CONTROLLER(board)
@@ -355,7 +351,7 @@ async def generate_thumbnail_with_pcbnew(pcb_file: str, ctx: Context) -> Optiona
             # Determine output filename
             plot_basename = "thumbnail"
 
-            logger.debug(f"Plotting PCB to PNG")
+            print(f"Plotting PCB to PNG")
             await ctx.report_progress(50, 100)
 
             # Plot PNG
@@ -369,22 +365,22 @@ async def generate_thumbnail_with_pcbnew(pcb_file: str, ctx: Context) -> Optiona
             plot_file = os.path.join(temp_dir, f"{plot_basename}.png")
 
             if not os.path.exists(plot_file):
-                logger.error(f"Expected plot file not found: {plot_file}")
+                print(f"Expected plot file not found: {plot_file}")
                 return None
 
             # Read the image file
             with open(plot_file, 'rb') as f:
                 img_data = f.read()
 
-            logger.info(f"Successfully generated thumbnail, size: {len(img_data)} bytes")
+            print(f"Successfully generated thumbnail, size: {len(img_data)} bytes")
             await ctx.report_progress(90, 100)
             return Image(data=img_data, format="png")
 
     except ImportError as e:
-        logger.error(f"Failed to import pcbnew module: {str(e)}")
+        print(f"Failed to import pcbnew module: {str(e)}")
         return None
     except Exception as e:
-        logger.error(f"Error generating thumbnail with pcbnew: {str(e)}", exc_info=True)
+        print(f"Error generating thumbnail with pcbnew: {str(e)}", exc_info=True)
         return None
 
 async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context) -> Optional[Image]:
@@ -399,7 +395,7 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context) -> Optional[I
         Image object containing the PCB thumbnail or None if generation failed
     """
     try:
-        logger.info("Attempting to generate thumbnail using command line tools")
+        print("Attempting to generate thumbnail using command line tools")
         await ctx.report_progress(20, 100)
 
         # Check for required command-line tools based on OS
@@ -408,22 +404,22 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context) -> Optional[I
             if not os.path.exists(pcbnew_cli) and shutil.which("pcbnew_cli") is not None:
                 pcbnew_cli = "pcbnew_cli"  # Try to use from PATH
             elif not os.path.exists(pcbnew_cli):
-                logger.error(f"pcbnew_cli not found at {pcbnew_cli} or in PATH")
+                print(f"pcbnew_cli not found at {pcbnew_cli} or in PATH")
                 return None
         elif system == "Windows":
             pcbnew_cli = os.path.join(KICAD_APP_PATH, "bin", "pcbnew_cli.exe")
             if not os.path.exists(pcbnew_cli) and shutil.which("pcbnew_cli") is not None:
                 pcbnew_cli = "pcbnew_cli"  # Try to use from PATH
             elif not os.path.exists(pcbnew_cli):
-                logger.error(f"pcbnew_cli not found at {pcbnew_cli} or in PATH")
+                print(f"pcbnew_cli not found at {pcbnew_cli} or in PATH")
                 return None
         elif system == "Linux":
             pcbnew_cli = shutil.which("pcbnew_cli")
             if not pcbnew_cli:
-                logger.error("pcbnew_cli not found in PATH")
+                print("pcbnew_cli not found in PATH")
                 return None
         else:
-            logger.error(f"Unsupported operating system: {system}")
+            print(f"Unsupported operating system: {system}")
             return None
 
         await ctx.report_progress(30, 100)
@@ -444,7 +440,7 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context) -> Optional[I
                 pcb_file
             ]
 
-            logger.debug(f"Running command: {' '.join(cmd)}")
+            print(f"Running command: {' '.join(cmd)}")
             await ctx.report_progress(50, 100)
 
             # Run the command
@@ -452,35 +448,35 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context) -> Optional[I
                 process = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
                 if process.returncode != 0:
-                    logger.error(f"Command failed with code {process.returncode}")
-                    logger.error(f"Error: {process.stderr}")
+                    print(f"Command failed with code {process.returncode}")
+                    print(f"Error: {process.stderr}")
                     return None
 
                 await ctx.report_progress(70, 100)
 
                 # Check if the output file was created
                 if not os.path.exists(output_file):
-                    logger.error(f"Output file not created: {output_file}")
+                    print(f"Output file not created: {output_file}")
                     return None
 
                 # Read the image file
                 with open(output_file, 'rb') as f:
                     img_data = f.read()
 
-                logger.info(f"Successfully generated thumbnail with CLI, size: {len(img_data)} bytes")
+                print(f"Successfully generated thumbnail with CLI, size: {len(img_data)} bytes")
                 await ctx.report_progress(90, 100)
                 return Image(data=img_data, format="png")
 
             except subprocess.TimeoutExpired:
-                logger.error("Command timed out after 30 seconds")
+                print("Command timed out after 30 seconds")
                 return None
             except Exception as e:
-                logger.error(f"Error running CLI command: {str(e)}", exc_info=True)
+                print(f"Error running CLI command: {str(e)}", exc_info=True)
                 return None
                 
     except asyncio.CancelledError:
-        logger.info("CLI thumbnail generation cancelled")
+        print("CLI thumbnail generation cancelled")
         raise
     except Exception as e:
-        logger.error(f"Unexpected error in CLI thumbnail generation: {str(e)}")
+        print(f"Unexpected error in CLI thumbnail generation: {str(e)}")
         return None

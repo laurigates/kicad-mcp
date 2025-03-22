@@ -6,10 +6,6 @@ import sys
 import glob
 import platform
 
-from kicad_mcp.utils.logger import Logger
-
-logger = Logger()
-
 def setup_kicad_python_path():
     """
     Add KiCad Python modules to the Python path by detecting the appropriate version.
@@ -18,14 +14,14 @@ def setup_kicad_python_path():
         bool: True if successful, False otherwise
     """
     system = platform.system()
-    logger.info(f"Setting up KiCad Python path for {system}")
+    print(f"Setting up KiCad Python path for {system}")
     
     # Define search paths based on operating system
     if system == "Darwin":  # macOS
         from kicad_mcp.config import KICAD_APP_PATH
         
         if not os.path.exists(KICAD_APP_PATH):
-            logger.error(f"KiCad application not found at {KICAD_APP_PATH}")
+            print(f"KiCad application not found at {KICAD_APP_PATH}")
             return False
             
         # Base path to Python framework
@@ -37,7 +33,7 @@ def setup_kicad_python_path():
         
         # If 'Current' symlink doesn't work, find all available Python versions
         if not site_packages:
-            logger.debug("'Current' symlink not found, searching for numbered versions")
+            print("'Current' symlink not found, searching for numbered versions")
             # Look for numbered versions like 3.9, 3.10, etc.
             version_dirs = glob.glob(os.path.join(python_base, "[0-9]*"))
             for version_dir in version_dirs:
@@ -74,7 +70,7 @@ def setup_kicad_python_path():
         site_packages = expanded_packages
     
     else:
-        logger.error(f"Unsupported operating system: {system}")
+        print(f"Unsupported operating system: {system}")
         return False
     
     # Pick the first valid path found
@@ -89,20 +85,20 @@ def setup_kicad_python_path():
             if os.path.exists(pcbnew_path):
                 if path not in sys.path:
                     sys.path.append(path)
-                    logger.info(f"Added KiCad Python path: {path}")
-                    logger.info(f"Found pcbnew module at: {pcbnew_path}")
+                    print(f"Added KiCad Python path: {path}")
+                    print(f"Found pcbnew module at: {pcbnew_path}")
                     
                     # Try to actually import it to verify compatibility
                     try:
                         import pcbnew
-                        logger.info(f"Successfully imported pcbnew module version: {getattr(pcbnew, 'GetBuildVersion', lambda: 'unknown')()}")
+                        print(f"Successfully imported pcbnew module version: {getattr(pcbnew, 'GetBuildVersion', lambda: 'unknown')()}")
                         return True
                     except ImportError as e:
-                        logger.error(f"Found pcbnew but failed to import: {str(e)}")
+                        print(f"Found pcbnew but failed to import: {str(e)}")
                         # Remove from path as it's not usable
                         sys.path.remove(path)
             else:
-                logger.debug(f"Found site-packages at {path} but no pcbnew module")
+                print(f"Found site-packages at {path} but no pcbnew module")
     
-    logger.error("Could not find a valid KiCad Python site-packages directory with pcbnew module")
+    print("Could not find a valid KiCad Python site-packages directory with pcbnew module")
     return False

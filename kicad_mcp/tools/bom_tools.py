@@ -31,10 +31,10 @@ def register_bom_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with BOM analysis results
         """
-        logger.info(f"Analyzing BOM for project: {project_path}")
+        print(f"Analyzing BOM for project: {project_path}")
         
         if not os.path.exists(project_path):
-            logger.error(f"Project not found: {project_path}")
+            print(f"Project not found: {project_path}")
             ctx.info(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
         
@@ -50,10 +50,10 @@ def register_bom_tools(mcp: FastMCP) -> None:
         for file_type, file_path in files.items():
             if "bom" in file_type.lower() or file_path.lower().endswith(".csv"):
                 bom_files[file_type] = file_path
-                logger.info(f"Found potential BOM file: {file_path}")
+                print(f"Found potential BOM file: {file_path}")
         
         if not bom_files:
-            logger.warning("No BOM files found for project")
+            print("No BOM files found for project")
             ctx.info("No BOM files found for project")
             return {
                 "success": False, 
@@ -82,7 +82,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
                 bom_data, format_info = parse_bom_file(file_path)
                 
                 if not bom_data or len(bom_data) == 0:
-                    logger.warning(f"Failed to parse BOM file: {file_path}")
+                    print(f"Failed to parse BOM file: {file_path}")
                     continue
                 
                 # Analyze the BOM data
@@ -99,10 +99,10 @@ def register_bom_tools(mcp: FastMCP) -> None:
                 total_unique_components += analysis["unique_component_count"]
                 total_components += analysis["total_component_count"]
                 
-                logger.info(f"Successfully analyzed BOM file: {file_path}")
+                print(f"Successfully analyzed BOM file: {file_path}")
                 
             except Exception as e:
-                logger.error(f"Error analyzing BOM file {file_path}: {str(e)}", exc_info=True)
+                print(f"Error analyzing BOM file {file_path}: {str(e)}", exc_info=True)
                 results["bom_files"][file_type] = {
                     "path": file_path,
                     "error": str(e)
@@ -165,10 +165,10 @@ def register_bom_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with export results
         """
-        logger.info(f"Exporting BOM for project: {project_path}")
+        print(f"Exporting BOM for project: {project_path}")
         
         if not os.path.exists(project_path):
-            logger.error(f"Project not found: {project_path}")
+            print(f"Project not found: {project_path}")
             ctx.info(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
         
@@ -184,7 +184,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
         
         # We need the schematic file to generate a BOM
         if "schematic" not in files:
-            logger.error("Schematic file not found in project")
+            print("Schematic file not found in project")
             ctx.info("Schematic file not found in project")
             return {"success": False, "error": "Schematic file not found"}
         
@@ -205,7 +205,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
                 ctx.info("Attempting to export BOM using KiCad Python modules...")
                 export_result = await export_bom_with_python(schematic_file, project_dir, project_name, ctx)
             except Exception as e:
-                logger.error(f"Error exporting BOM with Python modules: {str(e)}", exc_info=True)
+                print(f"Error exporting BOM with Python modules: {str(e)}", exc_info=True)
                 ctx.info(f"Error using Python modules: {str(e)}")
                 export_result = {"success": False, "error": str(e)}
         
@@ -215,7 +215,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
                 ctx.info("Attempting to export BOM using command-line tools...")
                 export_result = await export_bom_with_cli(schematic_file, project_dir, project_name, ctx)
             except Exception as e:
-                logger.error(f"Error exporting BOM with CLI: {str(e)}", exc_info=True)
+                print(f"Error exporting BOM with CLI: {str(e)}", exc_info=True)
                 ctx.info(f"Error using command-line tools: {str(e)}")
                 export_result = {"success": False, "error": str(e)}
         
@@ -242,7 +242,7 @@ def parse_bom_file(file_path: str) -> Tuple[List[Dict[str, Any]], Dict[str, Any]
             - List of component dictionaries
             - Dictionary with format information
     """
-    logger.info(f"Parsing BOM file: {file_path}")
+    print(f"Parsing BOM file: {file_path}")
     
     # Check file extension
     _, ext = os.path.splitext(file_path)
@@ -342,18 +342,18 @@ def parse_bom_file(file_path: str) -> Tuple[List[Dict[str, Any]], Dict[str, Any]
                     for row in reader:
                         components.append(dict(row))
             except:
-                logger.error(f"Failed to parse unknown file format: {file_path}")
+                print(f"Failed to parse unknown file format: {file_path}")
                 return [], {"detected_format": "unsupported"}
     
     except Exception as e:
-        logger.error(f"Error parsing BOM file: {str(e)}", exc_info=True)
+        print(f"Error parsing BOM file: {str(e)}", exc_info=True)
         return [], {"error": str(e)}
     
     # Check if we actually got components
     if not components:
-        logger.warning(f"No components found in BOM file: {file_path}")
+        print(f"No components found in BOM file: {file_path}")
     else:
-        logger.info(f"Successfully parsed {len(components)} components from {file_path}")
+        print(f"Successfully parsed {len(components)} components from {file_path}")
         
         # Add a sample of the fields found
         if components:
@@ -372,7 +372,7 @@ def analyze_bom_data(components: List[Dict[str, Any]], format_info: Dict[str, An
     Returns:
         Dictionary with analysis results
     """
-    logger.info(f"Analyzing {len(components)} components")
+    print(f"Analyzing {len(components)} components")
     
     # Initialize results
     results = {
@@ -547,7 +547,7 @@ def analyze_bom_data(components: List[Dict[str, Any]], format_info: Dict[str, An
                     if "currency" not in results:
                         results["currency"] = "USD"  # Default
             except:
-                logger.warning("Failed to parse cost data")
+                print("Failed to parse cost data")
         
         # Add extra insights
         if ref_col and value_col:
@@ -557,7 +557,7 @@ def analyze_bom_data(components: List[Dict[str, Any]], format_info: Dict[str, An
             results["most_common_values"] = {str(k): int(v) for k, v in most_common.items()}
     
     except Exception as e:
-        logger.error(f"Error analyzing BOM data: {str(e)}", exc_info=True)
+        print(f"Error analyzing BOM data: {str(e)}", exc_info=True)
         # Fallback to basic analysis
         results["unique_component_count"] = len(components)
         results["total_component_count"] = len(components)
@@ -577,7 +577,7 @@ async def export_bom_with_python(schematic_file: str, output_dir: str, project_n
     Returns:
         Dictionary with export results
     """
-    logger.info(f"Exporting BOM for schematic: {schematic_file}")
+    print(f"Exporting BOM for schematic: {schematic_file}")
     await ctx.report_progress(30, 100)
     
     try:
@@ -587,7 +587,7 @@ async def export_bom_with_python(schematic_file: str, output_dir: str, project_n
         import pcbnew
         
         # For now, return a message indicating this method is not implemented yet
-        logger.warning("BOM export with Python modules not fully implemented")
+        print("BOM export with Python modules not fully implemented")
         ctx.info("BOM export with Python modules not fully implemented yet")
         
         return {
@@ -597,7 +597,7 @@ async def export_bom_with_python(schematic_file: str, output_dir: str, project_n
         }
     
     except ImportError:
-        logger.error("Failed to import KiCad Python modules")
+        print("Failed to import KiCad Python modules")
         return {
             "success": False,
             "error": "Failed to import KiCad Python modules",
@@ -621,7 +621,7 @@ async def export_bom_with_cli(schematic_file: str, output_dir: str, project_name
     import platform
     
     system = platform.system()
-    logger.info(f"Exporting BOM using CLI tools on {system}")
+    print(f"Exporting BOM using CLI tools on {system}")
     await ctx.report_progress(40, 100)
     
     # Output file path
@@ -696,7 +696,7 @@ async def export_bom_with_cli(schematic_file: str, output_dir: str, project_name
         }
     
     try:
-        logger.info(f"Running command: {' '.join(cmd)}")
+        print(f"Running command: {' '.join(cmd)}")
         await ctx.report_progress(60, 100)
         
         # Run the command
@@ -704,8 +704,8 @@ async def export_bom_with_cli(schematic_file: str, output_dir: str, project_name
         
         # Check if the command was successful
         if process.returncode != 0:
-            logger.error(f"BOM export command failed with code {process.returncode}")
-            logger.error(f"Error output: {process.stderr}")
+            print(f"BOM export command failed with code {process.returncode}")
+            print(f"Error output: {process.stderr}")
             
             return {
                 "success": False,
@@ -746,7 +746,7 @@ async def export_bom_with_cli(schematic_file: str, output_dir: str, project_name
         }
     
     except subprocess.TimeoutExpired:
-        logger.error("BOM export command timed out after 30 seconds")
+        print("BOM export command timed out after 30 seconds")
         return {
             "success": False,
             "error": "BOM export command timed out after 30 seconds",
@@ -754,7 +754,7 @@ async def export_bom_with_cli(schematic_file: str, output_dir: str, project_name
         }
     
     except Exception as e:
-        logger.error(f"Error exporting BOM: {str(e)}", exc_info=True)
+        print(f"Error exporting BOM: {str(e)}", exc_info=True)
         return {
             "success": False,
             "error": f"Error exporting BOM: {str(e)}",

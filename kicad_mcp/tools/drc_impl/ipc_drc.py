@@ -2,14 +2,11 @@
 Design Rule Check (DRC) implementation using the KiCad IPC API.
 """
 import os
-from typing import Dict, Any
+from typing import Any, Dict
+
 from mcp.server.fastmcp import Context
 
-from kicad_mcp.utils.logger import Logger
 from kicad_mcp.utils.kicad_api_detection import check_ipc_api_environment
-
-# Create logger for this module
-logger = Logger()
 
 async def run_drc_with_ipc_api(pcb_file: str, ctx: Context) -> Dict[str, Any]:
     """Run DRC using the KiCad IPC API (kicad-python).
@@ -26,7 +23,7 @@ async def run_drc_with_ipc_api(pcb_file: str, ctx: Context) -> Dict[str, Any]:
         # Import the kicad-python modules
         import kipy
         from kipy.board_types import DrcExclusion, DrcSeverity
-        logger.info("Successfully imported kipy modules")
+        print("Successfully imported kipy modules")
         
         # Check if we're running in a KiCad IPC plugin environment
         is_plugin, socket_path = check_ipc_api_environment()
@@ -72,7 +69,7 @@ async def run_drc_with_ipc_api(pcb_file: str, ctx: Context) -> Dict[str, Any]:
                 doc = await kicad.open_document(pcb_file)
                 board_doc = doc
             except Exception as e:
-                logger.error(f"Error opening board: {str(e)}")
+                print(f"Error opening board: {str(e)}")
                 return {
                     "success": False, 
                     "method": "ipc",
@@ -104,7 +101,7 @@ async def run_drc_with_ipc_api(pcb_file: str, ctx: Context) -> Dict[str, Any]:
         violations = drc_report.violations
         violation_count = len(violations)
         
-        logger.info(f"DRC completed with {violation_count} violations")
+        print(f"DRC completed with {violation_count} violations")
         ctx.info(f"DRC completed with {violation_count} violations")
         
         # Process the violations
@@ -148,14 +145,14 @@ async def run_drc_with_ipc_api(pcb_file: str, ctx: Context) -> Dict[str, Any]:
         return results
         
     except ImportError as e:
-        logger.error(f"Failed to import kipy modules: {str(e)}")
+        print(f"Failed to import kipy modules: {str(e)}")
         return {
             "success": False,
             "method": "ipc",
             "error": f"Failed to import kipy modules: {str(e)}"
         }
     except Exception as e:
-        logger.error(f"Error in IPC API DRC: {str(e)}", exc_info=True)
+        print(f"Error in IPC API DRC: {str(e)}", exc_info=True)
         return {
             "success": False,
             "method": "ipc",
