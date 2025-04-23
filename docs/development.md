@@ -14,10 +14,9 @@ This guide provides detailed information for developers who want to modify or ex
    pip install -r requirements.txt
    ```
 
-2. **Run in development mode**:
+2. **Run the server**:
    ```bash
-   # Run with development server for better debugging
-   python -m mcp.dev main.py
+   python main.py
    ```
 
 3. **Use the MCP Inspector** for debugging:
@@ -240,11 +239,8 @@ To run tests:
 # Run all tests
 pytest
 
-# Run specific test file
-pytest tests/test_resources.py
-
-# Run with verbose output
-pytest -v
+# Run specific tests:
+pytest tests/test_tools.py::test_run_drc_check
 ```
 
 ## Debugging

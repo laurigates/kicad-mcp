@@ -4,10 +4,13 @@ Lifespan context management for KiCad MCP Server.
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import AsyncIterator, Dict, Any
+import logging # Import logging
+import os # Added for PID
 
 from mcp.server.fastmcp import FastMCP
 
-from kicad_mcp.utils.python_path import setup_kicad_python_path
+# Get PID for logging
+# _PID = os.getpid()
 
 @dataclass
 class KiCadAppContext:
@@ -18,7 +21,7 @@ class KiCadAppContext:
     cache: Dict[str, Any]
 
 @asynccontextmanager
-async def kicad_lifespan(server: FastMCP) -> AsyncIterator[KiCadAppContext]:
+async def kicad_lifespan(server: FastMCP, kicad_modules_available: bool = False) -> AsyncIterator[KiCadAppContext]:
     """Manage KiCad MCP server lifecycle with type-safe context.
     
     This function handles:
@@ -28,58 +31,55 @@ async def kicad_lifespan(server: FastMCP) -> AsyncIterator[KiCadAppContext]:
     
     Args:
         server: The FastMCP server instance
+        kicad_modules_available: Flag indicating if Python modules were found (passed from create_server)
         
     Yields:
         KiCadAppContext: A typed context object shared across all handlers
     """
-    print("Starting KiCad MCP server initialization")
+    logging.info(f"Starting KiCad MCP server initialization")
     
-    # Initialize resources on startup
-    print("Setting up KiCad Python modules")
-    kicad_modules_available = setup_kicad_python_path()
-    print(f"KiCad Python modules available: {kicad_modules_available}")
+    # Resources initialization - Python path setup removed
+    # print("Setting up KiCad Python modules")
+    # kicad_modules_available = setup_kicad_python_path() # Now passed as arg
+    logging.info(f"KiCad Python module availability: {kicad_modules_available} (Setup logic removed)")
     
     # Create in-memory cache for expensive operations
     cache: Dict[str, Any] = {}
     
     # Initialize any other resources that need cleanup later
-    created_temp_dirs = []
+    created_temp_dirs = [] # Assuming this is managed elsewhere or not needed for now
     
     try:
-        # Import any KiCad modules that should be preloaded
-        if kicad_modules_available:
-            try:
-                print("Preloading KiCad Python modules")
-                
-                # Core PCB module used in multiple tools
-                import pcbnew
-                print(f"Successfully preloaded pcbnew module: {getattr(pcbnew, 'GetBuildVersion', lambda: 'unknown')()}")
-                cache["pcbnew_version"] = getattr(pcbnew, "GetBuildVersion", lambda: "unknown")()
-            except ImportError as e:
-                print(f"Failed to preload some KiCad modules: {str(e)}")
+        # --- Removed Python module preloading section --- 
+        # if kicad_modules_available:
+        #     try:
+        #         print("Preloading KiCad Python modules")
+        #         ...
+        #     except ImportError as e:
+        #         print(f"Failed to preload some KiCad modules: {str(e)}")
 
         # Yield the context to the server - server runs during this time
-        print("KiCad MCP server initialization complete")
+        logging.info(f"KiCad MCP server initialization complete")
         yield KiCadAppContext(
-            kicad_modules_available=kicad_modules_available,
+            kicad_modules_available=kicad_modules_available, # Pass the flag through
             cache=cache
         )
     finally:
         # Clean up resources when server shuts down
-        print("Shutting down KiCad MCP server")
+        logging.info(f"Shutting down KiCad MCP server")
         
         # Clear the cache
         if cache:
-            print(f"Clearing cache with {len(cache)} entries")
+            logging.info(f"Clearing cache with {len(cache)} entries")
             cache.clear()
         
         # Clean up any temporary directories
         import shutil
         for temp_dir in created_temp_dirs:
             try:
-                print(f"Removing temporary directory: {temp_dir}")
+                logging.info(f"Removing temporary directory: {temp_dir}")
                 shutil.rmtree(temp_dir, ignore_errors=True)
             except Exception as e:
-                print(f"Error cleaning up temporary directory {temp_dir}: {str(e)}")
+                logging.error(f"Error cleaning up temporary directory {temp_dir}: {str(e)}")
         
-        print("KiCad MCP server shutdown complete")
+        logging.info(f"KiCad MCP server shutdown complete")

@@ -2,12 +2,15 @@
 Project management tools for KiCad.
 """
 import os
+import logging
 from typing import Dict, List, Any
 from mcp.server.fastmcp import FastMCP
 
 from kicad_mcp.utils.kicad_utils import find_kicad_projects, open_kicad_project
 from kicad_mcp.utils.file_utils import get_project_files, load_project_json
 
+# Get PID for logging
+# _PID = os.getpid()
 
 def register_project_tools(mcp: FastMCP) -> None:
     """Register project management tools with the MCP server.
@@ -17,9 +20,12 @@ def register_project_tools(mcp: FastMCP) -> None:
     """
     
     @mcp.tool()
-    def find_projects() -> List[Dict[str, Any]]:
-        """Find all KiCad projects on this system."""
-        return find_kicad_projects()
+    def list_projects() -> List[Dict[str, Any]]:
+        """Find and list all KiCad projects on this system."""
+        logging.info(f"Executing list_projects tool...")
+        projects = find_kicad_projects()
+        logging.info(f"list_projects tool returning {len(projects)} projects.")
+        return projects
 
     @mcp.tool()
     def get_project_structure(project_path: str) -> Dict[str, Any]:

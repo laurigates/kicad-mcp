@@ -16,7 +16,7 @@ elif system == "Windows":
     KICAD_USER_DIR = os.path.expanduser("~/Documents/KiCad")
     KICAD_APP_PATH = r"C:\Program Files\KiCad"
 elif system == "Linux":
-    KICAD_USER_DIR = os.path.expanduser("~/kicad")
+    KICAD_USER_DIR = os.path.expanduser("~/KiCad")
     KICAD_APP_PATH = "/usr/share/kicad"
 else:
     # Default to macOS paths if system is unknown
