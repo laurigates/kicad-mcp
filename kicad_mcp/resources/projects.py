@@ -15,22 +15,6 @@ def register_project_resources(mcp: FastMCP) -> None:
         mcp: The FastMCP server instance
     """
     
-    @mcp.resource("kicad://projects")
-    def list_projects_resource() -> str:
-        """List all KiCad projects as a formatted resource."""
-        projects = find_kicad_projects()
-        
-        if not projects:
-            return "No KiCad projects found in your Documents/KiCad directory."
-        
-        result = "# KiCad Projects\n\n"
-        for project in sorted(projects, key=lambda p: p["modified"], reverse=True):
-            result += f"## {project['name']}\n"
-            result += f"- **Path**: {project['path']}\n"
-            result += f"- **Last Modified**: {os.path.getmtime(project['path'])}\n\n"
-        
-        return result
-
     @mcp.resource("kicad://project/{project_path}")
     def get_project_details(project_path: str) -> str:
         """Get details about a specific KiCad project."""

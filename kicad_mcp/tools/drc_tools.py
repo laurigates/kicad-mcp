@@ -2,6 +2,7 @@
 Design Rule Check (DRC) tools for KiCad PCB files.
 """
 import os
+# import logging # <-- Remove if no other logging exists
 from typing import Dict, Any
 from mcp.server.fastmcp import FastMCP, Context
 
@@ -11,7 +12,6 @@ from kicad_mcp.utils.kicad_api_detection import get_best_api_approach
 
 # Import implementations
 from kicad_mcp.tools.drc_impl.cli_drc import run_drc_via_cli
-from kicad_mcp.tools.drc_impl.ipc_drc import run_drc_with_ipc_api
 
 def register_drc_tools(mcp: FastMCP) -> None:
     """Register DRC tools with the MCP server.
@@ -93,35 +93,18 @@ def register_drc_tools(mcp: FastMCP) -> None:
         await ctx.report_progress(10, 100)
         ctx.info(f"Starting DRC check on {os.path.basename(pcb_file)}")
         
-        # Get app context and determine which approach to use
-        app_context = ctx.request_context.lifespan_context
-        api_approach = getattr(app_context, 'api_approach', get_best_api_approach())
-        
         # Run DRC using the appropriate approach
         drc_results = None
         
-        if api_approach == "cli":
-            # Use CLI approach (kicad-cli)
-            print("Using kicad-cli for DRC")
-            ctx.info("Using KiCad CLI for DRC check...")
-            drc_results = await run_drc_via_cli(pcb_file, ctx)
-        
-        elif api_approach == "ipc":
-            # Use IPC API approach (kicad-python)
-            print("Using IPC API for DRC")
-            ctx.info("Using KiCad IPC API for DRC check...")
-            drc_results = await run_drc_with_ipc_api(pcb_file, ctx)
-        
-        else:
-            # No API available
-            print("No KiCad API available for DRC")
-            return {
-                "success": False,
-                "error": "No KiCad API available for DRC. Please install KiCad 9.0 or later."
-            }
+        print("Using kicad-cli for DRC")
+        ctx.info("Using KiCad CLI for DRC check...")
+        # logging.info(f"[DRC] Calling run_drc_via_cli for {pcb_file}") # <-- Remove log
+        drc_results = await run_drc_via_cli(pcb_file, ctx)
+        # logging.info(f"[DRC] run_drc_via_cli finished for {pcb_file}") # <-- Remove log
         
         # Process and save results if successful
         if drc_results and drc_results.get("success", False):
+            # logging.info(f"[DRC] DRC check successful for {pcb_file}. Saving results.") # <-- Remove log
             # Save results to history
             save_drc_result(project_path, drc_results)
             
@@ -136,6 +119,14 @@ def register_drc_tools(mcp: FastMCP) -> None:
                     ctx.info(f"Found {comparison['change']} new DRC violations since the last check.")
                 else:
                     ctx.info(f"No change in the number of DRC violations since the last check.")
+        elif drc_results:
+             # logging.warning(f"[DRC] DRC check reported failure for {pcb_file}: {drc_results.get('error')}") # <-- Remove log
+             # Pass or print a warning if needed
+             pass 
+        else:
+            # logging.error(f"[DRC] DRC check returned None for {pcb_file}") # <-- Remove log
+            # Pass or print an error if needed
+            pass
         
         # Complete progress
         await ctx.report_progress(100, 100)

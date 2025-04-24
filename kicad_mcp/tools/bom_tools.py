@@ -584,7 +584,8 @@ async def export_bom_with_python(schematic_file: str, output_dir: str, project_n
         # Try to import KiCad Python modules
         # This is a placeholder since exporting BOMs from schematic files
         # is complex and KiCad's API for this is not well-documented
-        import pcbnew
+        import kicad
+        import kicad.pcbnew
         
         # For now, return a message indicating this method is not implemented yet
         print("BOM export with Python modules not fully implemented")

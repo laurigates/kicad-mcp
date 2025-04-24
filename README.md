@@ -71,9 +71,6 @@ KICAD_SEARCH_PATHS=~/pcb,~/Electronics,~/Projects/KiCad
 Once the environment is set up, you can run the server:
 
 ```bash
-# Run in development mode
-python -m mcp.dev main.py
-
 # Or run directly
 python main.py
 ```

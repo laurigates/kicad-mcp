@@ -175,10 +175,7 @@ This guide helps you troubleshoot common issues with the KiCad MCP Server.
 
 To diagnose issues, check the server logs:
 
-1. **Development Mode Logs**
-   - When running in development mode with `python -m mcp.dev main.py`, logs appear in the console
-
-2. **Claude Desktop Logs (macOS)**
+1. **Claude Desktop Logs (macOS)**
    - Server logs:
      ```bash
      tail -n 20 -F ~/Library/Logs/Claude/mcp-server-kicad.log
@@ -188,7 +185,7 @@ To diagnose issues, check the server logs:
      tail -n 20 -F ~/Library/Logs/Claude/mcp.log
      ```
 
-3. **Claude Desktop Logs (Windows)**
+2. **Claude Desktop Logs (Windows)**
    - Check logs in:
      ```
      %APPDATA%\Claude\Logs\
@@ -264,17 +261,12 @@ To diagnose issues, check the server logs:
 
 If you're still experiencing problems:
 
-1. Try running the server in development mode for more detailed output:
-   ```bash
-   python -m mcp.dev main.py
-   ```
-
-2. Use the MCP Inspector for direct server testing:
+1. Use the MCP Inspector for direct server testing:
    ```bash
    npx @modelcontextprotocol/inspector uv --directory . run main.py
    ```
 
-3. Open an issue on GitHub with:
+2. Open an issue on GitHub with:
    - A clear description of the problem
    - Steps to reproduce
    - Error messages or logs
