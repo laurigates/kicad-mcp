@@ -11,15 +11,7 @@ The Design Rule Check (DRC) functionality allows you to:
 3. Track your progress over time as you fix issues
 4. Compare current results with previous checks
 
-## KiCad 9.0+ Compatibility
-
-**Important Update**: With KiCad 9.0+, the DRC functionality has been reimplemented to work with the new KiCad APIs. The server now supports two methods for running DRC:
-
-1. **KiCad CLI Method** (Recommended) - Uses the `kicad-cli` command-line tool to run DRC checks without requiring a running instance of KiCad.
-
-2. **IPC API Method** - Connects to a running instance of KiCad through the new IPC API using the `kicad-python` package.
-
-The server automatically selects the best available method based on your KiCad installation.
+It does this all by using the `kicad-cli` command-line tool to run DRC checks without requiring a running instance of KiCad.
 
 ## Prerequisites
 
@@ -27,7 +19,6 @@ For optimal DRC functionality with KiCad 9.0+, you should have:
 
 - KiCad 9.0 or newer installed
 - `kicad-cli` available in your system PATH (included with KiCad 9.0+)
-- For IPC API functionality: the `kicad-python` package installed (`pip install kicad-python`)
 
 ## Using DRC Features
 
@@ -43,7 +34,7 @@ Please run a DRC check on my project at /Users/username/Documents/KiCad/my_proje
 ```
 
 The tool will:
-- Automatically select the best available method (CLI or IPC API)
+- Use the kicad CLI to run the DRC check
 - Analyze your PCB design for rule violations
 - Generate a comprehensive report
 - Save the results to your DRC history
@@ -141,19 +132,7 @@ If the DRC check fails to run:
 
 1. Ensure your KiCad project exists at the specified path
 2. Verify that the project contains a PCB file (.kicad_pcb)
-3. Check your KiCad installation:
-   - For CLI method: Verify `kicad-cli` is in your PATH or in a standard installation location
-   - For IPC API method: Make sure KiCad is running with the API server enabled in Preferences > Plugins
+3. Check your KiCad installation: Verify `kicad-cli` is in your PATH or in a standard installation location
 4. Try using the full absolute path to your project file
-
-### Method Selection Issues
-
-If you want to force a specific DRC method:
-
-1. **CLI Method**: Ensure `kicad-cli` is available in your PATH
-2. **IPC API Method**: 
-   - Install the `kicad-python` package
-   - Launch KiCad before running the DRC check
-   - Enable the API server in KiCad preferences
 
 If you continue to experience issues, check the server logs for more detailed error information.

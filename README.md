@@ -152,9 +152,8 @@ The KiCad MCP Server provides several key features, each with detailed documenta
 - **BOM Management**: Analyze and export Bills of Materials
   - *Example:* "Generate a BOM for my smart watch project" → Creates a detailed bill of materials
   
-  - **Design Rule Checking**: Run DRC checks and track your progress over time
+  - **Design Rule Checking**: Run DRC checks using the KiCad CLI and track your progress over time
   - *Example:* "Run DRC on my power supply board and compare to last week" → Shows progress in fixing violations
-  - *KiCad 9.0+ Compatible:* Uses the new KiCad CLI or IPC API automatically
 
 - **PCB Visualization**: Generate visual representations of your PCB layouts
   - *Example:* "Show me a thumbnail of my audio amplifier PCB" → Displays a visual render of the board

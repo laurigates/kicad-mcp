@@ -1,8 +1,5 @@
 mcp[cli]
-httpx
-pytest
 pandas
-kicad-python
 
 # Development/Testing
-pytest-asyncio
+pytest
