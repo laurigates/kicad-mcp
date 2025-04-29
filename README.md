@@ -1,9 +1,5 @@
 # KiCad MCP Server
 
-> ⚠️ **WARNING**: This project was quickly hacked together and is largely untested. Expect things to break. Use at your own risk. I plan on improving it over time, but if you find bugs, please open an issue or submit a pull request to fix them (see Contributing section below).
-
-> ⚠️ **WARNING**: This project is optimized for Mac. While there exists some basic support for Windows and Linux, not all functionality is guaranteed to work.
-
 This guide will help you set up a Model Context Protocol (MCP) server for KiCad. While the examples in this guide often reference Claude Desktop, the server is compatible with **any MCP-compliant client**. You can use it with Claude Desktop, your own custom MCP clients, or any other application that implements the Model Context Protocol.
 
 ## Table of Contents
@@ -23,11 +19,10 @@ This guide will help you set up a Model Context Protocol (MCP) server for KiCad.
 
 ## Prerequisites
 
-- macOS, Windows, or Linux with KiCad installed
+- macOS, Windows, or Linux
 - Python 3.10 or higher
 - KiCad 9.0 or higher
 - Claude Desktop (or another MCP client)
-- Basic familiarity with the terminal
 
 ## Installation Steps
 
@@ -71,7 +66,6 @@ KICAD_SEARCH_PATHS=~/pcb,~/Electronics,~/Projects/KiCad
 Once the environment is set up, you can run the server:
 
 ```bash
-# Or run directly
 python main.py
 ```
 
@@ -136,6 +130,8 @@ The Model Context Protocol (MCP) defines three primary ways to provide capabilit
 - Invoked by user choice (typically from a menu)
 - Example: The `debug_pcb_issues` prompt helps users troubleshoot PCB problems
 
+For more information on resources vs tools vs prompts, read the [MCP docs](https://modelcontextprotocol.io/docs/concepts/architecture).
+
 ## Feature Highlights
 
 The KiCad MCP Server provides several key features, each with detailed documentation:
@@ -161,7 +157,7 @@ The KiCad MCP Server provides several key features, each with detailed documenta
 - **Circuit Pattern Recognition**: Automatically identify common circuit patterns in your schematics
   - *Example:* "What power supply topologies am I using in my IoT device?" → Identifies buck, boost, or linear regulators
 
-For more examples and details on each feature, see the dedicated guides in the documentation.
+For more examples and details on each feature, see the dedicated guides in the documentation. You can also ask the LLM what tools it has access to!
 
 ## Natural Language Interaction
 
@@ -271,6 +267,8 @@ If you encounter issues:
    - For testing servers via command line, the working directory will be where you run the command
 
 See [Troubleshooting Guide](docs/troubleshooting.md) for more details.
+
+If you're still not able to troubleshoot, please open a Github issue. 
 
 ## Contributing
 
