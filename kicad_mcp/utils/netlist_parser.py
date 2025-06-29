@@ -400,6 +400,22 @@ def extract_netlist(schematic_path: str) -> Dict[str, Any]:
         Dictionary with netlist information
     """
     try:
+        # First, try to detect if this is a JSON format file (created by kicad-mcp)
+        with open(schematic_path, 'r') as f:
+            content = f.read()
+            
+        # Try parsing as JSON first
+        try:
+            import json
+            json_data = json.loads(content)
+            if "symbol" in json_data or "version" in json_data:
+                print(f"Detected JSON format schematic: {schematic_path}")
+                return parse_json_schematic(json_data)
+        except json.JSONDecodeError:
+            pass
+        
+        # Fall back to S-expression parser
+        print(f"Using S-expression parser for: {schematic_path}")
         parser = SchematicParser(schematic_path)
         return parser.parse()
     except Exception as e:
@@ -411,6 +427,115 @@ def extract_netlist(schematic_path: str) -> Dict[str, Any]:
             "component_count": 0,
             "net_count": 0
         }
+
+
+def parse_json_schematic(json_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Parse a JSON format KiCad schematic (created by kicad-mcp).
+    
+    Args:
+        json_data: Dictionary containing the JSON schematic data
+        
+    Returns:
+        Dictionary with netlist information
+    """
+    components = {}
+    nets = defaultdict(list)
+    
+    # Extract components/symbols
+    symbols = json_data.get("symbol", [])
+    for symbol in symbols:
+        lib_id = symbol.get("lib_id", "")
+        uuid = symbol.get("uuid", "")
+        position = symbol.get("at", [0, 0, 0])
+        
+        # Extract properties
+        properties = {}
+        reference = "Unknown"
+        value = ""
+        
+        for prop in symbol.get("property", []):
+            prop_name = prop.get("name", "")
+            prop_value = prop.get("value", "")
+            
+            if prop_name == "Reference":
+                reference = prop_value
+            elif prop_name == "Value":
+                value = prop_value
+            elif prop_name == "Footprint":
+                properties["footprint"] = prop_value
+            elif prop_name == "Datasheet":
+                properties["datasheet"] = prop_value
+            else:
+                properties[prop_name] = prop_value
+        
+        # Create component entry
+        component = {
+            "lib_id": lib_id,
+            "reference": reference,
+            "value": value,
+            "uuid": uuid,
+            "position": {
+                "x": position[0] if len(position) > 0 else 0,
+                "y": position[1] if len(position) > 1 else 0,
+                "angle": position[2] if len(position) > 2 else 0
+            },
+            "properties": properties,
+            "pins": []  # JSON format doesn't include detailed pin info
+        }
+        
+        # Handle duplicate references by using UUID as backup key
+        component_key = reference
+        if component_key in components:
+            component_key = f"{reference}_{uuid[:8]}"
+        
+        components[component_key] = component
+        
+        # For power symbols, create a net
+        if lib_id.startswith("power:"):
+            power_type = lib_id.split(":", 1)[1]
+            nets[power_type].append({
+                "component": component_key,  # Use the actual component key
+                "pin": "1",  # Assume pin 1 for power symbols
+                "uuid": uuid
+            })
+    
+    # Extract wires and create connections
+    wires = json_data.get("wire", [])
+    wire_count = len(wires)
+    
+    # Create a basic net for each wire (this is simplified)
+    for i, wire in enumerate(wires):
+        wire_uuid = wire.get("uuid", f"wire_{i}")
+        pts = wire.get("pts", [])
+        if len(pts) >= 2:
+            # Create a net for this wire connection
+            net_name = f"Net-{wire_uuid[:8]}"
+            nets[net_name] = []
+            
+            # In a real implementation, we would trace which component pins
+            # are connected by this wire, but that requires geometric analysis
+    
+    # Build result
+    result = {
+        "components": components,
+        "nets": dict(nets),
+        "labels": [],  # TODO: Extract from JSON
+        "wires": [{"uuid": w.get("uuid", "")} for w in wires],
+        "junctions": [],  # TODO: Extract from JSON
+        "power_symbols": [
+            {
+                "type": comp["lib_id"].split(":", 1)[1] if comp["lib_id"].startswith("power:") else comp["lib_id"],
+                "position": comp["position"]
+            }
+            for comp in components.values()
+            if comp["lib_id"].startswith("power:")
+        ],
+        "component_count": len(components),
+        "net_count": len(nets)
+    }
+    
+    print(f"JSON schematic parsing complete: found {len(components)} components and {len(nets)} nets")
+    return result
 
 
 def analyze_netlist(netlist_data: Dict[str, Any]) -> Dict[str, Any]:

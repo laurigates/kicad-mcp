@@ -33,31 +33,31 @@ def register_netlist_tools(mcp: FastMCP) -> None:
         
         if not os.path.exists(schematic_path):
             print(f"Schematic file not found: {schematic_path}")
-            ctx.info(f"Schematic file not found: {schematic_path}")
+            await ctx.info(f"Schematic file not found: {schematic_path}")
             return {"success": False, "error": f"Schematic file not found: {schematic_path}"}
         
         # Report progress
         await ctx.report_progress(10, 100)
-        ctx.info(f"Loading schematic file: {os.path.basename(schematic_path)}")
+        await ctx.info(f"Loading schematic file: {os.path.basename(schematic_path)}")
         
         # Extract netlist information
         try:
             await ctx.report_progress(20, 100)
-            ctx.info("Parsing schematic structure...")
+            await ctx.info("Parsing schematic structure...")
             
             netlist_data = extract_netlist(schematic_path)
             
             if "error" in netlist_data:
                 print(f"Error extracting netlist: {netlist_data['error']}")
-                ctx.info(f"Error extracting netlist: {netlist_data['error']}")
+                await ctx.info(f"Error extracting netlist: {netlist_data['error']}")
                 return {"success": False, "error": netlist_data['error']}
             
             await ctx.report_progress(60, 100)
-            ctx.info(f"Extracted {netlist_data['component_count']} components and {netlist_data['net_count']} nets")
+            await ctx.info(f"Extracted {netlist_data['component_count']} components and {netlist_data['net_count']} nets")
             
             # Analyze the netlist
             await ctx.report_progress(70, 100)
-            ctx.info("Analyzing netlist data...")
+            await ctx.info("Analyzing netlist data...")
             
             analysis_results = analyze_netlist(netlist_data)
             
@@ -76,13 +76,13 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             
             # Complete progress
             await ctx.report_progress(100, 100)
-            ctx.info("Netlist extraction complete")
+            await ctx.info("Netlist extraction complete")
             
             return result
             
         except Exception as e:
             print(f"Error extracting netlist: {str(e)}")
-            ctx.info(f"Error extracting netlist: {str(e)}")
+            await ctx.info(f"Error extracting netlist: {str(e)}")
             return {"success": False, "error": str(e)}
 
     @mcp.tool()
@@ -103,7 +103,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
         
         if not os.path.exists(project_path):
             print(f"Project not found: {project_path}")
-            ctx.info(f"Project not found: {project_path}")
+            await ctx.info(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
         
         # Report progress
@@ -115,12 +115,12 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             
             if "schematic" not in files:
                 print("Schematic file not found in project")
-                ctx.info("Schematic file not found in project")
+                await ctx.info("Schematic file not found in project")
                 return {"success": False, "error": "Schematic file not found in project"}
             
             schematic_path = files["schematic"]
             print(f"Found schematic file: {schematic_path}")
-            ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
+            await ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
             
             # Extract netlist
             await ctx.report_progress(20, 100)
@@ -136,7 +136,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             
         except Exception as e:
             print(f"Error extracting project netlist: {str(e)}")
-            ctx.info(f"Error extracting project netlist: {str(e)}")
+            await ctx.info(f"Error extracting project netlist: {str(e)}")
             return {"success": False, "error": str(e)}
 
     @mcp.tool()
@@ -157,12 +157,12 @@ def register_netlist_tools(mcp: FastMCP) -> None:
         
         if not os.path.exists(schematic_path):
             print(f"Schematic file not found: {schematic_path}")
-            ctx.info(f"Schematic file not found: {schematic_path}")
+            await ctx.info(f"Schematic file not found: {schematic_path}")
             return {"success": False, "error": f"Schematic file not found: {schematic_path}"}
         
         # Report progress
         await ctx.report_progress(10, 100)
-        ctx.info(f"Extracting netlist from: {os.path.basename(schematic_path)}")
+        await ctx.info(f"Extracting netlist from: {os.path.basename(schematic_path)}")
         
         # Extract netlist information
         try:
@@ -170,13 +170,13 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             
             if "error" in netlist_data:
                 print(f"Error extracting netlist: {netlist_data['error']}")
-                ctx.info(f"Error extracting netlist: {netlist_data['error']}")
+                await ctx.info(f"Error extracting netlist: {netlist_data['error']}")
                 return {"success": False, "error": netlist_data['error']}
             
             await ctx.report_progress(40, 100)
             
             # Advanced connection analysis
-            ctx.info("Performing connection analysis...")
+            await ctx.info("Performing connection analysis...")
             
             analysis = {
                 "component_count": netlist_data["component_count"],
@@ -241,13 +241,13 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             
             # Complete progress
             await ctx.report_progress(100, 100)
-            ctx.info("Connection analysis complete")
+            await ctx.info("Connection analysis complete")
             
             return result
             
         except Exception as e:
             print(f"Error analyzing connections: {str(e)}")
-            ctx.info(f"Error analyzing connections: {str(e)}")
+            await ctx.info(f"Error analyzing connections: {str(e)}")
             return {"success": False, "error": str(e)}
 
     @mcp.tool()
@@ -269,7 +269,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
         
         if not os.path.exists(project_path):
             print(f"Project not found: {project_path}")
-            ctx.info(f"Project not found: {project_path}")
+            await ctx.info(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
         
         # Report progress
@@ -281,29 +281,29 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             
             if "schematic" not in files:
                 print("Schematic file not found in project")
-                ctx.info("Schematic file not found in project")
+                await ctx.info("Schematic file not found in project")
                 return {"success": False, "error": "Schematic file not found in project"}
             
             schematic_path = files["schematic"]
             print(f"Found schematic file: {schematic_path}")
-            ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
+            await ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
             
             # Extract netlist
             await ctx.report_progress(30, 100)
-            ctx.info(f"Extracting netlist to find connections for {component_ref}...")
+            await ctx.info(f"Extracting netlist to find connections for {component_ref}...")
             
             netlist_data = extract_netlist(schematic_path)
             
             if "error" in netlist_data:
                 print(f"Failed to extract netlist: {netlist_data['error']}")
-                ctx.info(f"Failed to extract netlist: {netlist_data['error']}")
+                await ctx.info(f"Failed to extract netlist: {netlist_data['error']}")
                 return {"success": False, "error": netlist_data['error']}
             
             # Check if component exists in the netlist
             components = netlist_data.get("components", {})
             if component_ref not in components:
                 print(f"Component {component_ref} not found in schematic")
-                ctx.info(f"Component {component_ref} not found in schematic")
+                await ctx.info(f"Component {component_ref} not found in schematic")
                 return {
                     "success": False, 
                     "error": f"Component {component_ref} not found in schematic",
@@ -315,7 +315,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             
             # Find connections
             await ctx.report_progress(50, 100)
-            ctx.info("Finding connections...")
+            await ctx.info("Finding connections...")
             
             nets = netlist_data.get("nets", {})
             connections = []
@@ -356,7 +356,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             
             # Analyze the connections
             await ctx.report_progress(70, 100)
-            ctx.info("Analyzing connections...")
+            await ctx.info("Analyzing connections...")
             
             # Categorize connections by pin function (if possible)
             pin_functions = {}
@@ -396,11 +396,11 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             }
             
             await ctx.report_progress(100, 100)
-            ctx.info(f"Found {len(connections)} connections for component {component_ref}")
+            await ctx.info(f"Found {len(connections)} connections for component {component_ref}")
             
             return result
             
         except Exception as e:
             print(f"Error finding component connections: {str(e)}", exc_info=True)
-            ctx.info(f"Error finding component connections: {str(e)}")
+            await ctx.info(f"Error finding component connections: {str(e)}")
             return {"success": False, "error": str(e)}

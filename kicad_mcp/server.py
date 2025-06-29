@@ -25,12 +25,14 @@ from kicad_mcp.tools.drc_tools import register_drc_tools
 from kicad_mcp.tools.bom_tools import register_bom_tools
 from kicad_mcp.tools.netlist_tools import register_netlist_tools
 from kicad_mcp.tools.pattern_tools import register_pattern_tools
+from kicad_mcp.tools.circuit_tools import register_circuit_tools
 
 # Import prompt handlers
 from kicad_mcp.prompts.templates import register_prompts
 from kicad_mcp.prompts.drc_prompt import register_drc_prompts
 from kicad_mcp.prompts.bom_prompts import register_bom_prompts
 from kicad_mcp.prompts.pattern_prompts import register_pattern_prompts
+from kicad_mcp.prompts.circuit_prompts import register_circuit_prompts
 
 # Import context management
 from kicad_mcp.context import kicad_lifespan
@@ -150,6 +152,7 @@ def create_server() -> FastMCP:
     register_bom_tools(mcp)
     register_netlist_tools(mcp)
     register_pattern_tools(mcp)
+    register_circuit_tools(mcp)
     
     # Register prompts
     logging.info(f"Registering prompts...")
@@ -157,6 +160,7 @@ def create_server() -> FastMCP:
     register_drc_prompts(mcp)
     register_bom_prompts(mcp)
     register_pattern_prompts(mcp)
+    register_circuit_prompts(mcp)
 
     # Register signal handlers and cleanup
     register_signal_handlers(mcp)

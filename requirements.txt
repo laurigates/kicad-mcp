@@ -3,3 +3,7 @@ pandas
 
 # Development/Testing
 pytest
+pytest-asyncio
+pytest-mock
+pytest-cov
+pytest-xdist
