@@ -1,5 +1,6 @@
 mcp[cli]
 pandas
+pyyaml
 
 # Development/Testing
 pytest

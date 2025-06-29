@@ -13,6 +13,7 @@ from mcp.server.fastmcp import FastMCP, Context
 
 from kicad_mcp.config import KICAD_APP_PATH, KICAD_EXTENSIONS, system
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
 
 
 def register_circuit_tools(mcp: FastMCP) -> None:
@@ -170,46 +171,17 @@ def register_circuit_tools(mcp: FastMCP) -> None:
             if ctx:
                 await ctx.report_progress(60, 100)
 
-            # Create basic schematic file
-            schematic_data = {
-                "version": 20230121,
-                "generator": "kicad-mcp",
-                "uuid": "e63e39d7-6ac0-4ffd-8aa3-1841a4541b55",
-                "paper": "A4",
-                "title_block": {
-                    "title": project_name,
-                    "date": "",
-                    "rev": "",
-                    "company": "",
-                    "comment": [
-                        {
-                            "number": 1,
-                            "value": description if description else ""
-                        }
-                    ]
-                },
-                "lib_symbols": {},
-                "symbol": [],
-                "wire": [],
-                "bus": [],
-                "junction": [],
-                "no_connect": [],
-                "bus_entry": [],
-                "text": [],
-                "label": [],
-                "hierarchical_label": [],
-                "global_label": [],
-                "sheet": [],
-                "sheet_instances": [
-                    {
-                        "path": "/",
-                        "page": "1"
-                    }
-                ]
-            }
+            # Create basic schematic file using S-expression format
+            generator = SExpressionGenerator()
+            schematic_content = generator.generate_schematic(
+                circuit_name=project_name,
+                components=[],
+                power_symbols=[],
+                connections=[]
+            )
 
             with open(schematic_file, 'w') as f:
-                json.dump(schematic_data, f, indent=2)
+                f.write(schematic_content)
 
             if ctx:
                 await ctx.report_progress(80, 100)
@@ -401,6 +373,10 @@ def register_circuit_tools(mcp: FastMCP) -> None:
         ctx: Context = None
     ) -> Dict[str, Any]:
         """Add a component to a KiCad schematic.
+        
+        WARNING: This tool modifies existing schematic files but may not preserve
+        S-expression format if the file was created with proper KiCad tools.
+        Prefer using create_kicad_schematic_from_text for new schematics.
 
         Args:
             project_path: Path to the KiCad project file (.kicad_pro)
