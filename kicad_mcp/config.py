@@ -71,3 +71,58 @@ DATA_EXTENSIONS = [
     ".csv",  # BOM or other data
     ".pos",  # Component position file
 ]
+
+# Circuit creation constants
+CIRCUIT_DEFAULTS = {
+    "grid_spacing": 2.54,  # Default grid spacing in mm (0.1 inch)
+    "component_spacing": 10.16,  # Default component spacing in mm
+    "wire_width": 6,  # Default wire width in KiCad units (0.006 inch)
+    "text_size": [1.27, 1.27],  # Default text size in mm
+    "pin_length": 2.54,  # Default pin length in mm
+}
+
+# Common component libraries
+COMMON_LIBRARIES = {
+    "basic": {
+        "resistor": {"library": "Device", "symbol": "R"},
+        "capacitor": {"library": "Device", "symbol": "C"},
+        "inductor": {"library": "Device", "symbol": "L"},
+        "led": {"library": "Device", "symbol": "LED"},
+        "diode": {"library": "Device", "symbol": "D"},
+    },
+    "power": {
+        "vcc": {"library": "power", "symbol": "VCC"},
+        "gnd": {"library": "power", "symbol": "GND"},
+        "+5v": {"library": "power", "symbol": "+5V"},
+        "+3v3": {"library": "power", "symbol": "+3V3"},
+        "+12v": {"library": "power", "symbol": "+12V"},
+        "-12v": {"library": "power", "symbol": "-12V"},
+    },
+    "connectors": {
+        "conn_2pin": {"library": "Connector", "symbol": "Conn_01x02_Male"},
+        "conn_4pin": {"library": "Connector_Generic", "symbol": "Conn_01x04"},
+        "conn_8pin": {"library": "Connector_Generic", "symbol": "Conn_01x08"},
+    }
+}
+
+# Default footprint suggestions
+DEFAULT_FOOTPRINTS = {
+    "R": [
+        "Resistor_SMD:R_0805_2012Metric",
+        "Resistor_SMD:R_0603_1608Metric",
+        "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
+    ],
+    "C": [
+        "Capacitor_SMD:C_0805_2012Metric",
+        "Capacitor_SMD:C_0603_1608Metric", 
+        "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm"
+    ],
+    "LED": [
+        "LED_SMD:LED_0805_2012Metric",
+        "LED_THT:LED_D5.0mm"
+    ],
+    "D": [
+        "Diode_SMD:D_SOD-123",
+        "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal"
+    ]
+}

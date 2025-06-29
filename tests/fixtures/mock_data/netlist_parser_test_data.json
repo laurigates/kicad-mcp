@@ -1,0 +1,106 @@
+{
+  "valid_json_schematic": {
+    "components": [
+      {
+        "lib_id": "MCU_Espressif:ESP32-WROOM-32",
+        "reference": "U1", 
+        "value": "ESP32-WROOM-32",
+        "uuid": "component-uuid-1",
+        "position": {"x": 1000, "y": 1000, "angle": 0},
+        "properties": {"footprint": "RF_Module:ESP32-WROOM-32", "datasheet": ""},
+        "pins": []
+      },
+      {
+        "lib_id": "power:VCC",
+        "reference": "#PWR01",
+        "value": "VCC", 
+        "uuid": "power-uuid-1",
+        "position": {"x": 500, "y": 300, "angle": 0},
+        "properties": {"footprint": "", "datasheet": ""},
+        "pins": []
+      }
+    ],
+    "wires": [
+      {
+        "uuid": "wire-uuid-1",
+        "start": {"x": 500, "y": 400},
+        "end": {"x": 1000, "y": 400}
+      }
+    ],
+    "nets": [
+      {
+        "name": "VCC",
+        "connections": [
+          {"component": "#PWR01", "pin": "1"},
+          {"component": "U1", "pin": "2"}
+        ]
+      } 
+    ]
+  },
+  "malformed_json_schematic": {
+    "components": [
+      {
+        "lib_id": "Device:R",
+        "reference": "R1"
+      }
+    ]
+  },
+  "empty_schematic": {
+    "components": [],
+    "wires": [],
+    "nets": []
+  },
+  "expected_parsed_results": {
+    "valid_json_parsed": {
+      "component_count": 2,
+      "net_count": 1,
+      "wire_count": 1,
+      "components": {
+        "U1": {
+          "lib_id": "MCU_Espressif:ESP32-WROOM-32",
+          "reference": "U1",
+          "value": "ESP32-WROOM-32"  
+        },
+        "#PWR01": {
+          "lib_id": "power:VCC",
+          "reference": "#PWR01", 
+          "value": "VCC"
+        }
+      },
+      "nets": {
+        "VCC": [
+          {"component": "#PWR01", "pin": "1"},
+          {"component": "U1", "pin": "2"}
+        ]
+      }
+    },
+    "empty_parsed": {
+      "component_count": 0,
+      "net_count": 0,
+      "wire_count": 0,
+      "components": {},
+      "nets": {}
+    }
+  },
+  "sexpr_test_patterns": {
+    "simple_component": "(symbol (lib_id \"Device:R\") (at 63.5 87.63 0) (unit 1) (uuid \"component-uuid-1234\") (property \"Reference\" \"R1\" (at 66.04 86.36 0)) (property \"Value\" \"10k\" (at 66.04 88.9 0)))",
+    "wire_pattern": "(wire (pts (xy 63.5 91.44) (xy 63.5 93.98)) (stroke (width 0) (type default)) (uuid \"wire-uuid-1234\"))",
+    "junction_pattern": "(junction (at 63.5 93.98) (diameter 0) (color 0 0 0 0) (uuid \"junction-uuid-1234\"))",
+    "label_pattern": "(label \"TEST_SIGNAL\" (at 66.04 93.98 0) (fields_autoplaced) (effects (font (size 1.27 1.27)) (justify left bottom)) (uuid \"label-uuid-1234\"))"
+  },
+  "error_test_cases": {
+    "file_not_found": "/nonexistent/path/test.kicad_sch",
+    "invalid_json": "{ invalid json content }",
+    "missing_components_key": {
+      "wires": [],
+      "nets": []
+    },
+    "invalid_component_structure": {
+      "components": [
+        {
+          "invalid": "structure"
+        }
+      ]
+    }
+  }
+}
