@@ -38,8 +38,11 @@ git clone https://github.com/lamaalrajih/kicad-mcp.git .
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install the MCP SDK and other dependencies
-pip install -r requirements.txt
+# Install the package and its dependencies using uv (recommended)
+uv pip install .
+
+# Alternative: Install with regular pip
+pip install .
 ```
 
 ### 2. Configure Your Environment
@@ -61,17 +64,16 @@ In the `.env` file, add your custom project directories:
 KICAD_SEARCH_PATHS=~/pcb,~/Electronics,~/Projects/KiCad
 ```
 
-### 3. Run the Server
+### 3. Configure an MCP Client
 
-Once the environment is set up, you can run the server:
+When configured as an MCP server in Claude Desktop (or other MCP clients), the server starts automatically when needed. You only need to run the server manually for development or testing purposes.
 
+**For development/testing only:**
 ```bash
 python main.py
 ```
 
-### 4. Configure an MCP Client
-
-Now, let's configure Claude Desktop to use our MCP server:
+To configure Claude Desktop to use our MCP server:
 
 1. Create or edit the Claude Desktop configuration file:
 
@@ -100,7 +102,7 @@ vim ~/Library/Application\ Support/Claude/claude_desktop_config.json
 
 Replace `/ABSOLUTE/PATH/TO/YOUR/PROJECT/kicad-mcp` with the actual path to your project directory.
 
-### 5. Restart Your MCP Client
+### 4. Restart Your MCP Client
 
 Close and reopen your MCP client to load the new configuration.
 
@@ -219,7 +221,7 @@ The KiCad MCP Server is organized into a modular structure:
 kicad-mcp/
 ├── README.md                       # Project documentation
 ├── main.py                         # Entry point that runs the server
-├── requirements.txt                # Python dependencies
+├── pyproject.toml                  # Python packaging and dependencies
 ├── .env.example                    # Example environment configuration
 ├── kicad_mcp/                      # Main package directory
 │   ├── __init__.py

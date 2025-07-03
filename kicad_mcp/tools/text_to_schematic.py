@@ -432,7 +432,7 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
                 await ctx.info(f"Parsed circuit: {circuit.name}")
                 await ctx.report_progress(30, 100)
             
-            # Import existing circuit tools
+            # Import existing circuit tools (now available as standalone functions)
             from kicad_mcp.tools.circuit_tools import (
                 add_component as _add_component,
                 add_power_symbol as _add_power_symbol,
@@ -635,6 +635,119 @@ circuit "RC Low-Pass Filter":
   connections:
     - R1.2 → C1.1
     - C1.2 → GND
+''',
+            "esp32_basic": '''
+circuit "ESP32 Basic Setup":
+  components:
+    - U1: ic ESP32-WROOM-32 at (50, 50)
+    - C1: capacitor 100µF at (20, 30)
+    - C2: capacitor 10µF at (25, 30)
+    - R1: resistor 10kΩ at (80, 40)
+    - R2: resistor 470Ω at (80, 60)
+    - LED1: led blue at (90, 60)
+    - SW1: switch tactile at (80, 80)
+  power:
+    - VCC: +3V3 at (20, 20)
+    - GND: GND at (20, 80)
+  connections:
+    - VCC → U1.VDD
+    - VCC → C1.1
+    - VCC → C2.1
+    - VCC → R1.1
+    - C1.2 → GND
+    - C2.2 → GND
+    - R1.2 → U1.EN
+    - U1.GND → GND
+    - U1.GPIO2 → R2.1
+    - R2.2 → LED1.anode
+    - LED1.cathode → GND
+    - U1.GPIO0 → SW1.1
+    - SW1.2 → GND
+''',
+            "esp32_dual_controller": '''
+circuit "ESP32 Dual Controller System":
+  components:
+    - U1: ic ESP32-WROOM-32 at (30, 50)
+    - U2: ic ESP32-WROOM-32 at (80, 50)
+    - R1: resistor 10kΩ at (15, 30)
+    - R2: resistor 10kΩ at (65, 30)
+    - R3: resistor 4.7kΩ at (50, 20)
+    - R4: resistor 4.7kΩ at (55, 20)
+    - C1: capacitor 100µF at (15, 70)
+    - C2: capacitor 100µF at (65, 70)
+  power:
+    - VCC: +3V3 at (15, 15)
+    - GND: GND at (15, 85)
+  connections:
+    - VCC → U1.VDD
+    - VCC → U2.VDD
+    - VCC → R1.1
+    - VCC → R2.1
+    - VCC → R3.1
+    - VCC → R4.1
+    - R1.2 → U1.EN
+    - R2.2 → U2.EN
+    - U1.GND → GND
+    - U2.GND → GND
+    - C1.1 → U1.VDD
+    - C1.2 → GND
+    - C2.1 → U2.VDD
+    - C2.2 → GND
+    - U1.GPIO21 → R3.2
+    - U1.GPIO22 → R4.2
+    - R3.2 → U2.GPIO21
+    - R4.2 → U2.GPIO22
+''',
+            "motor_driver": '''
+circuit "Motor Driver H-Bridge":
+  components:
+    - U1: ic L298N at (50, 50)
+    - M1: motor dc at (80, 40)
+    - C1: capacitor 470µF at (20, 30)
+    - C2: capacitor 100nF at (25, 30)
+    - D1: diode schottky at (70, 35)
+    - D2: diode schottky at (70, 45)
+    - D3: diode schottky at (90, 35)
+    - D4: diode schottky at (90, 45)
+  power:
+    - VCC: +12V at (20, 20)
+    - VDD: +5V at (25, 20)
+    - GND: GND at (20, 80)
+  connections:
+    - VCC → U1.VS
+    - VDD → U1.VSS
+    - U1.GND → GND
+    - C1.1 → VCC
+    - C1.2 → GND
+    - C2.1 → VDD
+    - C2.2 → GND
+    - U1.OUT1 → M1.1
+    - U1.OUT2 → M1.2
+''',
+            "sensor_i2c": '''
+circuit "I2C Sensor Interface":
+  components:
+    - U1: ic BME280 at (50, 40)
+    - R1: resistor 4.7kΩ at (30, 25)
+    - R2: resistor 4.7kΩ at (35, 25)
+    - C1: capacitor 100nF at (25, 35)
+    - C2: capacitor 10µF at (30, 35)
+  power:
+    - VCC: +3V3 at (25, 20)
+    - GND: GND at (25, 55)
+  connections:
+    - VCC → U1.VDD
+    - VCC → R1.1
+    - VCC → R2.1
+    - VCC → C1.1
+    - VCC → C2.1
+    - U1.GND → GND
+    - C1.2 → GND
+    - C2.2 → GND
+    - U1.SDA → R1.2
+    - U1.SCL → R2.2
+    - U1.CSB → VCC
+    - U1.SDO → GND
 '''
         }
         
