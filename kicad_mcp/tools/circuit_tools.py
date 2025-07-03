@@ -3,6 +3,7 @@ Circuit creation tools for KiCad projects.
 """
 import os
 import json
+import re
 import shutil
 import subprocess
 import tempfile
@@ -16,15 +17,9 @@ from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
 
 
-def register_circuit_tools(mcp: FastMCP) -> None:
-    """Register circuit creation tools with the MCP server.
-    
-    Args:
-        mcp: The FastMCP server instance
-    """
-    
-    @mcp.tool()
-    async def create_new_project(
+# Standalone functions for circuit operations
+
+async def create_new_project(
         project_name: str,
         project_path: str,
         description: str = "",
@@ -354,15 +349,18 @@ def register_circuit_tools(mcp: FastMCP) -> None:
             }
 
         except Exception as e:
+            error_msg = f"Error creating project '{project_name}' at '{project_path}': {str(e)}"
             if ctx:
-                await ctx.info(f"Error creating project: {str(e)}")
+                await ctx.info(error_msg)
+                await ctx.info(f"Exception type: {type(e).__name__}")
             return {
                 "success": False,
-                "error": str(e)
+                "error": error_msg,
+                "error_type": type(e).__name__
             }
 
-    @mcp.tool()
-    async def add_component(
+
+async def add_component(
         project_path: str,
         component_reference: str,
         component_value: str,
@@ -409,9 +407,12 @@ def register_circuit_tools(mcp: FastMCP) -> None:
             if ctx:
                 await ctx.report_progress(30, 100)
 
-            # Read existing schematic
-            with open(schematic_file, 'r') as f:
-                schematic_data = json.load(f)
+            # Read existing schematic and check if it can be modified
+            read_result = _read_schematic_for_modification(schematic_file)
+            if not read_result["success"]:
+                return read_result
+            
+            schematic_data = read_result["data"]
 
             # Create component UUID
             component_uuid = str(uuid.uuid4())
@@ -483,6 +484,7 @@ def register_circuit_tools(mcp: FastMCP) -> None:
 
             if ctx:
                 await ctx.report_progress(80, 100)
+                await ctx.info(f"Writing component to schematic. Total components now: {len(schematic_data.get('symbol', []))}")
 
             # Write updated schematic
             with open(schematic_file, 'w') as f:
@@ -496,19 +498,30 @@ def register_circuit_tools(mcp: FastMCP) -> None:
                 "success": True,
                 "component_reference": component_reference,
                 "component_uuid": component_uuid,
-                "position": [x_position, y_position]
+                "position": [x_position, y_position],
+                "debug_info": {
+                    "total_components": len(schematic_data.get('symbol', [])),
+                    "schematic_file": schematic_file,
+                    "symbol_entry_keys": list(symbol_entry.keys())
+                }
             }
 
         except Exception as e:
+            error_msg = f"Error adding component '{component_reference}' ({symbol_library}:{symbol_name}) to '{project_path}': {str(e)}"
             if ctx:
-                await ctx.info(f"Error adding component: {str(e)}")
+                await ctx.info(error_msg)
+                await ctx.info(f"Exception type: {type(e).__name__}")
+                await ctx.info(f"Position: ({x_position}, {y_position})")
             return {
                 "success": False,
-                "error": str(e)
+                "error": error_msg,
+                "error_type": type(e).__name__,
+                "component_reference": component_reference,
+                "position": [x_position, y_position]
             }
 
-    @mcp.tool()
-    async def create_wire_connection(
+
+async def create_wire_connection(
         project_path: str,
         start_x: float,
         start_y: float,
@@ -547,9 +560,12 @@ def register_circuit_tools(mcp: FastMCP) -> None:
             if ctx:
                 await ctx.report_progress(30, 100)
 
-            # Read existing schematic
-            with open(schematic_file, 'r') as f:
-                schematic_data = json.load(f)
+            # Read existing schematic and check if it can be modified
+            read_result = _read_schematic_for_modification(schematic_file)
+            if not read_result["success"]:
+                return read_result
+            
+            schematic_data = read_result["data"]
 
             # Convert positions to KiCad internal units
             start_x_internal = int(start_x * 10)
@@ -605,8 +621,8 @@ def register_circuit_tools(mcp: FastMCP) -> None:
                 "error": str(e)
             }
 
-    @mcp.tool()
-    async def add_power_symbol(
+
+async def add_power_symbol(
         project_path: str,
         power_type: str,
         x_position: float,
@@ -662,9 +678,12 @@ def register_circuit_tools(mcp: FastMCP) -> None:
             if ctx:
                 await ctx.report_progress(30, 100)
 
-            # Read existing schematic
-            with open(schematic_file, 'r') as f:
-                schematic_data = json.load(f)
+            # Read existing schematic and check if it can be modified
+            read_result = _read_schematic_for_modification(schematic_file)
+            if not read_result["success"]:
+                return read_result
+            
+            schematic_data = read_result["data"]
 
             # Create component UUID
             component_uuid = str(uuid.uuid4())
@@ -768,8 +787,80 @@ def register_circuit_tools(mcp: FastMCP) -> None:
                 "error": str(e)
             }
 
-    @mcp.tool()
-    async def validate_schematic(
+
+def _read_schematic_for_modification(schematic_file: str) -> Dict[str, Any]:
+    """Read a schematic file and determine if it can be modified by JSON operations.
+    
+    Returns appropriate error if the file is in S-expression format.
+    """
+    with open(schematic_file, 'r') as f:
+        content = f.read().strip()
+    
+    # Check if it's S-expression format (which KiCad expects)
+    if content.startswith('(kicad_sch'):
+        return {
+            "success": False,
+            "error": "Schematic is in S-expression format. Use create_kicad_schematic_from_text for modifying S-expression schematics.",
+            "suggestion": "Use the text-to-schematic tools for better S-expression support",
+            "schematic_file": schematic_file
+        }
+    else:
+        # Legacy JSON format
+        try:
+            return {
+                "success": True,
+                "data": json.loads(content)
+            }
+        except json.JSONDecodeError:
+            return {
+                "success": False,
+                "error": "Schematic file is not valid JSON or S-expression format"
+            }
+
+
+def _parse_sexpr_for_validation(content: str) -> Dict[str, Any]:
+    """Parse S-expression schematic content for validation purposes.
+    
+    This is a simplified parser that extracts basic information needed for validation.
+    """
+    result = {
+        "symbol": [],
+        "wire": []
+    }
+    
+    # Find all symbol instances in the schematic
+    # Pattern matches: (symbol (lib_id "Device:R") ... (property "Reference" "R1") ... (property "Value" "10k") ... )
+    symbol_blocks = re.findall(r'\(symbol\s+[^)]*\(lib_id\s+"([^"]+)"[^)]*\)', content, re.DOTALL)
+    
+    # For each symbol, find its properties
+    for symbol_block in re.finditer(r'\(symbol[^)]*\(lib_id\s+"([^"]+)".*?\)', content, re.DOTALL):
+        lib_id = symbol_block.group(1)
+        symbol_content = symbol_block.group(0)
+        
+        # Extract Reference and Value properties
+        ref_match = re.search(r'\(property\s+"Reference"\s+"([^"]+)"', symbol_content)
+        val_match = re.search(r'\(property\s+"Value"\s+"([^"]+)"', symbol_content)
+        
+        reference = ref_match.group(1) if ref_match else "Unknown"
+        value = val_match.group(1) if val_match else ""
+        
+        result["symbol"].append({
+            "lib_id": lib_id,
+            "property": [
+                {"name": "Reference", "value": reference},
+                {"name": "Value", "value": value}
+            ]
+        })
+    
+    # Find wire connections
+    # Pattern matches: (wire (pts (xy 63.5 87.63) (xy 74.93 87.63)))
+    wires = re.findall(r'\(wire\s+\(pts\s+\(xy\s+[\d.]+\s+[\d.]+\)\s+\(xy\s+[\d.]+\s+[\d.]+\)\)', content)
+    result["wire"] = [{"found": True} for _ in wires]
+    
+    return result
+
+
+async def validate_schematic(
         project_path: str,
         ctx: Context = None
     ) -> Dict[str, Any]:
@@ -800,9 +891,23 @@ def register_circuit_tools(mcp: FastMCP) -> None:
             if ctx:
                 await ctx.report_progress(30, 100)
 
-            # Read schematic
+            # Read schematic file - determine if it's S-expression or JSON format
             with open(schematic_file, 'r') as f:
-                schematic_data = json.load(f)
+                content = f.read().strip()
+            
+            # Check if it's S-expression format
+            if content.startswith('(kicad_sch'):
+                # Parse S-expression format
+                schematic_data = _parse_sexpr_for_validation(content)
+            else:
+                # Try JSON format (legacy)
+                try:
+                    schematic_data = json.loads(content)
+                except json.JSONDecodeError:
+                    return {
+                        "success": False,
+                        "error": "Schematic file is neither valid S-expression nor JSON format"
+                    }
 
             validation_results = {
                 "success": True,
@@ -864,6 +969,48 @@ def register_circuit_tools(mcp: FastMCP) -> None:
             }
 
 
+# Alias functions for compatibility with tests and other modules
+create_new_circuit = create_new_project
+add_component_to_circuit = add_component
+connect_components = create_wire_connection
+
+
+async def add_power_symbols(
+    project_path: str,
+    power_symbols: List[Dict[str, Any]],
+    ctx: Context = None
+) -> Dict[str, Any]:
+    """Add multiple power symbols to the schematic.
+    
+    Args:
+        project_path: Path to the KiCad project file (.kicad_pro)
+        power_symbols: List of power symbol definitions with power_type, x_position, y_position
+        ctx: Context for MCP communication
+        
+    Returns:
+        Dictionary with batch addition results
+    """
+    results = []
+    for symbol_def in power_symbols:
+        result = await add_power_symbol(
+            project_path=project_path,
+            power_type=symbol_def["power_type"],
+            x_position=symbol_def["x_position"],
+            y_position=symbol_def["y_position"],
+            ctx=ctx
+        )
+        results.append(result)
+    
+    return {
+        "success": all(r["success"] for r in results),
+        "results": results
+    }
+
+
+# Alias for validation
+validate_circuit = validate_schematic
+
+
 def get_kicad_cli_path() -> Optional[str]:
     """Get the path to kicad-cli executable based on the operating system.
     
@@ -890,3 +1037,69 @@ def get_kicad_cli_path() -> Optional[str]:
             return kicad_cli
     
     return None
+
+
+def register_circuit_tools(mcp: FastMCP) -> None:
+    """Register circuit creation tools with the MCP server.
+    
+    Args:
+        mcp: The FastMCP server instance
+    """
+    
+    @mcp.tool(name="create_new_project")
+    async def create_new_project_tool(
+        project_name: str,
+        project_path: str,
+        description: str = "",
+        ctx: Context = None
+    ) -> Dict[str, Any]:
+        """Create a new KiCad project with basic files."""
+        return await create_new_project(project_name, project_path, description, ctx)
+    
+    @mcp.tool(name="add_component")
+    async def add_component_tool(
+        project_path: str,
+        component_reference: str,
+        component_value: str,
+        symbol_library: str,
+        symbol_name: str,
+        x_position: float,
+        y_position: float,
+        ctx: Context = None
+    ) -> Dict[str, Any]:
+        """Add a component to a KiCad schematic."""
+        return await add_component(
+            project_path, component_reference, component_value, symbol_library, 
+            symbol_name, x_position, y_position, ctx
+        )
+    
+    @mcp.tool(name="create_wire_connection")
+    async def create_wire_connection_tool(
+        project_path: str,
+        start_x: float,
+        start_y: float,
+        end_x: float,
+        end_y: float,
+        ctx: Context = None
+    ) -> Dict[str, Any]:
+        """Create a wire connection between two points in a schematic."""
+        return await create_wire_connection(project_path, start_x, start_y, end_x, end_y, ctx)
+    
+    @mcp.tool(name="add_power_symbol")
+    async def add_power_symbol_tool(
+        project_path: str,
+        power_type: str,
+        x_position: float,
+        y_position: float,
+        ctx: Context = None
+    ) -> Dict[str, Any]:
+        """Add a power symbol (VCC, GND, etc.) to the schematic."""
+        return await add_power_symbol(project_path, power_type, x_position, y_position, ctx)
+    
+    @mcp.tool(name="validate_schematic")
+    async def validate_schematic_tool(
+        project_path: str,
+        ctx: Context = None
+    ) -> Dict[str, Any]:
+        """Validate a KiCad schematic for common issues."""
+        return await validate_schematic(project_path, ctx)

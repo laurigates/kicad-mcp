@@ -16,7 +16,11 @@ This guide helps you troubleshoot common issues with the KiCad MCP Server.
    - **Error:** `ModuleNotFoundError: No module named 'mcp'`
    - **Solution:** Ensure you have installed the required packages
      ```bash
-     pip install -r requirements.txt
+     # Using uv (recommended)
+     uv pip install .
+     
+     # Alternative: Using regular pip
+     pip install .
      ```
 
 2. **Python Version**

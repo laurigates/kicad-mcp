@@ -10,8 +10,11 @@ This guide provides detailed information for developers who want to modify or ex
    python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    
-   # Install development dependencies
-   pip install -r requirements.txt
+   # Install development dependencies using uv (recommended)
+   uv pip install .[dev]
+   
+   # Alternative: Install with regular pip
+   pip install .[dev]
    ```
 
 2. **Run the server**:
