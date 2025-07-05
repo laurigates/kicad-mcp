@@ -5,6 +5,7 @@ import atexit
 import os
 import signal
 import logging
+import sys
 from typing import Callable
 from mcp.server.fastmcp import FastMCP
 
@@ -192,3 +193,86 @@ def create_server() -> FastMCP:
     
     logging.info(f"Server initialization complete")
     return mcp
+
+
+# Logger configuration
+def setup_logging() -> None:
+    """Set up logging configuration."""
+    logging.basicConfig(level=logging.INFO)
+
+setup_logging()
+logger = logging.getLogger(__name__)
+
+
+def setup_signal_handlers() -> None:
+    """Set up signal handlers for graceful shutdown (test-compatible alias)."""
+    def signal_handler(signum, frame):
+        logger.info(f"Received shutdown signal {signum}")
+        cleanup_handler()
+        sys.exit(0)
+    
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+
+
+def cleanup_handler() -> None:
+    """Clean up resources on shutdown (test-compatible alias)."""
+    logger.info("Starting server cleanup")
+    try:
+        cleanup_temp_dirs()
+        run_cleanup_handlers()
+    except Exception as e:
+        logger.error(f"Error during cleanup: {e}")
+
+
+def cleanup_temp_dirs() -> None:
+    """Clean up temporary directories."""
+    try:
+        import shutil
+        from kicad_mcp.utils.temp_dir_manager import get_temp_dirs
+        
+        temp_dirs = get_temp_dirs()
+        logger.info(f"Cleaning up {len(temp_dirs)} temporary directories")
+        
+        for temp_dir in temp_dirs:
+            try:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+                    logger.info(f"Removed temporary directory: {temp_dir}")
+            except Exception as e:
+                logger.error(f"Error cleaning up temporary directory {temp_dir}: {str(e)}")
+    except ImportError:
+        # temp_dir_manager may not be available in all contexts
+        logger.info("temp_dir_manager not available, skipping temp directory cleanup")
+
+
+async def main() -> None:
+    """Main server entry point (test-compatible)."""
+    try:
+        logger.info("Starting KiCad MCP server")
+        setup_signal_handlers()
+        
+        # Register all tool modules as expected by tests
+        from kicad_mcp.tools.project_tools import register_project_tools
+        from kicad_mcp.tools.netlist_tools import register_netlist_tools  
+        from kicad_mcp.tools.export_tools import register_export_tools
+        from kicad_mcp.tools.drc_tools import register_drc_tools
+        from kicad_mcp.tools.bom_tools import register_bom_tools
+        from kicad_mcp.tools.pattern_tools import register_pattern_tools
+        from kicad_mcp.tools.analysis_tools import register_analysis_tools
+        from kicad_mcp.tools.circuit_tools import register_circuit_tools
+        
+        # Create and configure server
+        server = create_server()
+        global _server_instance
+        _server_instance = server
+        
+        # Start the server
+        await server.run()
+        
+    except KeyboardInterrupt:
+        logger.info("Received keyboard interrupt, graceful shutdown initiated")
+        cleanup_handler()
+    except Exception as e:
+        logger.error(f"Server startup error: {e}")
+        cleanup_handler()
