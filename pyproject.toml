@@ -70,6 +70,11 @@ performance = [
     "memory-profiler>=0.61.0",
     "py-spy>=0.3.0",
 ]
+visualization = [
+    "cairosvg>=2.7.0",     # SVG to PNG conversion
+    "Pillow>=10.0.0",      # Image processing
+    "playwright>=1.40.0",  # Browser automation (optional)
+]
 
 [project.urls]
 Homepage = "https://github.com/your-org/kicad-mcp"
