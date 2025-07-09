@@ -243,7 +243,7 @@ Place related components near each other and use consistent spacing:
 - R_INPUT: resistor 10kΩ at (30, 20)
 - C_INPUT: capacitor 100nF at (30, 30)
 
-# Output section  
+# Output section
 - R_OUTPUT: resistor 1kΩ at (70, 20)
 - LED_OUTPUT: led green at (70, 30)
 ```
@@ -281,7 +281,7 @@ The S-expression format generates native KiCad schematic files that can be opene
   (generator kicad-mcp)
   (uuid "12345678-1234-1234-1234-123456789abc")
   (paper "A4")
-  
+
   (symbol (lib_id "Device:R") (at 100 200 0) (unit 1)
     (property "Reference" "R1" (at 125.4 187.3 0))
     (property "Value" "220Ω" (at 125.4 212.7 0))

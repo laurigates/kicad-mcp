@@ -34,4 +34,3 @@ The KiCad MCP Server includes several specialized prompt templates for common Ki
 | `bom_export_help` | Assistance with exporting BOMs | You need help creating or customizing BOMs |
 | `component_sourcing` | Guidance for finding and sourcing components | You need to purchase components for your project |
 | `bom_comparison` | Compare BOMs between different design revisions | You want to understand changes between versions |
-

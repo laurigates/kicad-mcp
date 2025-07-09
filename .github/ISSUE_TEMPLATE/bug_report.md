@@ -18,9 +18,9 @@ assignees: ''
 
 ## Steps to Reproduce
 <!-- Detailed steps to reproduce the bug -->
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ## Expected Behavior
 <!-- What you expected to happen -->

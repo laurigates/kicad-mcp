@@ -9,10 +9,10 @@
       .title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; text-anchor: middle; }
     </style>
   </defs>
-  
+
   <!-- Background -->
   <rect width="400" height="300" fill="white" stroke="gray" stroke-width="1"/>
-  
+
   <!-- Grid -->
   <line x1="0" y1="0" x2="0" y2="300" stroke="lightgray" stroke-width="0.5"/>
   <line x1="20" y1="0" x2="20" y2="300" stroke="lightgray" stroke-width="0.5"/>

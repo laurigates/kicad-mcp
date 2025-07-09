@@ -21,7 +21,7 @@ Based on the KiCad source documentation, this project should handle:
 #### S-Expression Format (.kicad_sch, .kicad_pcb, .kicad_pro)
 - **Lexer/Parser**: KiCad uses generated lexers from `.keywords` files for parsing S-expressions
 - **Schematic Files**: Use `TSCHEMATIC_T` token types for schematic parsing
-- **PCB Files**: Use `PCB_KEYS_T` token types for PCB parsing  
+- **PCB Files**: Use `PCB_KEYS_T` token types for PCB parsing
 - **Netlist Files**: Use `NL_T` token types for netlist parsing
 
 #### File Types to Support
@@ -118,7 +118,7 @@ python -m pytest tests/unit/utils/test_component_layout.py -v
 ### Schematic I/O
 Based on KiCad source, schematic I/O supports:
 - **KiCad S-Expression**: Native format (`sch_io_kicad_sexpr`)
-- **Legacy Format**: Older KiCad format (`sch_io_kicad_legacy`)  
+- **Legacy Format**: Older KiCad format (`sch_io_kicad_legacy`)
 - **Third-Party Formats**: Eagle, Altium, Cadstar, LTSpice, EasyEDA
 
 ### Netlist Processing
@@ -164,7 +164,7 @@ KiCad S-expressions follow Lisp-like syntax:
 
 ### Key Token Types
 - `TSCHEMATIC_T` - Schematic file tokens
-- `PCB_KEYS_T` - PCB file tokens  
+- `PCB_KEYS_T` - PCB file tokens
 - `NL_T` - Netlist tokens
 - `DRCRULE_T` - Design rule check tokens
 

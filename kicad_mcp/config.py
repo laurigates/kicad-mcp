@@ -1,8 +1,8 @@
 """
 Configuration settings for the KiCad MCP server.
 """
-import os
 
+import os
 import platform
 
 # Determine operating system
@@ -39,7 +39,7 @@ DEFAULT_PROJECT_LOCATIONS = [
     "~/Electronics",
     "~/Projects/Electronics",
     "~/Projects/PCB",
-    "~/Projects/KiCad"
+    "~/Projects/KiCad",
 ]
 
 for location in DEFAULT_PROJECT_LOCATIONS:
@@ -49,7 +49,9 @@ for location in DEFAULT_PROJECT_LOCATIONS:
 
 # Base path to KiCad's Python framework
 if system == "Darwin":  # macOS
-    KICAD_PYTHON_BASE = os.path.join(KICAD_APP_PATH, "Contents/Frameworks/Python.framework/Versions")
+    KICAD_PYTHON_BASE = os.path.join(
+        KICAD_APP_PATH, "Contents/Frameworks/Python.framework/Versions"
+    )
 else:
     KICAD_PYTHON_BASE = ""  # Will be determined dynamically in python_path.py
 
@@ -102,7 +104,7 @@ COMMON_LIBRARIES = {
         "conn_2pin": {"library": "Connector", "symbol": "Conn_01x02_Male"},
         "conn_4pin": {"library": "Connector_Generic", "symbol": "Conn_01x04"},
         "conn_8pin": {"library": "Connector_Generic", "symbol": "Conn_01x08"},
-    }
+    },
 }
 
 # Default footprint suggestions
@@ -110,19 +112,13 @@ DEFAULT_FOOTPRINTS = {
     "R": [
         "Resistor_SMD:R_0805_2012Metric",
         "Resistor_SMD:R_0603_1608Metric",
-        "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
+        "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal",
     ],
     "C": [
         "Capacitor_SMD:C_0805_2012Metric",
-        "Capacitor_SMD:C_0603_1608Metric", 
-        "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm"
+        "Capacitor_SMD:C_0603_1608Metric",
+        "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm",
     ],
-    "LED": [
-        "LED_SMD:LED_0805_2012Metric",
-        "LED_THT:LED_D5.0mm"
-    ],
-    "D": [
-        "Diode_SMD:D_SOD-123",
-        "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal"
-    ]
+    "LED": ["LED_SMD:LED_0805_2012Metric", "LED_THT:LED_D5.0mm"],
+    "D": ["Diode_SMD:D_SOD-123", "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal"],
 }

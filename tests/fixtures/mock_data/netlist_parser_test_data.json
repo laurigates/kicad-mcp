@@ -3,7 +3,7 @@
     "components": [
       {
         "lib_id": "MCU_Espressif:ESP32-WROOM-32",
-        "reference": "U1", 
+        "reference": "U1",
         "value": "ESP32-WROOM-32",
         "uuid": "component-uuid-1",
         "position": {"x": 1000, "y": 1000, "angle": 0},
@@ -13,7 +13,7 @@
       {
         "lib_id": "power:VCC",
         "reference": "#PWR01",
-        "value": "VCC", 
+        "value": "VCC",
         "uuid": "power-uuid-1",
         "position": {"x": 500, "y": 300, "angle": 0},
         "properties": {"footprint": "", "datasheet": ""},
@@ -34,7 +34,7 @@
           {"component": "#PWR01", "pin": "1"},
           {"component": "U1", "pin": "2"}
         ]
-      } 
+      }
     ]
   },
   "malformed_json_schematic": {
@@ -59,11 +59,11 @@
         "U1": {
           "lib_id": "MCU_Espressif:ESP32-WROOM-32",
           "reference": "U1",
-          "value": "ESP32-WROOM-32"  
+          "value": "ESP32-WROOM-32"
         },
         "#PWR01": {
           "lib_id": "power:VCC",
-          "reference": "#PWR01", 
+          "reference": "#PWR01",
           "value": "VCC"
         }
       },
