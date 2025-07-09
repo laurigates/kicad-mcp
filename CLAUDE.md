@@ -21,7 +21,7 @@ Based on the KiCad source documentation, this project should handle:
 #### S-Expression Format (.kicad_sch, .kicad_pcb, .kicad_pro)
 - **Lexer/Parser**: KiCad uses generated lexers from `.keywords` files for parsing S-expressions
 - **Schematic Files**: Use `TSCHEMATIC_T` token types for schematic parsing
-- **PCB Files**: Use `PCB_KEYS_T` token types for PCB parsing  
+- **PCB Files**: Use `PCB_KEYS_T` token types for PCB parsing
 - **Netlist Files**: Use `NL_T` token types for netlist parsing
 
 #### File Types to Support
@@ -69,18 +69,56 @@ Based on the KiCad source documentation, this project should handle:
 - `tests/` - Comprehensive test suite
 
 ### Testing Strategy
+
+#### Test-Driven Development (TDD) - MANDATORY
+**ALL new features and bug fixes MUST follow TDD principles:**
+
+1. **RED Phase**: Write a failing test that describes the desired behavior
+2. **GREEN Phase**: Write minimal code to make the test pass
+3. **REFACTOR Phase**: Clean up code while keeping tests green
+
+**TDD Implementation Rules:**
+- Write tests BEFORE implementing functionality
+- Each test should focus on a single behavior
+- Tests must be automated and repeatable
+- All tests must pass before code is committed
+- Coverage should be comprehensive but not excessive
+
+**Test Categories:**
 - **Unit Tests**: Individual function and class testing
 - **Integration Tests**: End-to-end workflow testing
 - **Fixtures**: Sample KiCad files for testing
 - **Performance Tests**: Large project handling
 - **Format Compatibility**: Ensure generated files work with KiCad
 
+**Test Commands:**
+```bash
+# Run all tests
+python -m pytest tests/ -v
+
+# Run specific test categories
+python -m pytest tests/unit/ -v           # Unit tests only
+python -m pytest tests/integration/ -v   # Integration tests only
+
+# Run with coverage
+python -m pytest tests/ --cov=kicad_mcp --cov-report=html
+
+# Run tests for specific module
+python -m pytest tests/unit/utils/test_component_layout.py -v
+```
+
+**Test Structure:**
+- `tests/unit/` - Unit tests for individual components
+- `tests/integration/` - Integration tests for complete workflows
+- `tests/fixtures/` - Sample KiCad files and test data
+- `tests/conftest.py` - Shared test configuration and fixtures
+
 ## KiCad Integration Details
 
 ### Schematic I/O
 Based on KiCad source, schematic I/O supports:
 - **KiCad S-Expression**: Native format (`sch_io_kicad_sexpr`)
-- **Legacy Format**: Older KiCad format (`sch_io_kicad_legacy`)  
+- **Legacy Format**: Older KiCad format (`sch_io_kicad_legacy`)
 - **Third-Party Formats**: Eagle, Altium, Cadstar, LTSpice, EasyEDA
 
 ### Netlist Processing
@@ -126,7 +164,7 @@ KiCad S-expressions follow Lisp-like syntax:
 
 ### Key Token Types
 - `TSCHEMATIC_T` - Schematic file tokens
-- `PCB_KEYS_T` - PCB file tokens  
+- `PCB_KEYS_T` - PCB file tokens
 - `NL_T` - Netlist tokens
 - `DRCRULE_T` - Design rule check tokens
 

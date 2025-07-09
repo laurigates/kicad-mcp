@@ -9,10 +9,10 @@ This guide provides detailed information for developers who want to modify or ex
    # Create and activate a virtual environment
    python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
-   
+
    # Install development dependencies using uv (recommended)
    uv pip install .[dev]
-   
+
    # Alternative: Install with regular pip
    pip install .[dev]
    ```
@@ -79,14 +79,14 @@ from mcp.server.fastmcp import FastMCP
 
 def register_my_resources(mcp: FastMCP) -> None:
     """Register my custom resources with the MCP server."""
-    
+
     @mcp.resource("kicad://my-resource/{parameter}")
     def my_custom_resource(parameter: str) -> str:
         """Description of what this resource provides.
-        
+
         Args:
             parameter: Description of parameter
-            
+
         Returns:
             Formatted data for the LLM
         """
@@ -117,28 +117,28 @@ from mcp.server.fastmcp import FastMCP, Context
 
 def register_my_tools(mcp: FastMCP) -> None:
     """Register my custom tools with the MCP server."""
-    
+
     @mcp.tool()
     async def my_custom_tool(parameter: str, ctx: Context) -> Dict[str, Any]:
         """Description of what this tool does.
-        
+
         Args:
             parameter: Description of parameter
             ctx: MCP context for progress reporting
-            
+
         Returns:
             Dictionary with tool results
         """
         # Report progress to the user
         await ctx.report_progress(10, 100)
         ctx.info(f"Starting operation on {parameter}")
-        
+
         # Implementation goes here
-        
+
         # Complete progress
         await ctx.report_progress(100, 100)
         ctx.info("Operation complete")
-        
+
         return {
             "success": True,
             "message": "Operation completed successfully",
@@ -168,23 +168,23 @@ from mcp.server.fastmcp import FastMCP
 
 def register_my_prompts(mcp: FastMCP) -> None:
     """Register my custom prompts with the MCP server."""
-    
+
     @mcp.prompt()
     def my_custom_prompt() -> str:
         """Description of what this prompt is for."""
         prompt = """
         I need help with [specific task] in KiCad. Please assist me with:
-        
+
         1. [First aspect]
         2. [Second aspect]
         3. [Third aspect]
-        
+
         My KiCad project is located at:
         [Enter the full path to your .kicad_pro file here]
-        
+
         [Additional contextual information or instructions]
         """
-        
+
         return prompt
 ```
 
@@ -211,7 +211,7 @@ def my_tool(parameter: str, ctx: Context) -> Dict[str, Any]:
     """Example tool using lifespan context."""
     # Access the typed context
     app_context: KiCadAppContext = ctx.request_context.lifespan_context
-    
+
     # Check if KiCad modules are available
     if app_context.kicad_modules_available:
         # Use KiCad Python modules
@@ -219,18 +219,18 @@ def my_tool(parameter: str, ctx: Context) -> Dict[str, Any]:
     else:
         # Fall back to alternative method
         pass
-    
+
     # Use the cache to store expensive results
     cache_key = f"my_operation_{parameter}"
     if cache_key in app_context.cache:
         return app_context.cache[cache_key]
-    
+
     # Perform operation
     result = {}
-    
+
     # Cache the result
     app_context.cache[cache_key] = result
-    
+
     return result
 ```
 

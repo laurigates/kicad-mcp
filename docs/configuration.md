@@ -46,13 +46,13 @@ The recommended way to configure the server is by creating a `.env` file in the 
 3. Add your configuration:
    ```
    # KiCad MCP Server Configuration
-   
+
    # KiCad User Directory (where KiCad stores project files)
    KICAD_USER_DIR=~/Documents/KiCad
-   
+
    # Additional directories to search for KiCad projects (comma-separated)
    KICAD_SEARCH_PATHS=~/pcb,~/Electronics,~/Projects/KiCad
-   
+
    # KiCad application path (needed for opening projects and command-line tools)
    # macOS:
    KICAD_APP_PATH=/Applications/KiCad/KiCad.app

@@ -12,7 +12,7 @@
     (company "")
     (comment 1 "ESP32 development board with power management and LED indicator")
   )
-  
+
   (layers
     (0 "F.Cu" signal)
     (31 "B.Cu" signal)
@@ -35,7 +35,7 @@
     (48 "B.Fab" user)
     (49 "F.Fab" user)
   )
-  
+
   (setup
     (stackup
       (layer "F.SilkS"
@@ -114,9 +114,9 @@
       (outputdirectory "")
     )
   )
-  
+
   (net 0 "")
-  
+
   (gr_rect
     (start 20 20)
     (end 180 130)

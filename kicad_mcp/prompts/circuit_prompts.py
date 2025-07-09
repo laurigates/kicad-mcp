@@ -1,16 +1,17 @@
 """
 Prompt templates for circuit creation in KiCad.
 """
+
 from mcp.server.fastmcp import FastMCP
 
 
 def register_circuit_prompts(mcp: FastMCP) -> None:
     """Register circuit creation prompt templates with the MCP server.
-    
+
     Args:
         mcp: The FastMCP server instance
     """
-    
+
     @mcp.prompt()
     def create_basic_circuit() -> str:
         """Prompt for creating a basic circuit from scratch."""
@@ -171,7 +172,7 @@ def register_circuit_prompts(mcp: FastMCP) -> None:
 
         Existing project:
         - Project path: [Enter path to .kicad_pro file]
-        
+
         Components to add:
         - Component list: [Describe what components you want to add]
         - Connection requirements: [How should they connect to existing circuit]

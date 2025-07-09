@@ -140,22 +140,22 @@ The KiCad MCP Server provides several key features, each with detailed documenta
 
 - **Project Management**: List, examine, and open KiCad projects
   - *Example:* "Show me all my recent KiCad projects" → Lists all projects sorted by modification date
-  
+
 - **PCB Design Analysis**: Get insights about your PCB designs and schematics
   - *Example:* "Analyze the component density of my temperature sensor board" → Provides component spacing analysis
-  
+
 - **Netlist Extraction**: Extract and analyze component connections from schematics
   - *Example:* "What components are connected to the MCU in my Arduino shield?" → Shows all connections to the microcontroller
-  
+
 - **BOM Management**: Analyze and export Bills of Materials
   - *Example:* "Generate a BOM for my smart watch project" → Creates a detailed bill of materials
-  
+
   - **Design Rule Checking**: Run DRC checks using the KiCad CLI and track your progress over time
   - *Example:* "Run DRC on my power supply board and compare to last week" → Shows progress in fixing violations
 
 - **PCB Visualization**: Generate visual representations of your PCB layouts
   - *Example:* "Show me a thumbnail of my audio amplifier PCB" → Displays a visual render of the board
-  
+
 - **Circuit Pattern Recognition**: Automatically identify common circuit patterns in your schematics
   - *Example:* "What power supply topologies am I using in my IoT device?" → Identifies buck, boost, or linear regulators
 
@@ -212,6 +212,44 @@ The KiCad MCP Server can be configured using environment variables or a `.env` f
 See [Configuration Guide](docs/configuration.md) for more details.
 
 ## Development Guide
+
+### Test-Driven Development (TDD)
+
+This project follows **strict Test-Driven Development** practices:
+
+#### TDD Workflow (MANDATORY)
+1. **RED**: Write a failing test that describes the desired behavior
+2. **GREEN**: Write minimal code to make the test pass
+3. **REFACTOR**: Clean up code while keeping tests green
+
+#### Running Tests
+```bash
+# Run all tests
+python -m pytest tests/ -v
+
+# Run specific test categories
+python -m pytest tests/unit/ -v           # Unit tests only
+python -m pytest tests/integration/ -v   # Integration tests only
+
+# Run with coverage reporting
+python -m pytest tests/ --cov=kicad_mcp --cov-report=html
+
+# Run tests for specific module
+python -m pytest tests/unit/utils/test_component_layout.py -v
+```
+
+#### Test Structure
+- `tests/unit/` - Unit tests for individual components
+- `tests/integration/` - Integration tests for complete workflows
+- `tests/fixtures/` - Sample KiCad files and test data
+- `tests/conftest.py` - Shared test configuration and fixtures
+
+#### TDD Requirements
+- **Write tests BEFORE implementing functionality**
+- All tests must pass before code is committed
+- Each test should focus on a single behavior
+- Tests must be automated and repeatable
+- Coverage should be comprehensive but focused
 
 ### Project Structure
 
@@ -270,7 +308,7 @@ If you encounter issues:
 
 See [Troubleshooting Guide](docs/troubleshooting.md) for more details.
 
-If you're still not able to troubleshoot, please open a Github issue. 
+If you're still not able to troubleshoot, please open a Github issue.
 
 ## Contributing
 
