@@ -129,7 +129,7 @@ mcu_patterns = {
     # Existing patterns...
     "AVR": r"ATMEGA\d+|ATTINY\d+|AT90\w+",
     "STM32": r"STM32\w+",
-    
+
     # Add your new pattern here
     "Renesas": r"R[A-Z]\d+|RL78|RX\d+",
 }

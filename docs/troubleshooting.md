@@ -18,7 +18,7 @@ This guide helps you troubleshoot common issues with the KiCad MCP Server.
      ```bash
      # Using uv (recommended)
      uv pip install .
-     
+
      # Alternative: Using regular pip
      pip install .
      ```
@@ -51,17 +51,17 @@ This guide helps you troubleshoot common issues with the KiCad MCP Server.
 1. **Configuration File Issues**
    - **Problem:** Incorrect or missing configuration
    - **Solution:** Check your client configuration file:
-     
+
      For Claude Desktop (macOS):
      ```bash
      cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
      ```
-     
+
      For Claude Desktop (Windows):
      ```bash
      type %APPDATA%\Claude\claude_desktop_config.json
      ```
-     
+
      Ensure it contains the correct server configuration:
      ```json
      {
@@ -79,12 +79,12 @@ This guide helps you troubleshoot common issues with the KiCad MCP Server.
 2. **Working Directory Issues**
    - **Problem:** The server can't find files due to working directory issues
    - **Solution:** Always use absolute paths in your configuration
-     
+
      Replace:
      ```json
      "args": ["main.py"]
      ```
-     
+
      With:
      ```json
      "args": ["/absolute/path/to/main.py"]
