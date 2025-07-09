@@ -278,3 +278,4 @@ class TestComponentPinMapper:
 
         assert len(self.mapper.component_pins) == 0
         assert len(self.mapper.pin_connections) == 0
+

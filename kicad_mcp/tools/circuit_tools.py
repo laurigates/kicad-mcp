@@ -6,7 +6,7 @@ import json
 import os
 import re
 import shutil
-from typing import Any
+from typing import Any, Dict, Optional, List
 import uuid
 
 from fastmcp import Context, FastMCP
@@ -15,8 +15,6 @@ from kicad_mcp.config import KICAD_APP_PATH, system
 from kicad_mcp.utils.component_layout import ComponentLayoutManager
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
-
-# Standalone functions for circuit operations
 
 
 def _get_component_type_from_symbol(symbol_library: str, symbol_name: str) -> str:
