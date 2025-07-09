@@ -250,7 +250,6 @@ python -m pytest tests/unit/utils/test_component_layout.py -v
 - Each test should focus on a single behavior
 - Tests must be automated and repeatable
 - Coverage should be comprehensive but focused
-
 ### Project Structure
 
 The KiCad MCP Server is organized into a modular structure:
