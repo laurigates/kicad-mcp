@@ -10,14 +10,42 @@ import tempfile
 import asyncio
 import uuid
 from typing import Dict, Any, Optional, List
-from mcp.server.fastmcp import FastMCP, Context
+from fastmcp import FastMCP, Context
 
 from kicad_mcp.config import KICAD_APP_PATH, KICAD_EXTENSIONS, system
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
+from kicad_mcp.utils.component_layout import ComponentLayoutManager
 
 
 # Standalone functions for circuit operations
+
+def _get_component_type_from_symbol(symbol_library: str, symbol_name: str) -> str:
+    """Determine component type from symbol library and name."""
+    library = symbol_library.lower()
+    name = symbol_name.lower()
+    
+    # Map symbol names to component types
+    if name in ['r', 'resistor']:
+        return 'resistor'
+    elif name in ['c', 'capacitor']:
+        return 'capacitor'
+    elif name in ['l', 'inductor']:
+        return 'inductor'
+    elif name in ['led']:
+        return 'led'
+    elif name in ['d', 'diode']:
+        return 'diode'
+    elif 'transistor' in name or 'npn' in name or 'pnp' in name:
+        return 'transistor'
+    elif library == 'switch':
+        return 'switch'
+    elif library == 'connector':
+        return 'connector'
+    elif 'ic' in name or 'mcu' in name or 'esp32' in name or library in ['mcu', 'microcontroller', 'mcu_espressif']:
+        return 'ic'
+    else:
+        return 'default'
 
 async def create_new_project(
         project_name: str,
@@ -183,7 +211,7 @@ async def create_new_project(
 
             # Create basic PCB file
             pcb_data = {
-                "version": 20230121,
+                "version": 20240618,
                 "generator": "kicad-mcp",
                 "general": {
                     "thickness": 1.6
@@ -336,6 +364,22 @@ async def create_new_project(
                 json.dump(pcb_data, f, indent=2)
 
             if ctx:
+                await ctx.report_progress(90, 100)
+                await ctx.info("Generating visual feedback...")
+                
+                # Generate visual feedback for the created schematic
+                try:
+                    from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
+                    screenshot_result = await capture_schematic_screenshot(project_path, ctx)
+                    if screenshot_result:
+                        await ctx.info("✓ Schematic screenshot captured successfully")
+                    else:
+                        await ctx.info("⚠ Screenshot capture failed - proceeding without visual feedback")
+                except ImportError:
+                    await ctx.info("⚠ Visualization tools not available - proceeding without visual feedback")
+                except Exception as e:
+                    await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
+                
                 await ctx.report_progress(100, 100)
                 await ctx.info(f"Successfully created project at {project_file}")
 
@@ -417,9 +461,28 @@ async def add_component(
             # Create component UUID
             component_uuid = str(uuid.uuid4())
 
+            # Validate and fix component position using layout manager
+            layout_manager = ComponentLayoutManager()
+            
+            # Determine component type from symbol information
+            component_type = _get_component_type_from_symbol(symbol_library, symbol_name)
+            
+            # Validate position is within schematic boundaries
+            if layout_manager.validate_position(x_position, y_position, component_type):
+                final_x, final_y = layout_manager.snap_to_grid(x_position, y_position)
+                if ctx:
+                    await ctx.info(f"Component position validated and snapped to grid: ({final_x}, {final_y})")
+            else:
+                # Position is outside bounds, find a valid position
+                final_x, final_y = layout_manager.find_valid_position(
+                    component_reference, component_type, x_position, y_position
+                )
+                if ctx:
+                    await ctx.info(f"Component position corrected to fit within schematic bounds: ({final_x}, {final_y})")
+
             # Convert positions to KiCad internal units (0.1mm)
-            x_pos_internal = int(x_position * 10)
-            y_pos_internal = int(y_position * 10)
+            x_pos_internal = int(final_x * 10)
+            y_pos_internal = int(final_y * 10)
 
             if ctx:
                 await ctx.report_progress(50, 100)
@@ -491,6 +554,22 @@ async def add_component(
                 json.dump(schematic_data, f, indent=2)
 
             if ctx:
+                await ctx.report_progress(90, 100)
+                await ctx.info("Generating visual feedback for updated schematic...")
+                
+                # Generate visual feedback after adding component
+                try:
+                    from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
+                    screenshot_result = await capture_schematic_screenshot(project_path, ctx)
+                    if screenshot_result:
+                        await ctx.info("✓ Updated schematic screenshot captured")
+                    else:
+                        await ctx.info("⚠ Screenshot capture failed - proceeding without visual feedback")
+                except ImportError:
+                    await ctx.info("⚠ Visualization tools not available")
+                except Exception as e:
+                    await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
+                
                 await ctx.report_progress(100, 100)
                 await ctx.info(f"Successfully added component {component_reference}")
 
@@ -567,6 +646,27 @@ async def create_wire_connection(
             
             schematic_data = read_result["data"]
 
+            # Validate wire positions using layout manager
+            layout_manager = ComponentLayoutManager()
+            
+            # Validate start position
+            if not layout_manager.validate_position(start_x, start_y, 'default'):
+                start_x, start_y = layout_manager.snap_to_grid(
+                    max(layout_manager.bounds.min_x, min(start_x, layout_manager.bounds.max_x)),
+                    max(layout_manager.bounds.min_y, min(start_y, layout_manager.bounds.max_y))
+                )
+                if ctx:
+                    await ctx.info(f"Wire start position corrected to ({start_x}, {start_y})")
+            
+            # Validate end position
+            if not layout_manager.validate_position(end_x, end_y, 'default'):
+                end_x, end_y = layout_manager.snap_to_grid(
+                    max(layout_manager.bounds.min_x, min(end_x, layout_manager.bounds.max_x)),
+                    max(layout_manager.bounds.min_y, min(end_y, layout_manager.bounds.max_y))
+                )
+                if ctx:
+                    await ctx.info(f"Wire end position corrected to ({end_x}, {end_y})")
+
             # Convert positions to KiCad internal units
             start_x_internal = int(start_x * 10)
             start_y_internal = int(start_y * 10)
@@ -603,6 +703,22 @@ async def create_wire_connection(
                 json.dump(schematic_data, f, indent=2)
 
             if ctx:
+                await ctx.report_progress(90, 100)
+                await ctx.info("Generating visual feedback for wire connection...")
+                
+                # Generate visual feedback after adding wire
+                try:
+                    from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
+                    screenshot_result = await capture_schematic_screenshot(project_path, ctx)
+                    if screenshot_result:
+                        await ctx.info("✓ Wire connection screenshot captured")
+                    else:
+                        await ctx.info("⚠ Screenshot capture failed - proceeding without visual feedback")
+                except ImportError:
+                    await ctx.info("⚠ Visualization tools not available")
+                except Exception as e:
+                    await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
+                
                 await ctx.report_progress(100, 100)
                 await ctx.info("Successfully created wire connection")
 
@@ -764,6 +880,22 @@ async def add_power_symbol(
                 json.dump(schematic_data, f, indent=2)
 
             if ctx:
+                await ctx.report_progress(90, 100)
+                await ctx.info("Generating visual feedback for power symbol...")
+                
+                # Generate visual feedback after adding power symbol
+                try:
+                    from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
+                    screenshot_result = await capture_schematic_screenshot(project_path, ctx)
+                    if screenshot_result:
+                        await ctx.info("✓ Power symbol screenshot captured")
+                    else:
+                        await ctx.info("⚠ Screenshot capture failed - proceeding without visual feedback")
+                except ImportError:
+                    await ctx.info("⚠ Visualization tools not available")
+                except Exception as e:
+                    await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
+                
                 await ctx.report_progress(100, 100)
                 await ctx.info(f"Successfully added power symbol {power_ref}")
 

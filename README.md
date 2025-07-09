@@ -213,6 +213,44 @@ See [Configuration Guide](docs/configuration.md) for more details.
 
 ## Development Guide
 
+### Test-Driven Development (TDD)
+
+This project follows **strict Test-Driven Development** practices:
+
+#### TDD Workflow (MANDATORY)
+1. **RED**: Write a failing test that describes the desired behavior
+2. **GREEN**: Write minimal code to make the test pass  
+3. **REFACTOR**: Clean up code while keeping tests green
+
+#### Running Tests
+```bash
+# Run all tests
+python -m pytest tests/ -v
+
+# Run specific test categories
+python -m pytest tests/unit/ -v           # Unit tests only
+python -m pytest tests/integration/ -v   # Integration tests only
+
+# Run with coverage reporting
+python -m pytest tests/ --cov=kicad_mcp --cov-report=html
+
+# Run tests for specific module
+python -m pytest tests/unit/utils/test_component_layout.py -v
+```
+
+#### Test Structure
+- `tests/unit/` - Unit tests for individual components
+- `tests/integration/` - Integration tests for complete workflows
+- `tests/fixtures/` - Sample KiCad files and test data
+- `tests/conftest.py` - Shared test configuration and fixtures
+
+#### TDD Requirements
+- **Write tests BEFORE implementing functionality**
+- All tests must pass before code is committed
+- Each test should focus on a single behavior
+- Tests must be automated and repeatable
+- Coverage should be comprehensive but focused
+
 ### Project Structure
 
 The KiCad MCP Server is organized into a modular structure:

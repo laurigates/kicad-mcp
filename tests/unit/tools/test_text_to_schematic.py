@@ -221,7 +221,7 @@ class TestTextToSchematicTools:
             json.dump(project_data, f)
         
         schematic_data = {
-            "version": 20230121,
+            "version": 20240618,
             "generator": "kicad-mcp-test",
             "symbol": [],
             "wire": []

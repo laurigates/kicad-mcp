@@ -40,7 +40,7 @@ async def create_sample_project(project_dir: str) -> str:
     
     # Create basic schematic file
     schematic_data = {
-        "version": 20230121,
+        "version": 20240618,
         "generator": "kicad-mcp-example",
         "uuid": "demo-uuid-1234",
         "paper": "A4",

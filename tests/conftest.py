@@ -75,7 +75,7 @@ def sample_json_schematic() -> Dict[str, Any]:
 def sample_sexpr_schematic() -> str:
     """Sample S-expression format schematic content for testing."""
     return """(kicad_sch 
-    (version 20230121) 
+    (version 20240618) 
     (generator eeschema)
     (uuid "12345678-1234-1234-1234-123456789abc")
     (paper "A4")
@@ -265,7 +265,7 @@ def sample_kicad_project(temp_dir: Path) -> Dict[str, Any]:
     
     # Create empty .kicad_sch file
     sch_file = project_dir / "test_project.kicad_sch"
-    sch_file.write_text('(kicad_sch (version 20230121) (generator eeschema))')
+    sch_file.write_text('(kicad_sch (version 20240618) (generator eeschema))')
     
     # Create empty .kicad_pcb file
     pcb_file = project_dir / "test_project.kicad_pcb"

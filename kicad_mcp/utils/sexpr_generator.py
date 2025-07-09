@@ -7,6 +7,9 @@ import uuid
 from typing import Dict, Any, List, Tuple, Optional
 from dataclasses import dataclass
 
+from kicad_mcp.utils.component_layout import ComponentLayoutManager, LayoutStrategy
+from kicad_mcp.utils.pin_mapper import ComponentPinMapper
+
 
 class SExpressionGenerator:
     """Generator for KiCad S-expression format schematics."""
@@ -14,6 +17,8 @@ class SExpressionGenerator:
     def __init__(self):
         self.symbol_libraries = {}
         self.component_uuid_map = {}
+        self.layout_manager = ComponentLayoutManager()
+        self.pin_mapper = ComponentPinMapper()
     
     def generate_schematic(self, circuit_name: str, components: List[Dict], 
                           power_symbols: List[Dict], connections: List[Dict]) -> str:
@@ -28,13 +33,24 @@ class SExpressionGenerator:
         Returns:
             S-expression formatted schematic as string
         """
+        # Clear previous layout and pin mappings
+        self.layout_manager.clear_layout()
+        self.pin_mapper.clear_mappings()
+        
+        # Validate and fix component positions using layout manager
+        validated_components = self._validate_component_positions(components)
+        validated_power_symbols = self._validate_power_positions(power_symbols)
+        
+        # Add components to pin mapper for accurate pin tracking
+        self._map_component_pins(validated_components, validated_power_symbols)
+        
         # Generate main schematic UUID
         main_uuid = str(uuid.uuid4())
         
         # Start building the S-expression
         sexpr_lines = [
             "(kicad_sch",
-            "  (version 20230121)",
+            "  (version 20240618)",
             "  (generator kicad-mcp)",
             f'  (uuid "{main_uuid}")',
             '  (paper "A4")',
@@ -49,19 +65,19 @@ class SExpressionGenerator:
         ]
         
         # Add symbol libraries
-        lib_symbols = self._generate_lib_symbols(components, power_symbols)
+        lib_symbols = self._generate_lib_symbols(validated_components, validated_power_symbols)
         if lib_symbols:
             sexpr_lines.extend(lib_symbols)
             sexpr_lines.append("")
         
         # Add components (symbols)
-        for component in components:
+        for component in validated_components:
             symbol_lines = self._generate_component_symbol(component)
             sexpr_lines.extend(symbol_lines)
             sexpr_lines.append("")
         
         # Add power symbols
-        for power_symbol in power_symbols:
+        for power_symbol in validated_power_symbols:
             symbol_lines = self._generate_power_symbol(power_symbol)
             sexpr_lines.extend(symbol_lines)
             sexpr_lines.append("")
@@ -331,6 +347,129 @@ class SExpressionGenerator:
             ')'
         ]
     
+    def _validate_component_positions(self, components: List[Dict]) -> List[Dict]:
+        """Validate and fix component positions using the layout manager."""
+        validated_components = []
+        
+        for component in components:
+            # Get component type for sizing
+            component_type = self._get_component_type(component)
+            
+            # Check if position is provided
+            if 'position' in component and component['position']:
+                x, y = component['position']
+                # Validate position is within bounds
+                if self.layout_manager.validate_position(x, y, component_type):
+                    # Position is valid, place component at exact location
+                    final_x, final_y = self.layout_manager.place_component(
+                        component['reference'], component_type, x, y
+                    )
+                else:
+                    # Position is invalid, find a valid one
+                    final_x, final_y = self.layout_manager.place_component(
+                        component['reference'], component_type
+                    )
+            else:
+                # No position provided, auto-place
+                final_x, final_y = self.layout_manager.place_component(
+                    component['reference'], component_type
+                )
+            
+            # Update component with validated position
+            validated_component = component.copy()
+            validated_component['position'] = (final_x, final_y)
+            validated_components.append(validated_component)
+        
+        return validated_components
+    
+    def _validate_power_positions(self, power_symbols: List[Dict]) -> List[Dict]:
+        """Validate and fix power symbol positions using the layout manager."""
+        validated_power_symbols = []
+        
+        for power_symbol in power_symbols:
+            # Power symbols use 'power' component type
+            component_type = 'power'
+            
+            # Check if position is provided
+            if 'position' in power_symbol and power_symbol['position']:
+                x, y = power_symbol['position']
+                # Validate position is within bounds
+                if self.layout_manager.validate_position(x, y, component_type):
+                    # Position is valid, place power symbol at exact location
+                    final_x, final_y = self.layout_manager.place_component(
+                        power_symbol['reference'], component_type, x, y
+                    )
+                else:
+                    # Position is invalid, find a valid one
+                    final_x, final_y = self.layout_manager.place_component(
+                        power_symbol['reference'], component_type
+                    )
+            else:
+                # No position provided, auto-place
+                final_x, final_y = self.layout_manager.place_component(
+                    power_symbol['reference'], component_type
+                )
+            
+            # Update power symbol with validated position
+            validated_power_symbol = power_symbol.copy()
+            validated_power_symbol['position'] = (final_x, final_y)
+            validated_power_symbols.append(validated_power_symbol)
+        
+        return validated_power_symbols
+    
+    def _get_component_type(self, component: Dict) -> str:
+        """Determine component type from component dictionary."""
+        # Check if component_type is explicitly provided
+        if 'component_type' in component:
+            return component['component_type']
+        
+        # Infer from symbol information
+        symbol_name = component.get('symbol_name', '').lower()
+        symbol_library = component.get('symbol_library', '').lower()
+        
+        # Map symbol names to component types
+        if symbol_name in ['r', 'resistor']:
+            return 'resistor'
+        elif symbol_name in ['c', 'capacitor']:
+            return 'capacitor'
+        elif symbol_name in ['l', 'inductor']:
+            return 'inductor'
+        elif symbol_name in ['led']:
+            return 'led'
+        elif symbol_name in ['d', 'diode']:
+            return 'diode'
+        elif 'transistor' in symbol_name:
+            return 'transistor'
+        elif symbol_library == 'switch':
+            return 'switch'
+        elif symbol_library == 'connector':
+            return 'connector'
+        elif 'ic' in symbol_name or 'mcu' in symbol_name:
+            return 'ic'
+        else:
+            return 'default'
+    
+    def _map_component_pins(self, components: List[Dict], power_symbols: List[Dict]):
+        """Map all components and power symbols to the pin mapper."""
+        # Map regular components
+        for component in components:
+            component_type = self._get_component_type(component)
+            self.pin_mapper.add_component(
+                component_ref=component['reference'],
+                component_type=component_type,
+                position=component['position'],
+                angle=0.0  # Default angle, could be extended later
+            )
+        
+        # Map power symbols
+        for power_symbol in power_symbols:
+            self.pin_mapper.add_component(
+                component_ref=power_symbol['reference'],
+                component_type='power',
+                position=power_symbol['position'],
+                angle=0.0
+            )
+    
     def _generate_component_symbol(self, component: Dict) -> List[str]:
         """Generate component symbol instance."""
         comp_uuid = str(uuid.uuid4())
@@ -389,20 +528,125 @@ class SExpressionGenerator:
         return lines
     
     def _generate_wire(self, connection: Dict) -> List[str]:
-        """Generate wire connection."""
-        wire_uuid = str(uuid.uuid4())
+        """Generate wire connection using pin-level routing."""
+        lines = []
         
-        # For now, generate simple point-to-point wires
-        # In a real implementation, you'd need to calculate actual pin positions
-        start_x = connection.get('start_x', 100) * 10
-        start_y = connection.get('start_y', 100) * 10
-        end_x = connection.get('end_x', 200) * 10
-        end_y = connection.get('end_y', 100) * 10
+        # Check if connection specifies components and pins
+        if ('start_component' in connection and 'end_component' in connection):
+            # Pin-level connection
+            start_component = connection['start_component']
+            start_pin = connection.get('start_pin', '1')
+            end_component = connection['end_component']
+            end_pin = connection.get('end_pin', '1')
+            
+            # Get pin connection points
+            start_point = self.pin_mapper.get_pin_connection_point(start_component, start_pin)
+            end_point = self.pin_mapper.get_pin_connection_point(end_component, end_pin)
+            
+            if start_point and end_point:
+                # Get the pins for routing calculation
+                start_pin_obj = self.pin_mapper.get_pin(start_component, start_pin)
+                end_pin_obj = self.pin_mapper.get_pin(end_component, end_pin)
+                
+                if start_pin_obj and end_pin_obj:
+                    # Calculate wire route using pin mapper
+                    route_points = self.pin_mapper.calculate_wire_route(start_pin_obj, end_pin_obj)
+                    
+                    # Generate wire segments for the route
+                    for i in range(len(route_points) - 1):
+                        wire_uuid = str(uuid.uuid4())
+                        start_x = int(route_points[i][0] * 10)
+                        start_y = int(route_points[i][1] * 10)
+                        end_x = int(route_points[i + 1][0] * 10)
+                        end_y = int(route_points[i + 1][1] * 10)
+                        
+                        lines.extend([
+                            f'  (wire (pts (xy {start_x} {start_y}) (xy {end_x} {end_y})) (stroke (width 0) (type default))',
+                            f'    (uuid "{wire_uuid}")',
+                            '  )'
+                        ])
+                    
+                    # Add connection tracking
+                    self.pin_mapper.add_connection(start_component, start_pin, end_component, end_pin)
+        else:
+            # Legacy coordinate-based connection
+            wire_uuid = str(uuid.uuid4())
+            start_x = connection.get('start_x', 100) * 10
+            start_y = connection.get('start_y', 100) * 10
+            end_x = connection.get('end_x', 200) * 10
+            end_y = connection.get('end_y', 100) * 10
+            
+            lines = [
+                f'  (wire (pts (xy {start_x} {start_y}) (xy {end_x} {end_y})) (stroke (width 0) (type default))',
+                f'    (uuid "{wire_uuid}")',
+                '  )'
+            ]
         
-        lines = [
-            f'  (wire (pts (xy {start_x} {start_y}) (xy {end_x} {end_y})) (stroke (width 0) (type default))',
-            f'    (uuid "{wire_uuid}")',
-            '  )'
-        ]
+        return lines
+    
+    def generate_advanced_wire_routing(self, net_connections: List[Dict]) -> List[str]:
+        """
+        Generate advanced wire routing for complex nets.
+        
+        Args:
+            net_connections: List of net connection dictionaries with multiple pins
+            
+        Returns:
+            List of S-expression lines for all wire segments
+        """
+        lines = []
+        
+        for net in net_connections:
+            net_name = net.get('name', 'unnamed_net')
+            net_pins = net.get('pins', [])
+            
+            if len(net_pins) < 2:
+                continue
+                
+            # Get ComponentPin objects for all pins in the net
+            component_pins = []
+            for pin_ref in net_pins:
+                if '.' in pin_ref:
+                    component_ref, pin_number = pin_ref.split('.', 1)
+                    pin_obj = self.pin_mapper.get_pin(component_ref, pin_number)
+                    if pin_obj:
+                        component_pins.append(pin_obj)
+            
+            if len(component_pins) < 2:
+                continue
+                
+            # Use bus routing for nets with multiple pins
+            if len(component_pins) > 2:
+                bus_routes = self.pin_mapper.calculate_bus_route(component_pins)
+                
+                for route in bus_routes:
+                    for i in range(len(route) - 1):
+                        wire_uuid = str(uuid.uuid4())
+                        start_x = int(route[i][0] * 10)
+                        start_y = int(route[i][1] * 10)
+                        end_x = int(route[i + 1][0] * 10)
+                        end_y = int(route[i + 1][1] * 10)
+                        
+                        lines.extend([
+                            f'  (wire (pts (xy {start_x} {start_y}) (xy {end_x} {end_y})) (stroke (width 0) (type default))',
+                            f'    (uuid "{wire_uuid}")',
+                            '  )'
+                        ])
+            else:
+                # Point-to-point routing for two pins
+                route_points = self.pin_mapper.calculate_wire_route(component_pins[0], component_pins[1])
+                
+                for i in range(len(route_points) - 1):
+                    wire_uuid = str(uuid.uuid4())
+                    start_x = int(route_points[i][0] * 10)
+                    start_y = int(route_points[i][1] * 10)
+                    end_x = int(route_points[i + 1][0] * 10)
+                    end_y = int(route_points[i + 1][1] * 10)
+                    
+                    lines.extend([
+                        f'  (wire (pts (xy {start_x} {start_y}) (xy {end_x} {end_y})) (stroke (width 0) (type default))',
+                        f'    (uuid "{wire_uuid}")',
+                        '  )'
+                    ])
         
         return lines
