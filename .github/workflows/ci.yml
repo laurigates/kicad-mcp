@@ -24,12 +24,8 @@ jobs:
         uv python install 3.12
         uv python pin 3.12
 
-    - name: Create virtual environment
-      run: uv venv
-
     - name: Install dependencies
-      run: |
-        uv pip install -e ".[dev]"
+      run: uv sync --extra dev
 
     - name: Lint with ruff
       run: uv run ruff check kicad_mcp/ tests/
@@ -63,12 +59,8 @@ jobs:
         uv python install ${{ matrix.python-version }}
         uv python pin ${{ matrix.python-version }}
 
-    - name: Create virtual environment
-      run: uv venv
-
     - name: Install dependencies
-      run: |
-        uv pip install -e ".[dev]"
+      run: uv sync --extra dev
 
     - name: Run tests
       run: uv run python -m pytest tests/ -v --cov=kicad_mcp --cov-report=xml
@@ -97,12 +89,8 @@ jobs:
         uv python install 3.12
         uv python pin 3.12
 
-    - name: Create virtual environment
-      run: uv venv
-
     - name: Install dependencies
-      run: |
-        uv pip install -e ".[dev,security]"
+      run: uv sync --extra dev
 
     - name: Run security scan
       run: uv run bandit -r kicad_mcp/
@@ -125,15 +113,8 @@ jobs:
         uv python install 3.12
         uv python pin 3.12
 
-    - name: Create virtual environment
-      run: uv venv
-
-    - name: Install build dependencies
-      run: |
-        uv pip install build
-
     - name: Build package
-      run: uv run python -m build
+      run: uv build
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
