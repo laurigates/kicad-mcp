@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "kicad-mcp"
@@ -46,7 +46,18 @@ dependencies = [
     "pyyaml>=6.0.0",
 ]
 
-[project.optional-dependencies]
+[project.urls]
+Homepage = "https://github.com/your-org/kicad-mcp"
+Documentation = "https://github.com/your-org/kicad-mcp/blob/main/README.md"
+Repository = "https://github.com/your-org/kicad-mcp"
+"Bug Tracker" = "https://github.com/your-org/kicad-mcp/issues"
+Changelog = "https://github.com/your-org/kicad-mcp/blob/main/CHANGELOG.md"
+
+[project.scripts]
+kicad-mcp = "kicad_mcp.server:main"
+
+# UV dependency groups (replaces project.optional-dependencies)
+[dependency-groups]
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.23.0",
@@ -76,21 +87,7 @@ visualization = [
     "playwright>=1.40.0",  # Browser automation (optional)
 ]
 
-[project.urls]
-Homepage = "https://github.com/your-org/kicad-mcp"
-Documentation = "https://github.com/your-org/kicad-mcp/blob/main/README.md"
-Repository = "https://github.com/your-org/kicad-mcp"
-"Bug Tracker" = "https://github.com/your-org/kicad-mcp/issues"
-Changelog = "https://github.com/your-org/kicad-mcp/blob/main/CHANGELOG.md"
-
-[project.scripts]
-kicad-mcp = "kicad_mcp.server:main"
-
-# Tool configurations
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["kicad_mcp*"]
-
+# Tool configurations remain the same
 [tool.ruff]
 target-version = "py310"
 line-length = 100
@@ -135,7 +132,6 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
-
 
 [tool.mypy]
 python_version = "3.10"
