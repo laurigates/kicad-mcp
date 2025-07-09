@@ -126,7 +126,7 @@ async def demo_visual_debugging():
     except Exception as e:
         print(f"   ❌ Error analyzing positioning: {e}")
 
-    # Show how to use this in development workflow
+    # Show how to use this in a development workflow
     print("\n🔧 Development Workflow Integration:")
     print("   1. Generate schematic with circuit_tools")
     print("   2. Capture screenshot with visualization_tools")
