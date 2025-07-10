@@ -201,4 +201,3 @@ class TestComponentLayoutManager:
         self.layout_manager.clear_layout()
 
         assert len(self.layout_manager.placed_components) == 0
-

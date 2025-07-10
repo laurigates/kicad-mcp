@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 import pytest
 
 from kicad_mcp.tools.circuit_tools import register_circuit_tools
@@ -66,7 +66,7 @@ class TestCircuitTools:
         description = "Test circuit for unit testing"
 
         # Import the actual function after registration
-        from mcp.server.fastmcp import FastMCP
+        from fastmcp import FastMCP
 
         from kicad_mcp.tools.circuit_tools import register_circuit_tools
 
@@ -114,7 +114,7 @@ class TestCircuitTools:
         # Create existing directory
         Path(project_path).mkdir()
 
-        from mcp.server.fastmcp import FastMCP
+        from fastmcp import FastMCP
 
         from kicad_mcp.tools.circuit_tools import register_circuit_tools
 
@@ -142,7 +142,7 @@ class TestCircuitTools:
         """Test adding an ESP32 component to a circuit."""
         project_path = sample_kicad_project["path"]
 
-        from mcp.server.fastmcp import FastMCP
+        from fastmcp import FastMCP
 
         from kicad_mcp.tools.circuit_tools import register_circuit_tools
 
@@ -192,7 +192,7 @@ class TestCircuitTools:
     @pytest.mark.asyncio
     async def test_add_component_invalid_project(self, mock_context):
         """Test error handling when adding component to invalid project."""
-        from mcp.server.fastmcp import FastMCP
+        from fastmcp import FastMCP
 
         from kicad_mcp.tools.circuit_tools import register_circuit_tools
 
@@ -224,7 +224,7 @@ class TestCircuitTools:
         """Test adding power symbols (VCC, GND, etc.) to circuit."""
         project_path = sample_kicad_project["path"]
 
-        from mcp.server.fastmcp import FastMCP
+        from fastmcp import FastMCP
 
         from kicad_mcp.tools.circuit_tools import register_circuit_tools
 
@@ -274,7 +274,7 @@ class TestCircuitTools:
         project_path = sample_kicad_project["path"]
 
         # First add some components to connect
-        from mcp.server.fastmcp import FastMCP
+        from fastmcp import FastMCP
 
         from kicad_mcp.tools.circuit_tools import register_circuit_tools
 
@@ -334,7 +334,7 @@ class TestCircuitTools:
         """Test circuit validation functionality."""
         project_path = sample_kicad_project["path"]
 
-        from mcp.server.fastmcp import FastMCP
+        from fastmcp import FastMCP
 
         from kicad_mcp.tools.circuit_tools import register_circuit_tools
 
@@ -356,7 +356,7 @@ class TestCircuitTools:
         """Test that components are positioned correctly."""
         project_path = sample_kicad_project["path"]
 
-        from mcp.server.fastmcp import FastMCP
+        from fastmcp import FastMCP
 
         from kicad_mcp.tools.circuit_tools import register_circuit_tools
 
@@ -403,7 +403,7 @@ class TestCircuitTools:
         """Test that component references are kept unique."""
         project_path = sample_kicad_project["path"]
 
-        from mcp.server.fastmcp import FastMCP
+        from fastmcp import FastMCP
 
         from kicad_mcp.tools.circuit_tools import register_circuit_tools
 
@@ -450,7 +450,7 @@ class TestCircuitTools:
         project_name = "complex_circuit"
         project_path = str(temp_dir / project_name)
 
-        from mcp.server.fastmcp import FastMCP
+        from fastmcp import FastMCP
 
         from kicad_mcp.tools.circuit_tools import register_circuit_tools
 

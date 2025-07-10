@@ -281,4 +281,3 @@ class TestCompleteWorkflow:
         assert sexpr.startswith("(kicad_sch")
         assert "(wire (pts" in sexpr
         assert "20240618" in sexpr
-

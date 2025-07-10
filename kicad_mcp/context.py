@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import logging  # Import logging
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 # Get PID for logging
 # _PID = os.getpid()

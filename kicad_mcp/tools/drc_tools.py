@@ -7,7 +7,7 @@ import os
 # import logging # <-- Remove if no other logging exists
 from typing import Any
 
-from mcp.server.fastmcp import Context, FastMCP
+from fastmcp import Context, FastMCP
 
 # Import implementations
 from kicad_mcp.tools.drc_impl.cli_drc import run_drc_via_cli

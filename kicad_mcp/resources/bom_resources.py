@@ -5,7 +5,7 @@ Bill of Materials (BOM) resources for KiCad projects.
 import json
 import os
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 import pandas as pd
 
 # Import the helper functions from bom_tools.py to avoid code duplication

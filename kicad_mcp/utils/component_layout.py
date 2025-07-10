@@ -512,4 +512,3 @@ class ComponentLayoutManager:
     def clear_layout(self):
         """Clear all placed components."""
         self.placed_components.clear()
-

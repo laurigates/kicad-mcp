@@ -50,6 +50,35 @@ Based on the KiCad source documentation, this project should handle:
 
 ## Development Guidelines
 
+### Development Environment Setup
+
+**CRITICAL: Always use the project's virtual environment and uv for package management**
+
+#### Required Environment Setup
+```bash
+# Always activate the virtual environment FIRST
+source .venv/bin/activate
+
+# Use uv for all Python package operations (NOT pip)
+uv pip install <package>
+uv pip install -e .
+uv pip list
+uv pip freeze
+
+# Install development dependencies
+uv pip install -e ".[dev]"
+
+# Verify you're in the correct environment
+which python  # Should show .venv/bin/python
+python -c "import fastmcp; print('FastMCP available')"
+```
+
+#### Common Issues and Solutions
+- **ImportError for fastmcp**: Make sure virtual environment is activated with `source .venv/bin/activate`
+- **Module not found errors**: Use `uv pip install -e .` to install in development mode
+- **Package installation**: Always use `uv pip` instead of plain `pip`
+- **Test failures**: Ensure all dev dependencies are installed with `uv pip install -e ".[dev]"`
+
 ### File Format Compatibility
 - **Primary Goal**: Generate files readable by KiCad application
 - **S-Expression Standard**: Follow KiCad's S-expression format specification
