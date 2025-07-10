@@ -7,7 +7,7 @@ import os
 import shutil
 import subprocess
 
-from mcp.server.fastmcp import Context, FastMCP, Image
+from fastmcp import Context, FastMCP, Image
 
 from kicad_mcp.config import KICAD_APP_PATH, system
 from kicad_mcp.utils.file_utils import get_project_files

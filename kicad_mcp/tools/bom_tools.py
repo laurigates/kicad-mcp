@@ -7,7 +7,7 @@ import json
 import os
 from typing import Any
 
-from mcp.server.fastmcp import Context, FastMCP
+from fastmcp import Context, FastMCP
 import pandas as pd
 
 from kicad_mcp.utils.file_utils import get_project_files

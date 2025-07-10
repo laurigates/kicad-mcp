@@ -9,7 +9,7 @@ import os
 import signal
 import sys
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 # Import context management
 from kicad_mcp.context import kicad_lifespan

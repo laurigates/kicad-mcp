@@ -6,9 +6,8 @@ Converts circuit descriptions to proper KiCad S-expression format.
 """
 
 import uuid
-from typing import List, Dict
 
-from kicad_mcp.utils.component_layout import ComponentLayoutManager, LayoutStrategy
+from kicad_mcp.utils.component_layout import ComponentLayoutManager
 from kicad_mcp.utils.pin_mapper import ComponentPinMapper
 
 
@@ -21,8 +20,8 @@ class SExpressionGenerator:
         self.layout_manager = ComponentLayoutManager()
         self.pin_mapper = ComponentPinMapper()
 
-    def generate_schematic(self, circuit_name: str, components: List[Dict],
-                          power_symbols: List[Dict], connections: List[Dict]) -> str:
+    def generate_schematic(self, circuit_name: str, components: list[dict],
+                          power_symbols: list[dict], connections: list[dict]) -> str:
         """Generate a complete KiCad schematic in S-expression format.
 
         Args:
@@ -96,7 +95,7 @@ class SExpressionGenerator:
 
         return "\n".join(sexpr_lines)
 
-    def _generate_lib_symbols(self, components: List[Dict], power_symbols: List[Dict]) -> List[str]:
+    def _generate_lib_symbols(self, components: list[dict], power_symbols: list[dict]) -> list[str]:
         """Generate lib_symbols section."""
         lines = ["  (lib_symbols"]
 
@@ -123,7 +122,7 @@ class SExpressionGenerator:
         lines.append("  )")
         return lines
 
-    def _generate_symbol_definition(self, library: str, symbol: str) -> List[str]:
+    def _generate_symbol_definition(self, library: str, symbol: str) -> list[str]:
         """Generate a basic symbol definition."""
         if library == "Device":
             if symbol == "R":
@@ -142,7 +141,7 @@ class SExpressionGenerator:
         # Default symbol (resistor-like)
         return self._generate_resistor_symbol()
 
-    def _generate_resistor_symbol(self) -> List[str]:
+    def _generate_resistor_symbol(self) -> list[str]:
         """Generate resistor symbol definition."""
         return [
             '(symbol "Device:R"',
@@ -171,7 +170,7 @@ class SExpressionGenerator:
             ")",
         ]
 
-    def _generate_capacitor_symbol(self) -> List[str]:
+    def _generate_capacitor_symbol(self) -> list[str]:
         """Generate capacitor symbol definition."""
         return [
             '(symbol "Device:C"',
@@ -205,7 +204,7 @@ class SExpressionGenerator:
             ")",
         ]
 
-    def _generate_inductor_symbol(self) -> List[str]:
+    def _generate_inductor_symbol(self) -> list[str]:
         """Generate inductor symbol definition."""
         return [
             '(symbol "Device:L"',
@@ -237,7 +236,7 @@ class SExpressionGenerator:
             ")",
         ]
 
-    def _generate_led_symbol(self) -> List[str]:
+    def _generate_led_symbol(self) -> list[str]:
         """Generate LED symbol definition."""
         return [
             '(symbol "Device:LED"',
@@ -274,7 +273,7 @@ class SExpressionGenerator:
             ")",
         ]
 
-    def _generate_diode_symbol(self) -> List[str]:
+    def _generate_diode_symbol(self) -> list[str]:
         """Generate diode symbol definition."""
         return [
             '(symbol "Device:D"',
@@ -311,7 +310,7 @@ class SExpressionGenerator:
             ")",
         ]
 
-    def _generate_power_symbol_definition(self, power_type: str) -> List[str]:
+    def _generate_power_symbol_definition(self, power_type: str) -> list[str]:
         """Generate power symbol definition."""
         return [
             f'(symbol "power:{power_type}"',
@@ -344,7 +343,7 @@ class SExpressionGenerator:
             ")",
         ]
 
-    def _validate_component_positions(self, components: List[Dict]) -> List[Dict]:
+    def _validate_component_positions(self, components: list[dict]) -> list[dict]:
         """Validate and fix component positions using the layout manager."""
         validated_components = []
 
@@ -379,7 +378,7 @@ class SExpressionGenerator:
 
         return validated_components
 
-    def _validate_power_positions(self, power_symbols: List[Dict]) -> List[Dict]:
+    def _validate_power_positions(self, power_symbols: list[dict]) -> list[dict]:
         """Validate and fix power symbol positions using the layout manager."""
         validated_power_symbols = []
 
@@ -414,7 +413,7 @@ class SExpressionGenerator:
 
         return validated_power_symbols
 
-    def _get_component_type(self, component: Dict) -> str:
+    def _get_component_type(self, component: dict) -> str:
         """Determine component type from component dictionary."""
         # Check if component_type is explicitly provided
         if 'component_type' in component:
@@ -446,7 +445,7 @@ class SExpressionGenerator:
         else:
             return 'default'
 
-    def _map_component_pins(self, components: List[Dict], power_symbols: List[Dict]):
+    def _map_component_pins(self, components: list[dict], power_symbols: list[dict]):
         """Map all components and power symbols to the pin mapper."""
         # Map regular components
         for component in components:
@@ -467,7 +466,7 @@ class SExpressionGenerator:
                 angle=0.0
             )
 
-    def _generate_component_symbol(self, component: Dict) -> List[str]:
+    def _generate_component_symbol(self, component: dict) -> list[str]:
         """Generate component symbol instance."""
         comp_uuid = str(uuid.uuid4())
         self.component_uuid_map[component["reference"]] = comp_uuid
@@ -499,7 +498,7 @@ class SExpressionGenerator:
 
         return lines
 
-    def _generate_power_symbol(self, power_symbol: dict) -> List[str]:
+    def _generate_power_symbol(self, power_symbol: dict) -> list[str]:
         """Generate power symbol instance."""
         power_uuid = str(uuid.uuid4())
         ref = power_symbol.get("reference", f"#PWR0{len(self.component_uuid_map) + 1:03d}")
@@ -526,7 +525,7 @@ class SExpressionGenerator:
 
         return lines
 
-    def _generate_wire(self, connection: Dict) -> List[str]:
+    def _generate_wire(self, connection: dict) -> list[str]:
         """Generate wire connection using pin-level routing."""
         lines = []
 
@@ -583,7 +582,7 @@ class SExpressionGenerator:
 
         return lines
 
-    def generate_advanced_wire_routing(self, net_connections: List[Dict]) -> List[str]:
+    def generate_advanced_wire_routing(self, net_connections: list[dict]) -> list[str]:
         """
         Generate advanced wire routing for complex nets.
 
@@ -596,7 +595,7 @@ class SExpressionGenerator:
         lines = []
 
         for net in net_connections:
-            net_name = net.get('name', 'unnamed_net')
+            net.get('name', 'unnamed_net')
             net_pins = net.get('pins', [])
 
             if len(net_pins) < 2:

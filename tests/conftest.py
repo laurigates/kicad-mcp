@@ -14,7 +14,7 @@ import pytest_asyncio
 
 # Try to import MCP dependencies, but make it optional for unit tests
 try:
-    from mcp.server.fastmcp import Context
+    from fastmcp import Context
 
     MCP_AVAILABLE = True
 except ImportError:
@@ -78,9 +78,8 @@ def sample_json_schematic() -> dict[str, Any]:
 @pytest.fixture
 def sample_sexpr_schematic() -> str:
     """Sample S-expression format schematic content for testing."""
-<<<<<<< HEAD
-    return """(kicad_sch 
-    (version 20240618) 
+    return """(kicad_sch
+    (version 20240618)
     (generator eeschema)
     (uuid "12345678-1234-1234-1234-123456789abc")
     (paper "A4")
@@ -249,8 +248,7 @@ def sample_kicad_project(temp_dir: Path) -> dict[str, Any]:
 
     # Create empty .kicad_sch file
     sch_file = project_dir / "test_project.kicad_sch"
-<<<<<<< HEAD
-    sch_file.write_text('(kicad_sch (version 20240618) (generator eeschema))')
+    sch_file.write_text("(kicad_sch (version 20240618) (generator eeschema))")
     # Create empty .kicad_pcb file
     pcb_file = project_dir / "test_project.kicad_pcb"
     pcb_file.write_text("(kicad_pcb (version 20221018) (generator pcbnew))")
