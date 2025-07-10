@@ -12,7 +12,6 @@ import sys
 from fastmcp import FastMCP
 
 # Import context management
-from kicad_mcp.context import kicad_lifespan
 from kicad_mcp.prompts.bom_prompts import register_bom_prompts
 from kicad_mcp.prompts.circuit_prompts import register_circuit_prompts
 from kicad_mcp.prompts.drc_prompt import register_drc_prompts
@@ -126,24 +125,10 @@ def register_signal_handlers(server: FastMCP) -> None:
 def create_server() -> FastMCP:
     """Create and configure the KiCad MCP server."""
     logging.info("Initializing KiCad MCP server")
-
-    # Try to set up KiCad Python path - Removed
-    # kicad_modules_available = setup_kicad_python_path()
-    kicad_modules_available = False  # Set to False as we removed the setup logic
-
-    # if kicad_modules_available:
-    #     print("KiCad Python modules successfully configured")
-    # else:
-    # Always print this now, as we rely on CLI
     logging.info("KiCad Python module setup removed; relying on kicad-cli for external operations.")
 
     # Initialize FastMCP server
-    # Pass the availability flag (always False now) to the lifespan context
-    mcp = FastMCP(
-        "KiCad",
-        lifespan=kicad_lifespan,
-        lifespan_kwargs={"kicad_modules_available": kicad_modules_available},
-    )
+    mcp = FastMCP("KiCad")
     logging.info("Created FastMCP server instance with lifespan management")
 
     # Register resources
