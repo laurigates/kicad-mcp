@@ -4,7 +4,7 @@ Design Rule Check (DRC) resources for KiCad PCB files.
 
 import os
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from kicad_mcp.tools.drc_impl.cli_drc import run_drc_via_cli
 from kicad_mcp.utils.drc_history import get_drc_history

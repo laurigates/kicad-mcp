@@ -5,7 +5,7 @@ Circuit pattern recognition tools for KiCad schematics.
 import os
 from typing import Any
 
-from mcp.server.fastmcp import Context, FastMCP
+from fastmcp import Context, FastMCP
 
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.netlist_parser import extract_netlist

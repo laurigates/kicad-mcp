@@ -7,7 +7,7 @@ import json
 import os
 from typing import Any
 
-from mcp.server.fastmcp import Context, FastMCP
+from fastmcp import Context, FastMCP
 import pandas as pd
 
 from kicad_mcp.utils.file_utils import get_project_files
@@ -306,10 +306,10 @@ def parse_bom_file(file_path: str) -> tuple[list[dict[str, Any]], dict[str, Any]
                     components.append(dict(row))
 
         elif ext == ".xml":
-            # Basic XML parsing
-            import xml.etree.ElementTree as ET
+            # Basic XML parsing with security protection
+            from defusedxml.ElementTree import parse as safe_parse
 
-            tree = ET.parse(file_path)
+            tree = safe_parse(file_path)
             root = tree.getroot()
 
             format_info["detected_format"] = "xml"

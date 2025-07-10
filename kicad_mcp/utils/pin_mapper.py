@@ -436,4 +436,3 @@ class ComponentPinMapper:
         """Clear all component and pin mappings."""
         self.component_pins.clear()
         self.pin_connections.clear()
-

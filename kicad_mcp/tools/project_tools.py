@@ -6,7 +6,7 @@ import logging
 import os
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from kicad_mcp.utils.file_utils import get_project_files, load_project_json
 from kicad_mcp.utils.kicad_utils import find_kicad_projects, open_kicad_project

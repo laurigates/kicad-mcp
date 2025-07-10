@@ -7,7 +7,7 @@ import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
-from mcp.server.fastmcp import Context, FastMCP
+from fastmcp import Context, FastMCP
 import pytest
 
 from kicad_mcp.tools.circuit_tools import register_circuit_tools

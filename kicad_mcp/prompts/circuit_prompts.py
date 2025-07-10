@@ -2,7 +2,7 @@
 Prompt templates for circuit creation in KiCad.
 """
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 
 def register_circuit_prompts(mcp: FastMCP) -> None:
