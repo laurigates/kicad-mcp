@@ -42,3 +42,15 @@ logs/
 
 # MCP specific
 ~/.kicad_mcp/drc_history/
+
+# Example KiCad projects and test files
+*_example/
+*_project/
+*.kicad_pcb
+*.kicad_pro
+*.kicad_sch
+*.kicad_sch.backup
+*-backups/
+*.zip
+visual_output/
+*.svg
