@@ -54,3 +54,4 @@ logs/
 *.zip
 visual_output/
 *.svg
+esp32_dev_board_example/esp32_dev_board-backups/
