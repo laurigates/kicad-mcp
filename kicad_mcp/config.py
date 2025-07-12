@@ -72,6 +72,9 @@ KICAD_EXTENSIONS = {
 DATA_EXTENSIONS = [
     ".csv",  # BOM or other data
     ".pos",  # Component position file
+    ".net",  # Netlist files
+    ".zip",  # Gerber files and other archives
+    ".drl",  # Drill files
 ]
 
 # Circuit creation constants

@@ -37,16 +37,20 @@ def get_project_files(project_path: str) -> dict[str, str]:
             files[file_type] = file_path
 
     # Check for data files
-    for ext in DATA_EXTENSIONS:
-        for file in os.listdir(project_dir):
-            if file.startswith(project_name) and file.endswith(ext):
-                # Extract the type from filename (e.g., project_name-bom.csv -> bom)
-                file_type = file[len(project_name) :].strip("-_")
-                file_type = file_type.split(".")[0]
-                if not file_type:
-                    file_type = ext[1:]  # Use extension if no specific type
+    try:
+        for ext in DATA_EXTENSIONS:
+            for file in os.listdir(project_dir):
+                if file.startswith(project_name) and file.endswith(ext):
+                    # Extract the type from filename (e.g., project_name-bom.csv -> bom)
+                    file_type = file[len(project_name) :].strip("-_")
+                    file_type = file_type.split(".")[0]
+                    if not file_type:
+                        file_type = ext[1:]  # Use extension if no specific type
 
-                files[file_type] = os.path.join(project_dir, file)
+                    files[file_type] = os.path.join(project_dir, file)
+    except (OSError, FileNotFoundError):
+        # Directory doesn't exist or can't be accessed - return what we have
+        pass
 
     return files
 

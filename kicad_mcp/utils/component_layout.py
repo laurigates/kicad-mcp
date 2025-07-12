@@ -366,20 +366,50 @@ class ComponentLayoutManager:
         """Layout components in a single column."""
         updated_components = []
 
+        # Clear existing components to avoid collision detection issues during layout
+        self.clear_layout()
+
         x = self.bounds.min_x + self.bounds.usable_width / 2
         available_height = self.bounds.usable_height
-        spacing = available_height / max(1, len(components) - 1) if len(components) > 1 else 0
-        spacing = max(spacing, self.component_spacing)
+
+        # Calculate proper spacing considering component heights
+        max_component_height = max(
+            self.COMPONENT_SIZES.get(
+                comp.get("component_type", "default"), self.COMPONENT_SIZES["default"]
+            )[1]
+            for comp in components
+        )
+        min_spacing = max(self.component_spacing, max_component_height + 5.0)  # Add 5mm buffer
+
+        # Use either calculated spacing or minimum spacing, whichever is larger
+        if len(components) > 1:
+            calculated_spacing = available_height / (len(components) - 1)
+            spacing = max(calculated_spacing, min_spacing)
+        else:
+            spacing = min_spacing
+
+        # Fix the X coordinate for all components in the column
+        column_x, _ = self.snap_to_grid(x, 0)
 
         for i, component in enumerate(components):
             y = self.bounds.min_y + i * spacing
-            x, y = self.snap_to_grid(x, y)
+            _, snapped_y = self.snap_to_grid(0, y)
 
             component_type = component.get("component_type", "default")
-            x, y = self.place_component(component["reference"], component_type, x, y)
+
+            # Force the x-coordinate to stay in the column by bypassing collision detection
+            width, height = self.COMPONENT_SIZES.get(
+                component_type, self.COMPONENT_SIZES["default"]
+            )
+            component_bounds = ComponentBounds(
+                component["reference"], column_x, snapped_y, width, height
+            )
+            self.placed_components.append(component_bounds)
+
+            final_x, final_y = column_x, snapped_y
 
             updated_component = component.copy()
-            updated_component["position"] = (x, y)
+            updated_component["position"] = (final_x, final_y)
             updated_components.append(updated_component)
 
         return updated_components

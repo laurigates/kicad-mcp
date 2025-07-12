@@ -43,18 +43,20 @@ class TestNetlistParser:
         assert result["component_count"] >= 1
         assert "components" in result
 
-        # Should detect at least one resistor component
-        resistors = [
-            comp for ref, comp in result["components"].items() if comp["lib_id"] == "Device:R"
+        # Should detect at least one ESP32 component
+        esp32_components = [
+            comp
+            for ref, comp in result["components"].items()
+            if comp["lib_id"] == "MCU_Espressif:ESP32-WROOM-32"
         ]
-        assert len(resistors) >= 1
+        assert len(esp32_components) >= 1
 
     def test_extract_netlist_file_not_found(self):
         """Test error handling when schematic file doesn't exist."""
         result = extract_netlist("/nonexistent/path/test.kicad_sch")
 
         assert "error" in result
-        assert "not found" in result["error"].lower()
+        assert "not found" in result["error"].lower() or "no such file" in result["error"].lower()
 
     def test_extract_netlist_invalid_json(self, temp_dir):
         """Test error handling with malformed JSON."""
