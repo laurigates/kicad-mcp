@@ -23,7 +23,7 @@ class TestFullWorkflow:
     """Integration tests for complete KiCad MCP workflows."""
 
     @pytest.fixture
-    async def mcp_server(self):
+    def mcp_server(self):
         """Create a fully configured MCP server for testing."""
         mcp = FastMCP("kicad-mcp-test")
 
@@ -51,8 +51,9 @@ class TestFullWorkflow:
         project_path = str(temp_dir / project_name)
 
         # Step 1: Create new project
-        create_func = mcp_server._tools["create_new_circuit"].func
-        result = await create_func(
+        from kicad_mcp.tools.circuit_tools import create_new_project
+
+        result = await create_new_project(
             project_name=project_name,
             project_path=project_path,
             description="Integration test project",
@@ -63,12 +64,20 @@ class TestFullWorkflow:
         assert Path(project_file).exists()
 
         # Step 2: Add power symbols
-        add_power_func = mcp_server._tools["add_power_symbols"].func
-        result = await add_power_func(
-            project_path=project_file, power_types=["VCC", "GND", "+3V3"], ctx=mock_context
-        )
-        assert result["success"] is True
-        assert len(result["power_symbols"]) == 3
+        from kicad_mcp.tools.circuit_tools import add_power_symbol
+
+        # Add individual power symbols
+        power_results = []
+        for i, power_type in enumerate(["VCC", "GND", "+3V3"]):
+            result = await add_power_symbol(
+                project_path=project_file,
+                power_type=power_type,
+                x_position=50,
+                y_position=50 + i * 20,
+                ctx=mock_context,
+            )
+            power_results.append(result)
+            assert result["success"] is True
 
         # Step 3: Add main components
         add_component_func = mcp_server._tools["add_component_to_circuit"].func
@@ -178,10 +187,11 @@ class TestFullWorkflow:
     ):
         """Test project discovery and analysis workflow."""
         # Step 1: List projects in directory
-        list_projects_func = mcp_server._tools["list_projects"].func
+        from kicad_mcp.tools.project_tools import list_projects
+
         project_dir = Path(sample_kicad_project["directory"]).parent
 
-        result = await list_projects_func(search_directories=[str(project_dir)], ctx=mock_context)
+        result = await list_projects(search_directories=[str(project_dir)], ctx=mock_context)
         assert result["success"] is True
         assert len(result["projects"]) >= 1
 
@@ -195,8 +205,9 @@ class TestFullWorkflow:
         assert test_project is not None
 
         # Step 2: Get project structure
-        get_structure_func = mcp_server._tools["get_project_structure"].func
-        result = await get_structure_func(
+        from kicad_mcp.tools.project_tools import get_project_structure
+
+        result = await get_project_structure(
             project_path=sample_kicad_project["path"], ctx=mock_context
         )
         assert result["success"] is True

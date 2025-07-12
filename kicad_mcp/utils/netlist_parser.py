@@ -433,7 +433,12 @@ def extract_netlist(schematic_path: str) -> dict[str, Any]:
             import json
 
             json_data = json.loads(content)
-            if "symbol" in json_data or "version" in json_data:
+            # Check for JSON schematic format indicators
+            if (
+                "components" in json_data
+                or "symbol" in json_data
+                or ("version" in json_data and not content.strip().startswith("("))
+            ):
                 print(f"Detected JSON format schematic: {schematic_path}")
                 return parse_json_schematic(json_data)
         except json.JSONDecodeError:
@@ -460,18 +465,24 @@ def parse_json_schematic(json_data: dict[str, Any]) -> dict[str, Any]:
     components = {}
     nets = defaultdict(list)
 
-    # Extract components/symbols
-    symbols = json_data.get("symbol", [])
+    # Extract components/symbols (support both 'components' and 'symbol' keys)
+    symbols = json_data.get("components", json_data.get("symbol", []))
     for symbol in symbols:
         lib_id = symbol.get("lib_id", "")
         uuid = symbol.get("uuid", "")
-        position = symbol.get("at", [0, 0, 0])
+        # Handle position format (can be dict or list)
+        pos_data = symbol.get("position", symbol.get("at", [0, 0, 0]))
+        if isinstance(pos_data, dict):
+            position = [pos_data.get("x", 0), pos_data.get("y", 0), pos_data.get("angle", 0)]
+        else:
+            position = pos_data
 
-        # Extract properties
-        properties = {}
-        reference = "Unknown"
-        value = ""
+        # Extract properties (handle both old and new formats)
+        properties = symbol.get("properties", {})
+        reference = symbol.get("reference", "Unknown")
+        value = symbol.get("value", "")
 
+        # If using old format with "property" array
         for prop in symbol.get("property", []):
             prop_name = prop.get("name", "")
             prop_value = prop.get("value", "")
@@ -575,16 +586,30 @@ def analyze_netlist(netlist_data: dict[str, Any]) -> dict[str, Any]:
     results = {
         "component_count": netlist_data.get("component_count", 0),
         "net_count": netlist_data.get("net_count", 0),
-        "component_types": defaultdict(int),
+        "component_types": {},
+        "net_connectivity": {},
+        "component_summary": {
+            "total_components": netlist_data.get("component_count", 0),
+            "total_nets": netlist_data.get("net_count", 0),
+        },
         "power_nets": [],
     }
 
-    # Analyze component types
-    for ref, _component in netlist_data.get("components", {}).items():
-        # Extract component type from reference (e.g., R1 -> R)
-        comp_type = re.match(r"^([A-Za-z_]+)", ref)
-        if comp_type:
-            results["component_types"][comp_type.group(1)] += 1
+    # Analyze component types from lib_id
+    component_types = defaultdict(int)
+    for _ref, component in netlist_data.get("components", {}).items():
+        lib_id = component.get("lib_id", "")
+        if lib_id:
+            component_types[lib_id] += 1
+
+    results["component_types"] = dict(component_types)
+
+    # Analyze net connectivity
+    net_connectivity = {}
+    for net_name, connections in netlist_data.get("nets", {}).items():
+        net_connectivity[net_name] = connections
+
+    results["net_connectivity"] = net_connectivity
 
     # Identify power nets
     for net_name in netlist_data.get("nets", {}):
