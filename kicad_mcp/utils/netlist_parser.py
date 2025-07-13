@@ -235,8 +235,20 @@ class SchematicParser:
             if pts_match:
                 pts_str = pts_match.group(1)
                 coords = re.findall(r"\(xy\s+([\d\.-]+)\s+([\d\.-]+)\)", pts_str)
-                if coords:
-                    wires.append({"points": [{"x": float(x), "y": float(y)} for x, y in coords]})
+                if len(coords) >= 2:
+                    # Generate a UUID for the wire
+                    import uuid
+
+                    wire_uuid = str(uuid.uuid4())
+
+                    # Use start/end format for compatibility with tests
+                    wires.append(
+                        {
+                            "uuid": wire_uuid,
+                            "start": {"x": float(coords[0][0]), "y": float(coords[0][1])},
+                            "end": {"x": float(coords[-1][0]), "y": float(coords[-1][1])},
+                        }
+                    )
         return wires
 
     def _extract_junctions(self, content: str) -> list[dict[str, Any]]:
