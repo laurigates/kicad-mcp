@@ -185,83 +185,86 @@ async def create_new_project(
         if ctx:
             await ctx.report_progress(80, 100)
 
-        # Create basic PCB file
-        pcb_data = {
-            "version": 20240618,
-            "generator": "kicad-mcp",
-            "general": {"thickness": 1.6},
-            "paper": "A4",
-            "title_block": {
-                "title": project_name,
-                "date": "",
-                "rev": "",
-                "company": "",
-                "comment": [{"number": 1, "value": description if description else ""}],
-            },
-            "layers": [
-                {"ordinal": 0, "name": "F.Cu", "type": "signal"},
-                {"ordinal": 31, "name": "B.Cu", "type": "signal"},
-                {"ordinal": 32, "name": "B.Adhes", "type": "user"},
-                {"ordinal": 33, "name": "F.Adhes", "type": "user"},
-                {"ordinal": 34, "name": "B.Paste", "type": "user"},
-                {"ordinal": 35, "name": "F.Paste", "type": "user"},
-                {"ordinal": 36, "name": "B.SilkS", "type": "user"},
-                {"ordinal": 37, "name": "F.SilkS", "type": "user"},
-                {"ordinal": 38, "name": "B.Mask", "type": "user"},
-                {"ordinal": 39, "name": "F.Mask", "type": "user"},
-                {"ordinal": 44, "name": "Edge.Cuts", "type": "user"},
-                {"ordinal": 45, "name": "Margin", "type": "user"},
-                {"ordinal": 46, "name": "B.CrtYd", "type": "user"},
-                {"ordinal": 47, "name": "F.CrtYd", "type": "user"},
-                {"ordinal": 48, "name": "B.Fab", "type": "user"},
-                {"ordinal": 49, "name": "F.Fab", "type": "user"},
-            ],
-            "setup": {
-                "pad_to_mask_clearance": 0,
-                "pcbplotparams": {
-                    "layerselection": "0x00010fc_ffffffff",
-                    "disableapertmacros": False,
-                    "usegerberextensions": False,
-                    "usegerberattributes": True,
-                    "usegerberadvancedattributes": True,
-                    "creategerberjobfile": True,
-                    "svguseinch": False,
-                    "svgprecision": 6,
-                    "excludeedgelayer": True,
-                    "plotframeref": False,
-                    "viasonmask": False,
-                    "mode": 1,
-                    "useauxorigin": False,
-                    "hpglpennumber": 1,
-                    "hpglpenspeed": 20,
-                    "hpglpendiameter": 15.0,
-                    "dxfpolygonmode": True,
-                    "dxfimperialunits": True,
-                    "dxfusepcbnewfont": True,
-                    "psnegative": False,
-                    "psa4output": False,
-                    "plotreference": True,
-                    "plotvalue": True,
-                    "plotinvisibletext": False,
-                    "sketchpadsonfab": False,
-                    "subtractmaskfromsilk": False,
-                    "outputformat": 1,
-                    "mirror": False,
-                    "drillshape": 1,
-                    "scaleselection": 1,
-                    "outputdirectory": "",
-                },
-            },
-            "net": [{"code": 0, "name": ""}],
-            "footprint": [],
-            "track": [],
-            "via": [],
-            "zone": [],
-            "target": [],
-        }
+        # Create basic PCB file in S-expression format
+        pcb_content = f"""(kicad_pcb
+  (version 20240618)
+  (generator "kicad-mcp")
+  (general
+    (thickness 1.6)
+  )
+  (paper "A4")
+  (title_block
+    (title "{project_name}")
+    (date "")
+    (rev "")
+    (company "")
+    (comment (number 1) (value "{description if description else ""}"))
+  )
+  (layers
+    (0 "F.Cu" signal)
+    (31 "B.Cu" signal)
+    (32 "B.Adhes" user "B.Adhesive")
+    (33 "F.Adhes" user "F.Adhesive")
+    (34 "B.Paste" user)
+    (35 "F.Paste" user)
+    (36 "B.SilkS" user "B.Silkscreen")
+    (37 "F.SilkS" user "F.Silkscreen")
+    (38 "B.Mask" user)
+    (39 "F.Mask" user)
+    (44 "Edge.Cuts" user)
+    (45 "Margin" user)
+    (46 "B.CrtYd" user "B.Courtyard")
+    (47 "F.CrtYd" user "F.Courtyard")
+    (48 "B.Fab" user)
+    (49 "F.Fab" user)
+  )
+  (setup
+    (pad_to_mask_clearance 0)
+    (pcbplotparams
+      (layerselection 0x00010fc_ffffffff)
+      (plot_on_all_layers_selection 0x0000000_00000000)
+      (disableapertmacros false)
+      (usegerberextensions false)
+      (usegerberattributes true)
+      (usegerberadvancedattributes true)
+      (creategerberjobfile true)
+      (dashed_line_dash_ratio 12.000000)
+      (dashed_line_gap_ratio 3.000000)
+      (svgprecision 4)
+      (plotframeref false)
+      (viasonmask false)
+      (mode 1)
+      (useauxorigin false)
+      (hpglpennumber 1)
+      (hpglpenspeed 20)
+      (hpglpendiameter 15.000000)
+      (pdf_front_fp_property_popups true)
+      (pdf_back_fp_property_popups true)
+      (dxfpolygonmode true)
+      (dxfimperialunits true)
+      (dxfusepcbnewfont true)
+      (psnegative false)
+      (psa4output false)
+      (plotreference true)
+      (plotvalue true)
+      (plotfptext true)
+      (plotinvisibletext false)
+      (sketchpadsonfab false)
+      (subtractmaskfromsilk false)
+      (outputformat 1)
+      (mirror false)
+      (drillshape 1)
+      (scaleselection 1)
+      (outputdirectory "")
+    )
+  )
+  (nets
+    (net 0 "")
+  )
+)"""
 
         with open(pcb_file, "w") as f:
-            json.dump(pcb_data, f, indent=2)
+            f.write(pcb_content)
 
         if ctx:
             await ctx.report_progress(90, 100)

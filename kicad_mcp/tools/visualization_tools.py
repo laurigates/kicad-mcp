@@ -8,7 +8,8 @@ import os
 import subprocess
 from typing import Any
 
-from fastmcp import Context, FastMCP, Image
+from fastmcp import Context, FastMCP
+from fastmcp.utilities.types import Image
 
 from kicad_mcp.utils.file_utils import get_project_files
 
