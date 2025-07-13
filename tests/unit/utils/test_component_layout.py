@@ -67,7 +67,7 @@ class TestComponentLayoutManager:
     def test_initialization(self):
         """Test layout manager initialization."""
         assert self.layout_manager.bounds.width == 297.0
-        assert self.layout_manager.grid_spacing == 2.54
+        assert self.layout_manager.grid_spacing == 1.0
         assert len(self.layout_manager.placed_components) == 0
 
     def test_position_validation(self):
@@ -87,20 +87,20 @@ class TestComponentLayoutManager:
         """Test grid snapping functionality."""
         # Test various coordinates
         x, y = self.layout_manager.snap_to_grid(51.2, 49.8)
-        assert x == 50.8  # 51.2 rounds to 20*2.54 = 50.8
-        assert y == 50.8  # 49.8 rounds to 20*2.54 = 50.8
+        assert x == 51.0  # 51.2 rounds to 51*1.0 = 51.0
+        assert y == 50.0  # 49.8 rounds to 50*1.0 = 50.0
 
         x, y = self.layout_manager.snap_to_grid(25.0, 25.0)
-        assert x == 25.4  # Closest grid point
-        assert y == 25.4
+        assert x == 25.0  # Already on grid point
+        assert y == 25.0
 
     def test_component_placement(self):
         """Test component placement."""
         # Place a component at valid position
         x, y = self.layout_manager.place_component("R1", "resistor", 50, 50)
 
-        assert x == 50.8  # Snapped to grid
-        assert y == 50.8
+        assert x == 50.0  # Snapped to grid
+        assert y == 50.0
         assert len(self.layout_manager.placed_components) == 1
 
         # Place another component at invalid position (should auto-correct)

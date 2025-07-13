@@ -86,6 +86,48 @@ def find_kicad_projects() -> list[dict[str, Any]]:
     return projects
 
 
+def find_kicad_projects_in_dirs(search_directories: list[str]) -> list[dict[str, Any]]:
+    """Find KiCad projects in specific directories.
+
+    Args:
+        search_directories: List of directories to search
+
+    Returns:
+        List of dictionaries with project information
+    """
+    projects = []
+    logging.info(f"Searching KiCad projects in specified directories: {search_directories}")
+
+    for search_dir in search_directories:
+        expanded_dir = os.path.expanduser(search_dir)
+        if not os.path.exists(expanded_dir):
+            logging.warning(f"Search directory does not exist: {expanded_dir}")
+            continue
+
+        logging.info(f"Scanning directory: {expanded_dir}")
+        for root, _, files in os.walk(expanded_dir, followlinks=True):
+            for file in files:
+                if file.endswith(KICAD_EXTENSIONS["project"]):
+                    project_path = os.path.join(root, file)
+                    if not os.path.isfile(project_path):
+                        continue
+
+                    try:
+                        project_info = {
+                            "name": get_project_name_from_path(project_path),
+                            "path": project_path,
+                            "directory": os.path.dirname(project_path),
+                        }
+                        projects.append(project_info)
+                        logging.info(f"Found KiCad project: {project_path}")
+                    except Exception as e:
+                        logging.error(f"Error processing project {project_path}: {str(e)}")
+                        continue
+
+    logging.info(f"Found {len(projects)} KiCad projects in specified directories")
+    return projects
+
+
 def get_project_name_from_path(project_path: str) -> str:
     """Extract the project name from a .kicad_pro file path.
 
