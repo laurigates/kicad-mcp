@@ -64,13 +64,15 @@ class SchematicParser:
         self._extract_components()
 
         # Extract wires
-        self._extract_wires()
+        self.wires = self._extract_wires(self.content)
 
         # Extract junctions
-        self._extract_junctions()
+        self.junctions = self._extract_junctions(self.content)
 
         # Extract labels
-        self._extract_labels()
+        self.labels, self.global_labels, self.hierarchical_labels = self._extract_labels(
+            self.content
+        )
 
         # Extract power symbols
         self._extract_power_symbols()
@@ -148,6 +150,9 @@ class SchematicParser:
         symbols = self._extract_s_expressions(r"\(symbol\s+")
 
         for symbol in symbols:
+            # Skip library symbols
+            if "(in_bom yes)" not in symbol:
+                continue
             component = self._parse_component(symbol)
             if component:
                 self.components.append(component)
@@ -192,6 +197,11 @@ class SchematicParser:
                     component["properties"] = {}
                 component["properties"][prop_name] = prop_value
 
+        # Extract uuid
+        uuid_match = re.search(r"\(uuid\s+([^\s\)]+)\)", symbol_expr)
+        if uuid_match:
+            component["uuid"] = uuid_match.group(1).strip('"')
+
         # Extract position
         pos_match = re.search(r"\(at\s+([\d\.-]+)\s+([\d\.-]+)(\s+[\d\.-]+)?\)", symbol_expr)
         if pos_match:
@@ -203,139 +213,85 @@ class SchematicParser:
 
         # Extract pins
         pins = []
-        pin_matches = re.finditer(
-            r'\(pin\s+\(num\s+"([^"]+)"\)\s+\(name\s+"([^"]+)"\)', symbol_expr
-        )
+        pin_matches = re.finditer(r'\(pin\s+"([^"]+)"\s+\(uuid\s+([^\s\)]+)\)\)', symbol_expr)
         for match in pin_matches:
             pin_num = match.group(1)
-            pin_name = match.group(2)
-            pins.append({"num": pin_num, "name": pin_name})
+            pin_uuid = match.group(2).strip('"')
+            pins.append({"num": pin_num, "uuid": pin_uuid})
 
         if pins:
             component["pins"] = pins
 
         return component
 
-    def _extract_wires(self) -> None:
-        """Extract wire information from schematic."""
-        print("Extracting wires")
-
-        # Extract all wire expressions
-        wires = self._extract_s_expressions(r"\(wire\s+")
-
-        for wire in wires:
-            # Extract the wire coordinates
-            pts_match = re.search(
-                r"\(pts\s+\(xy\s+([\d\.-]+)\s+([\d\.-]+)\)\s+\(xy\s+([\d\.-]+)\s+([\d\.-]+)\)\)",
-                wire,
-            )
+    def _extract_wires(self, content: str) -> list[dict[str, Any]]:
+        """Extract all wire expressions from the schematic content."""
+        wires = []
+        # A more robust regex to capture wire data including nested structures
+        wire_matches = re.finditer(r"\(\s*wire\s+((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)", content)
+        for match in wire_matches:
+            wire_data = match.group(1)
+            pts_match = re.search(r"\(pts\s+((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)", wire_data)
             if pts_match:
-                self.wires.append(
-                    {
-                        "start": {"x": float(pts_match.group(1)), "y": float(pts_match.group(2))},
-                        "end": {"x": float(pts_match.group(3)), "y": float(pts_match.group(4))},
-                    }
-                )
+                pts_str = pts_match.group(1)
+                coords = re.findall(r"\(xy\s+([\d\.-]+)\s+([\d\.-]+)\)", pts_str)
+                if coords:
+                    wires.append({"points": [{"x": float(x), "y": float(y)} for x, y in coords]})
+        return wires
 
-        print(f"Extracted {len(self.wires)} wires")
-
-    def _extract_junctions(self) -> None:
-        """Extract junction information from schematic."""
-        print("Extracting junctions")
-
-        # Extract all junction expressions
-        junctions = self._extract_s_expressions(r"\(junction\s+")
-
-        for junction in junctions:
-            # Extract the junction coordinates
-            xy_match = re.search(r"\(junction\s+\(xy\s+([\d\.-]+)\s+([\d\.-]+)\)\)", junction)
-            if xy_match:
-                self.junctions.append(
-                    {"x": float(xy_match.group(1)), "y": float(xy_match.group(2))}
-                )
-
-        print(f"Extracted {len(self.junctions)} junctions")
-
-    def _extract_labels(self) -> None:
-        """Extract label information from schematic."""
-        print("Extracting labels")
-
-        # Extract local labels
-        local_labels = self._extract_s_expressions(r"\(label\s+")
-
-        for label in local_labels:
-            # Extract label text and position
-            label_match = re.search(
-                r'\(label\s+"([^"]+)"\s+\(at\s+([\d\.-]+)\s+([\d\.-]+)(\s+[\d\.-]+)?\)', label
-            )
-            if label_match:
-                self.labels.append(
-                    {
-                        "type": "local",
-                        "text": label_match.group(1),
-                        "position": {
-                            "x": float(label_match.group(2)),
-                            "y": float(label_match.group(3)),
-                            "angle": float(
-                                label_match.group(4).strip() if label_match.group(4) else 0
-                            ),
-                        },
-                    }
-                )
-
-        # Extract global labels
-        global_labels = self._extract_s_expressions(r"\(global_label\s+")
-
-        for label in global_labels:
-            # Extract global label text and position
-            label_match = re.search(
-                r'\(global_label\s+"([^"]+)"\s+\(shape\s+([^\s\)]+)\)\s+\(at\s+([\d\.-]+)\s+([\d\.-]+)(\s+[\d\.-]+)?\)',
-                label,
-            )
-            if label_match:
-                self.global_labels.append(
-                    {
-                        "type": "global",
-                        "text": label_match.group(1),
-                        "shape": label_match.group(2),
-                        "position": {
-                            "x": float(label_match.group(3)),
-                            "y": float(label_match.group(4)),
-                            "angle": float(
-                                label_match.group(5).strip() if label_match.group(5) else 0
-                            ),
-                        },
-                    }
-                )
-
-        # Extract hierarchical labels
-        hierarchical_labels = self._extract_s_expressions(r"\(hierarchical_label\s+")
-
-        for label in hierarchical_labels:
-            # Extract hierarchical label text and position
-            label_match = re.search(
-                r'\(hierarchical_label\s+"([^"]+)"\s+\(shape\s+([^\s\)]+)\)\s+\(at\s+([\d\.-]+)\s+([\d\.-]+)(\s+[\d\.-]+)?\)',
-                label,
-            )
-            if label_match:
-                self.hierarchical_labels.append(
-                    {
-                        "type": "hierarchical",
-                        "text": label_match.group(1),
-                        "shape": label_match.group(2),
-                        "position": {
-                            "x": float(label_match.group(3)),
-                            "y": float(label_match.group(4)),
-                            "angle": float(
-                                label_match.group(5).strip() if label_match.group(5) else 0
-                            ),
-                        },
-                    }
-                )
-
-        print(
-            f"Extracted {len(self.labels)} local labels, {len(self.global_labels)} global labels, and {len(self.hierarchical_labels)} hierarchical labels"
+    def _extract_junctions(self, content: str) -> list[dict[str, Any]]:
+        """Extract all junction expressions from the schematic content."""
+        junctions = []
+        junction_matches = re.finditer(
+            r"\(\s*junction\s+\(at\s+([\d\.-]+)\s+([\d\.-]+)\s*\)(?:.|\n)*?\)", content
         )
+        for match in junction_matches:
+            junctions.append({"x": float(match.group(1)), "y": float(match.group(2))})
+        return junctions
+
+    def _extract_labels(
+        self, content: str
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+        """Extract all label expressions from the schematic content."""
+        labels = []
+        global_labels = []
+        hierarchical_labels = []
+
+        # Regex to find all types of labels
+        label_matches = re.finditer(
+            r"\(\s*(label|global_label|hierarchical_label)\s+((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)",
+            content,
+        )
+
+        for match in label_matches:
+            label_type = match.group(1)
+            label_data = match.group(2)
+
+            # Extract text, which is the first quoted string
+            text_match = re.search(r'"([^"]*)"', label_data)
+            text = text_match.group(1) if text_match else ""
+
+            # Extract position
+            pos_match = re.search(r"\(at\s+([\d\.-]+)\s+([\d\.-]+)\s+([\d\.-]+)\)", label_data)
+            if pos_match:
+                pos = {
+                    "x": float(pos_match.group(1)),
+                    "y": float(pos_match.group(2)),
+                    "angle": float(pos_match.group(3)),
+                }
+            else:
+                pos = {"x": 0, "y": 0, "angle": 0}
+
+            label_info = {"text": text, "position": pos}
+
+            if label_type == "label":
+                labels.append(label_info)
+            elif label_type == "global_label":
+                global_labels.append(label_info)
+            elif label_type == "hierarchical_label":
+                hierarchical_labels.append(label_info)
+
+        return labels, global_labels, hierarchical_labels
 
     def _extract_power_symbols(self) -> None:
         """Extract power symbol information from schematic."""
@@ -424,9 +380,26 @@ def extract_netlist(schematic_path: str) -> dict[str, Any]:
         Dictionary with netlist information
     """
     try:
-        # First, try to detect if this is a JSON format file (created by kicad-mcp)
+        if not os.path.exists(schematic_path) or os.path.getsize(schematic_path) == 0:
+            return {
+                "error": "Schematic file not found or is empty",
+                "components": {},
+                "nets": {},
+                "component_count": 0,
+                "net_count": 0,
+            }
+
         with open(schematic_path) as f:
-            content = f.read()
+            content = f.read().strip()
+
+        if not content:
+            return {
+                "error": "Schematic file is empty",
+                "components": {},
+                "nets": {},
+                "component_count": 0,
+                "net_count": 0,
+            }
 
         # Try parsing as JSON first
         try:
@@ -437,12 +410,20 @@ def extract_netlist(schematic_path: str) -> dict[str, Any]:
             if (
                 "components" in json_data
                 or "symbol" in json_data
-                or ("version" in json_data and not content.strip().startswith("("))
+                or ("version" in json_data and not content.startswith("("))
             ):
                 print(f"Detected JSON format schematic: {schematic_path}")
                 return parse_json_schematic(json_data)
         except json.JSONDecodeError:
-            pass
+            # If it's not JSON, it should be an S-expression
+            if not content.startswith("(kicad_sch"):
+                return {
+                    "error": "Invalid schematic format. Not a valid JSON or S-expression file.",
+                    "components": {},
+                    "nets": {},
+                    "component_count": 0,
+                    "net_count": 0,
+                }
 
         # Fall back to S-expression parser
         print(f"Using S-expression parser for: {schematic_path}")
@@ -466,6 +447,8 @@ def parse_json_schematic(json_data: dict[str, Any]) -> dict[str, Any]:
     nets = defaultdict(list)
 
     # Extract components/symbols (support both 'components' and 'symbol' keys)
+    if "components" not in json_data and "symbol" not in json_data:
+        raise KeyError("Schematic JSON must contain 'components' or 'symbol' key")
     symbols = json_data.get("components", json_data.get("symbol", []))
     for symbol in symbols:
         lib_id = symbol.get("lib_id", "")
@@ -533,7 +516,10 @@ def parse_json_schematic(json_data: dict[str, Any]) -> dict[str, Any]:
 
     # Extract wires and create connections
     wires = json_data.get("wire", [])
-    len(wires)
+
+    # Extract nets
+    for net in json_data.get("nets", []):
+        nets[net["name"]] = net["connections"]
 
     # Create a basic net for each wire (this is simplified)
     for i, wire in enumerate(wires):
