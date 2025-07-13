@@ -217,9 +217,11 @@ class ComponentLayoutManager:
             while current_x + width / 2 <= self.bounds.max_x:
                 x, y = self.snap_to_grid(current_x, current_y)
 
-                candidate = ComponentBounds(component_ref, x, y, width, height)
-                if not self._has_collision(candidate):
-                    return x, y
+                # Validate position after grid snapping
+                if self.validate_position(x, y, component_type):
+                    candidate = ComponentBounds(component_ref, x, y, width, height)
+                    if not self._has_collision(candidate):
+                        return x, y
 
                 current_x += self.component_spacing
 

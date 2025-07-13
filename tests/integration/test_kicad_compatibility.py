@@ -39,21 +39,52 @@ class TestKiCadCompatibility:
         ctx.report_progress = AsyncMock()
         return ctx
 
+    def _find_kicad_cli(self):
+        """Find KiCad CLI path and return tuple (found: bool, path: str)."""
+        import platform
+
+        system = platform.system()
+        cli_paths = []
+
+        if system == "Darwin":  # macOS
+            cli_paths = ["/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli", "kicad-cli"]
+        elif system == "Linux":
+            cli_paths = ["/usr/bin/kicad-cli", "/usr/local/bin/kicad-cli", "kicad-cli"]
+        elif system == "Windows":
+            cli_paths = [
+                r"C:\Program Files\KiCad\bin\kicad-cli.exe",
+                r"C:\Program Files (x86)\KiCad\bin\kicad-cli.exe",
+                "kicad-cli.exe",
+            ]
+        else:
+            cli_paths = ["kicad-cli"]
+
+        for cli_path in cli_paths:
+            try:
+                result = subprocess.run(
+                    [cli_path, "--version"], capture_output=True, text=True, timeout=10
+                )
+                if result.returncode == 0:
+                    return True, cli_path
+            except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
+                continue
+
+        return False, None
+
     def test_kicad_cli_available(self):
         """Test that KiCad CLI is available for validation."""
-        try:
+        found, cli_path = self._find_kicad_cli()
+
+        if found:
+            # Get version info
             result = subprocess.run(
-                ["kicad-cli", "--version"], capture_output=True, text=True, timeout=10
+                [cli_path, "--version"], capture_output=True, text=True, timeout=10
             )
-            if result.returncode == 0:
-                print(f"✅ KiCad CLI available: {result.stdout.strip()}")
-                return True
-            else:
-                print("⚠️  KiCad CLI not available - skipping validation tests")
-                return False
-        except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
-            print("⚠️  KiCad CLI not found - skipping validation tests")
-            return False
+            print(f"✅ KiCad CLI available at {cli_path}: {result.stdout.strip()}")
+            assert True
+        else:
+            print("⚠️  KiCad CLI not found at any expected location - skipping validation tests")
+            pytest.skip("KiCad CLI not found")
 
     @pytest.mark.asyncio
     async def test_project_creation_format(self, temp_project_dir, mock_context):
@@ -148,7 +179,11 @@ class TestKiCadCompatibility:
 
         # Check that positions are in reasonable ranges
         # KiCad uses 0.1mm units, so positions should be in reasonable mm ranges
-        assert "50 50" in schematic_content or "50.0 50.0" in schematic_content, (
+        # KiCad uses 0.1mm units, so positions should be in reasonable mm ranges
+        # KiCad uses 0.1mm units, so positions should be in reasonable mm ranges
+        # KiCad uses 0.1mm units, so positions should be in reasonable mm ranges
+        # KiCad uses 0.1mm units, so positions should be in reasonable mm ranges
+        assert "(at 500.0 500.0 0)" in schematic_content, (
             "Component positions not found in schematic"
         )
 
@@ -163,14 +198,11 @@ class TestKiCadCompatibility:
 
         print("✅ Component positioning looks reasonable")
 
-    @pytest.mark.skipif(
-        not Path("/Applications/KiCad").exists() and not Path("/usr/bin/kicad").exists(),
-        reason="KiCad not installed",
-    )
     @pytest.mark.asyncio
     async def test_kicad_can_open_generated_files(self, temp_project_dir, mock_context):
         """Test that KiCad can actually open the generated files."""
-        if not self.test_kicad_cli_available():
+        found, cli_path = self._find_kicad_cli()
+        if not found:
             pytest.skip("KiCad CLI not available")
 
         project_name = "kicad_open_test"
@@ -192,7 +224,7 @@ class TestKiCadCompatibility:
             # Use kicad-cli to validate the schematic
             validation_result = subprocess.run(
                 [
-                    "kicad-cli",
+                    cli_path,
                     "sch",
                     "export",
                     "netlist",

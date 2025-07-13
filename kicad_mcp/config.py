@@ -79,7 +79,7 @@ DATA_EXTENSIONS = [
 
 # Circuit creation constants
 CIRCUIT_DEFAULTS = {
-    "grid_spacing": 2.54,  # Default grid spacing in mm (0.1 inch)
+    "grid_spacing": 1.0,  # Default grid spacing in mm for user coordinates
     "component_spacing": 10.16,  # Default component spacing in mm
     "wire_width": 6,  # Default wire width in KiCad units (0.006 inch)
     "text_size": [1.27, 1.27],  # Default text size in mm
