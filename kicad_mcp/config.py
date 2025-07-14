@@ -125,3 +125,27 @@ DEFAULT_FOOTPRINTS = {
     "LED": ["LED_SMD:LED_0805_2012Metric", "LED_THT:LED_D5.0mm"],
     "D": ["Diode_SMD:D_SOD-123", "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal"],
 }
+
+# Timeout constants (in seconds)
+TIMEOUT_CONSTANTS = {
+    "kicad_cli_version_check": 10.0,  # Timeout for KiCad CLI version checks
+    "kicad_cli_export": 30.0,         # Timeout for KiCad CLI export operations
+    "application_open": 10.0,         # Timeout for opening applications (e.g., KiCad)
+    "subprocess_default": 30.0,       # Default timeout for subprocess operations
+}
+
+# Progress reporting constants
+PROGRESS_CONSTANTS = {
+    "start": 10,          # Initial progress percentage
+    "detection": 20,      # Progress after CLI detection
+    "setup": 30,          # Progress after setup complete
+    "processing": 50,     # Progress during processing
+    "finishing": 70,      # Progress when finishing up
+    "validation": 90,     # Progress during validation
+    "complete": 100,      # Progress when complete
+}
+
+# Display constants
+DISPLAY_CONSTANTS = {
+    "bom_preview_limit": 20,  # Maximum number of BOM items to show in preview
+}

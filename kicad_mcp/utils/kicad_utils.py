@@ -13,7 +13,10 @@ from kicad_mcp.config import (
     KICAD_APP_PATH,
     KICAD_EXTENSIONS,
     KICAD_USER_DIR,
+    TIMEOUT_CONSTANTS,
 )
+from .path_validator import validate_kicad_file, validate_directory, PathValidationError
+from .secure_subprocess import SecureSubprocessRunner, SecureSubprocessError
 
 # Get PID for logging - Removed, handled by logging config
 # _PID = os.getpid()
@@ -44,43 +47,48 @@ def find_kicad_projects() -> list[dict[str, Any]]:
     logging.info(f"Expanded search directories: {expanded_search_dirs}")
 
     for search_dir in expanded_search_dirs:
-        if not os.path.exists(search_dir):
-            logging.warning(
-                f"Expanded search directory does not exist: {search_dir}"
-            )  # Use warning level
+        try:
+            # Validate the search directory
+            validated_dir = validate_directory(search_dir, must_exist=False)
+            if not os.path.exists(validated_dir):
+                logging.warning(f"Search directory does not exist: {search_dir}")
+                continue
+
+            logging.info(f"Scanning validated directory: {validated_dir}")
+            # Use followlinks=True to follow symlinks if needed
+            for root, _, files in os.walk(validated_dir, followlinks=True):
+                for file in files:
+                    if file.endswith(KICAD_EXTENSIONS["project"]):
+                        project_path = os.path.join(root, file)
+                        # Check if it's a real file and not a broken symlink
+                        if not os.path.isfile(project_path):
+                            logging.info(f"Skipping non-file/broken symlink: {project_path}")
+                            continue
+
+                        try:
+                            # Validate the project file with path validation
+                            validated_project = validate_kicad_file(project_path, "project", must_exist=True)
+                            
+                            # Get modification time to ensure file is accessible
+                            mod_time = os.path.getmtime(validated_project)
+                            rel_path = os.path.relpath(validated_project, validated_dir)
+                            project_name = get_project_name_from_path(validated_project)
+
+                            logging.info(f"Found accessible KiCad project: {validated_project}")
+                            projects.append(
+                                {
+                                    "name": project_name,
+                                    "path": validated_project,
+                                    "relative_path": rel_path,
+                                    "modified": mod_time,
+                                }
+                            )
+                        except (OSError, PathValidationError) as e:
+                            logging.error(f"Error accessing/validating project file {project_path}: {e}")
+                            continue  # Skip if we can't access or validate it
+        except PathValidationError as e:
+            logging.warning(f"Invalid search directory {search_dir}: {e}")
             continue
-
-        logging.info(f"Scanning expanded directory: {search_dir}")
-        # Use followlinks=True to follow symlinks if needed
-        for root, _, files in os.walk(search_dir, followlinks=True):
-            for file in files:
-                if file.endswith(KICAD_EXTENSIONS["project"]):
-                    project_path = os.path.join(root, file)
-                    # Check if it's a real file and not a broken symlink
-                    if not os.path.isfile(project_path):
-                        logging.info(f"Skipping non-file/broken symlink: {project_path}")
-                        continue
-
-                    try:
-                        # Attempt to get modification time to ensure file is accessible
-                        mod_time = os.path.getmtime(project_path)
-                        rel_path = os.path.relpath(project_path, search_dir)
-                        project_name = get_project_name_from_path(project_path)
-
-                        logging.info(f"Found accessible KiCad project: {project_path}")
-                        projects.append(
-                            {
-                                "name": project_name,
-                                "path": project_path,
-                                "relative_path": rel_path,
-                                "modified": mod_time,
-                            }
-                        )
-                    except OSError as e:
-                        logging.error(
-                            f"Error accessing project file {project_path}: {e}"
-                        )  # Use error level
-                        continue  # Skip if we can't access it
 
     logging.info(f"Found {len(projects)} KiCad projects after scanning.")
     return projects
@@ -99,30 +107,35 @@ def find_kicad_projects_in_dirs(search_directories: list[str]) -> list[dict[str,
     logging.info(f"Searching KiCad projects in specified directories: {search_directories}")
 
     for search_dir in search_directories:
-        expanded_dir = os.path.expanduser(search_dir)
-        if not os.path.exists(expanded_dir):
-            logging.warning(f"Search directory does not exist: {expanded_dir}")
+        try:
+            # Validate the search directory
+            validated_dir = validate_directory(search_dir, must_exist=True)
+            logging.info(f"Scanning validated directory: {validated_dir}")
+            
+            for root, _, files in os.walk(validated_dir, followlinks=True):
+                for file in files:
+                    if file.endswith(KICAD_EXTENSIONS["project"]):
+                        project_path = os.path.join(root, file)
+                        if not os.path.isfile(project_path):
+                            continue
+
+                        try:
+                            # Validate the project file
+                            validated_project = validate_kicad_file(project_path, "project", must_exist=True)
+                            
+                            project_info = {
+                                "name": get_project_name_from_path(validated_project),
+                                "path": validated_project,
+                                "directory": os.path.dirname(validated_project),
+                            }
+                            projects.append(project_info)
+                            logging.info(f"Found KiCad project: {validated_project}")
+                        except (PathValidationError, Exception) as e:
+                            logging.error(f"Error processing/validating project {project_path}: {str(e)}")
+                            continue
+        except PathValidationError as e:
+            logging.warning(f"Invalid search directory {search_dir}: {e}")
             continue
-
-        logging.info(f"Scanning directory: {expanded_dir}")
-        for root, _, files in os.walk(expanded_dir, followlinks=True):
-            for file in files:
-                if file.endswith(KICAD_EXTENSIONS["project"]):
-                    project_path = os.path.join(root, file)
-                    if not os.path.isfile(project_path):
-                        continue
-
-                    try:
-                        project_info = {
-                            "name": get_project_name_from_path(project_path),
-                            "path": project_path,
-                            "directory": os.path.dirname(project_path),
-                        }
-                        projects.append(project_info)
-                        logging.info(f"Found KiCad project: {project_path}")
-                    except Exception as e:
-                        logging.error(f"Error processing project {project_path}: {str(e)}")
-                        continue
 
     logging.info(f"Found {len(projects)} KiCad projects in specified directories")
     return projects
@@ -150,22 +163,35 @@ def open_kicad_project(project_path: str) -> dict[str, Any]:
     Returns:
         Dictionary with result information
     """
-    if not os.path.exists(project_path):
-        return {"success": False, "error": f"Project not found: {project_path}"}
-
     try:
+        # Validate and sanitize the project path
+        validated_project_path = validate_kicad_file(project_path, "project", must_exist=True)
+        
+        # Create secure subprocess runner
+        subprocess_runner = SecureSubprocessRunner()
+        
+        # Determine command based on platform
         cmd = []
+        allowed_commands = []
+        
         if sys.platform == "darwin":  # macOS
             # On MacOS, use the 'open' command to open the project in KiCad
-            cmd = ["open", "-a", KICAD_APP_PATH, project_path]
+            cmd = ["open", "-a", KICAD_APP_PATH, validated_project_path]
+            allowed_commands = ["open"]
         elif sys.platform == "linux":  # Linux
             # On Linux, use 'xdg-open'
-            cmd = ["xdg-open", project_path]
+            cmd = ["xdg-open", validated_project_path]
+            allowed_commands = ["xdg-open"]
         else:
             # Fallback or error for unsupported OS
             return {"success": False, "error": f"Unsupported operating system: {sys.platform}"}
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        # Execute command using secure subprocess runner
+        result = subprocess_runner.run_safe_command(
+            cmd, 
+            allowed_commands=allowed_commands,
+            timeout=TIMEOUT_CONSTANTS["application_open"]
+        )
 
         return {
             "success": result.returncode == 0,
@@ -174,5 +200,9 @@ def open_kicad_project(project_path: str) -> dict[str, Any]:
             "error": result.stderr if result.returncode != 0 else None,
         }
 
+    except PathValidationError as e:
+        return {"success": False, "error": f"Invalid project path: {e}"}
+    except SecureSubprocessError as e:
+        return {"success": False, "error": f"Failed to open project: {e}"}
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": f"Unexpected error: {e}"}
