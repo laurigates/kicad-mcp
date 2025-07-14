@@ -129,20 +129,20 @@ DEFAULT_FOOTPRINTS = {
 # Timeout constants (in seconds)
 TIMEOUT_CONSTANTS = {
     "kicad_cli_version_check": 10.0,  # Timeout for KiCad CLI version checks
-    "kicad_cli_export": 30.0,         # Timeout for KiCad CLI export operations
-    "application_open": 10.0,         # Timeout for opening applications (e.g., KiCad)
-    "subprocess_default": 30.0,       # Default timeout for subprocess operations
+    "kicad_cli_export": 30.0,  # Timeout for KiCad CLI export operations
+    "application_open": 10.0,  # Timeout for opening applications (e.g., KiCad)
+    "subprocess_default": 30.0,  # Default timeout for subprocess operations
 }
 
 # Progress reporting constants
 PROGRESS_CONSTANTS = {
-    "start": 10,          # Initial progress percentage
-    "detection": 20,      # Progress after CLI detection
-    "setup": 30,          # Progress after setup complete
-    "processing": 50,     # Progress during processing
-    "finishing": 70,      # Progress when finishing up
-    "validation": 90,     # Progress during validation
-    "complete": 100,      # Progress when complete
+    "start": 10,  # Initial progress percentage
+    "detection": 20,  # Progress after CLI detection
+    "setup": 30,  # Progress after setup complete
+    "processing": 50,  # Progress during processing
+    "finishing": 70,  # Progress when finishing up
+    "validation": 90,  # Progress during validation
+    "complete": 100,  # Progress when complete
 }
 
 # Display constants

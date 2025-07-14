@@ -4,7 +4,6 @@ KiCad-specific utility functions.
 
 import logging  # Import logging
 import os
-import subprocess
 import sys  # Add sys import
 from typing import Any
 
@@ -15,8 +14,9 @@ from kicad_mcp.config import (
     KICAD_USER_DIR,
     TIMEOUT_CONSTANTS,
 )
-from .path_validator import validate_kicad_file, validate_directory, PathValidationError
-from .secure_subprocess import SecureSubprocessRunner, SecureSubprocessError
+
+from .path_validator import PathValidationError, validate_directory, validate_kicad_file
+from .secure_subprocess import SecureSubprocessError, SecureSubprocessRunner
 
 # Get PID for logging - Removed, handled by logging config
 # _PID = os.getpid()
@@ -67,8 +67,10 @@ def find_kicad_projects() -> list[dict[str, Any]]:
 
                         try:
                             # Validate the project file with path validation
-                            validated_project = validate_kicad_file(project_path, "project", must_exist=True)
-                            
+                            validated_project = validate_kicad_file(
+                                project_path, "project", must_exist=True
+                            )
+
                             # Get modification time to ensure file is accessible
                             mod_time = os.path.getmtime(validated_project)
                             rel_path = os.path.relpath(validated_project, validated_dir)
@@ -84,7 +86,9 @@ def find_kicad_projects() -> list[dict[str, Any]]:
                                 }
                             )
                         except (OSError, PathValidationError) as e:
-                            logging.error(f"Error accessing/validating project file {project_path}: {e}")
+                            logging.error(
+                                f"Error accessing/validating project file {project_path}: {e}"
+                            )
                             continue  # Skip if we can't access or validate it
         except PathValidationError as e:
             logging.warning(f"Invalid search directory {search_dir}: {e}")
@@ -111,7 +115,7 @@ def find_kicad_projects_in_dirs(search_directories: list[str]) -> list[dict[str,
             # Validate the search directory
             validated_dir = validate_directory(search_dir, must_exist=True)
             logging.info(f"Scanning validated directory: {validated_dir}")
-            
+
             for root, _, files in os.walk(validated_dir, followlinks=True):
                 for file in files:
                     if file.endswith(KICAD_EXTENSIONS["project"]):
@@ -121,8 +125,10 @@ def find_kicad_projects_in_dirs(search_directories: list[str]) -> list[dict[str,
 
                         try:
                             # Validate the project file
-                            validated_project = validate_kicad_file(project_path, "project", must_exist=True)
-                            
+                            validated_project = validate_kicad_file(
+                                project_path, "project", must_exist=True
+                            )
+
                             project_info = {
                                 "name": get_project_name_from_path(validated_project),
                                 "path": validated_project,
@@ -131,7 +137,9 @@ def find_kicad_projects_in_dirs(search_directories: list[str]) -> list[dict[str,
                             projects.append(project_info)
                             logging.info(f"Found KiCad project: {validated_project}")
                         except (PathValidationError, Exception) as e:
-                            logging.error(f"Error processing/validating project {project_path}: {str(e)}")
+                            logging.error(
+                                f"Error processing/validating project {project_path}: {str(e)}"
+                            )
                             continue
         except PathValidationError as e:
             logging.warning(f"Invalid search directory {search_dir}: {e}")
@@ -166,14 +174,14 @@ def open_kicad_project(project_path: str) -> dict[str, Any]:
     try:
         # Validate and sanitize the project path
         validated_project_path = validate_kicad_file(project_path, "project", must_exist=True)
-        
+
         # Create secure subprocess runner
         subprocess_runner = SecureSubprocessRunner()
-        
+
         # Determine command based on platform
         cmd = []
         allowed_commands = []
-        
+
         if sys.platform == "darwin":  # macOS
             # On MacOS, use the 'open' command to open the project in KiCad
             cmd = ["open", "-a", KICAD_APP_PATH, validated_project_path]
@@ -188,9 +196,7 @@ def open_kicad_project(project_path: str) -> dict[str, Any]:
 
         # Execute command using secure subprocess runner
         result = subprocess_runner.run_safe_command(
-            cmd, 
-            allowed_commands=allowed_commands,
-            timeout=TIMEOUT_CONSTANTS["application_open"]
+            cmd, allowed_commands=allowed_commands, timeout=TIMEOUT_CONSTANTS["application_open"]
         )
 
         return {

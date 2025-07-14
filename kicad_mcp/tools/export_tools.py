@@ -8,10 +8,14 @@ import os
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.types import Image
 
+from kicad_mcp.config import PROGRESS_CONSTANTS, TIMEOUT_CONSTANTS
 from kicad_mcp.utils.file_utils import get_project_files
-from kicad_mcp.utils.path_validator import validate_kicad_file, validate_directory, PathValidationError
-from kicad_mcp.utils.secure_subprocess import SecureSubprocessRunner, SecureSubprocessError
-from kicad_mcp.config import TIMEOUT_CONSTANTS, PROGRESS_CONSTANTS
+from kicad_mcp.utils.path_validator import (
+    PathValidationError,
+    validate_directory,
+    validate_kicad_file,
+)
+from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, SecureSubprocessRunner
 
 
 def register_export_tools(mcp: FastMCP) -> None:
@@ -41,7 +45,9 @@ def register_export_tools(mcp: FastMCP) -> None:
 
             # Validate and sanitize project path
             try:
-                validated_project_path = validate_kicad_file(project_path, "project", must_exist=True)
+                validated_project_path = validate_kicad_file(
+                    project_path, "project", must_exist=True
+                )
             except PathValidationError as e:
                 print(f"Invalid project path: {e}")
                 await ctx.info(f"Invalid project path: {e}")
@@ -167,9 +173,9 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context):
                 input_files=[validated_pcb_file],
                 output_files=[output_file],
                 working_dir=validated_project_dir,
-                timeout=TIMEOUT_CONSTANTS["kicad_cli_export"]
+                timeout=TIMEOUT_CONSTANTS["kicad_cli_export"],
             )
-            
+
             if process.returncode != 0:
                 print(f"Command failed with code {process.returncode}")
                 print(f"Stderr: {process.stderr}")
@@ -178,7 +184,9 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context):
                 return None
 
             print(f"Command successful: {process.stdout}")
-            await ctx.report_progress(PROGRESS_CONSTANTS["finishing"], PROGRESS_CONSTANTS["complete"])
+            await ctx.report_progress(
+                PROGRESS_CONSTANTS["finishing"], PROGRESS_CONSTANTS["complete"]
+            )
 
             # Check if the output file was created
             if not os.path.exists(output_file):
@@ -190,7 +198,9 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context):
                 img_data = f.read()
 
             print(f"Successfully generated thumbnail with CLI, size: {len(img_data)} bytes")
-            await ctx.report_progress(PROGRESS_CONSTANTS["validation"], PROGRESS_CONSTANTS["complete"])
+            await ctx.report_progress(
+                PROGRESS_CONSTANTS["validation"], PROGRESS_CONSTANTS["complete"]
+            )
             # Inform user about the saved file
             await ctx.info(f"Thumbnail saved to: {output_file}")
             return Image(data=img_data, format="svg")
