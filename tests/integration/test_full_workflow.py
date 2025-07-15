@@ -67,8 +67,8 @@ class TestFullWorkflow:
 
         # Step 2: Create a circuit using the text-to-schematic tool
         from kicad_mcp.tools.text_to_schematic import TextToSchematicParser
-        from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
         from kicad_mcp.utils.file_utils import get_project_files
+        from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
 
         # Define a simple circuit using YAML format
         circuit_description = """
@@ -198,7 +198,7 @@ circuit "Integration Test Circuit":
         """Test project discovery and analysis workflow."""
         # Step 1: Skip project listing due to path validation restrictions
         # Instead, test direct project structure analysis
-        
+
         # Step 2: Get project structure
         get_project_structure_func = mcp_server._tool_manager._tools["get_project_structure"].fn
 
@@ -248,16 +248,16 @@ circuit "Invalid Component Test":
   connections:
     - VCC → X1.1
 """
-        
+
         # This should handle the invalid component gracefully
         from kicad_mcp.tools.text_to_schematic import TextToSchematicParser
-        
+
         parser = TextToSchematicParser()
         try:
             circuit = parser.parse_yaml_circuit(invalid_circuit_description)
             # Parser should handle unknown components by mapping to default
             assert len(circuit.components) == 1
-        except Exception as e:
+        except Exception:
             # Or it might throw an exception, which is also acceptable
             pass
 
@@ -303,7 +303,7 @@ circuit "Invalid Component Test":
             x = 1000 + (i % 10) * 500
             y = 1000 + (i // 10) * 500
             components_list.append(f"    - R{i + 1}: resistor {(i + 1) * 100}Ω at ({x}, {y})")
-        
+
         large_circuit_description = f"""
 circuit "Large Test Circuit":
   components:
@@ -318,8 +318,8 @@ circuit "Large Test Circuit":
 
         # Parse and generate the circuit
         from kicad_mcp.tools.text_to_schematic import TextToSchematicParser
-        from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
         from kicad_mcp.utils.file_utils import get_project_files
+        from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
 
         parser = TextToSchematicParser()
         circuit = parser.parse_yaml_circuit(large_circuit_description)
@@ -369,7 +369,7 @@ circuit "Large Test Circuit":
         sexpr_content = generator.generate_schematic(
             circuit.name, components_dict, power_symbols_dict, connections_dict
         )
-        
+
         with open(schematic_file, "w") as f:
             f.write(sexpr_content)
 
@@ -447,8 +447,8 @@ circuit "Concurrent Test Circuit {project_name}":
 
             # Parse and generate the circuit
             from kicad_mcp.tools.text_to_schematic import TextToSchematicParser
-            from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
             from kicad_mcp.utils.file_utils import get_project_files
+            from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
 
             parser = TextToSchematicParser()
             circuit = parser.parse_yaml_circuit(circuit_description)
@@ -499,7 +499,7 @@ circuit "Concurrent Test Circuit {project_name}":
             sexpr_content = generator.generate_schematic(
                 circuit.name, components_dict, power_symbols_dict, connections_dict
             )
-            
+
             with open(schematic_file, "w") as f:
                 f.write(sexpr_content)
 

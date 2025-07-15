@@ -19,6 +19,17 @@ from kicad_mcp.utils.secure_subprocess import (
 )
 
 
+def _kicad_cli_available():
+    """Check if KiCad CLI is available."""
+    try:
+        from kicad_mcp.utils.kicad_cli import get_kicad_cli_path
+
+        get_kicad_cli_path()
+        return True
+    except Exception:
+        return False
+
+
 class TestSecureSubprocessRunner:
     """Test cases for SecureSubprocessRunner class."""
 
@@ -75,6 +86,7 @@ class TestSecureSubprocessRunner:
         with pytest.raises(KiCadCLIError):
             runner.run_kicad_command(["--version"])
 
+    @pytest.mark.skipif(not _kicad_cli_available(), reason="KiCad CLI not available")
     def test_run_kicad_command_invalid_input_file(self):
         """Test KiCad command with invalid input file."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -87,6 +99,7 @@ class TestSecureSubprocessRunner:
                     ["sch", "export", "svg", "/etc/passwd"], input_files=["/etc/passwd"]
                 )
 
+    @pytest.mark.skipif(not _kicad_cli_available(), reason="KiCad CLI not available")
     def test_run_kicad_command_invalid_output_directory(self):
         """Test KiCad command with invalid output directory."""
         with tempfile.TemporaryDirectory() as temp_dir:
