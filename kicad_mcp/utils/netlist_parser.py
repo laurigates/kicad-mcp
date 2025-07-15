@@ -6,6 +6,7 @@ from collections import defaultdict
 import os
 import re
 from typing import Any
+import uuid
 
 
 class SchematicParser:
@@ -237,8 +238,6 @@ class SchematicParser:
                 coords = re.findall(r"\(xy\s+([\d\.-]+)\s+([\d\.-]+)\)", pts_str)
                 if len(coords) >= 2:
                     # Generate a UUID for the wire
-                    import uuid
-
                     wire_uuid = str(uuid.uuid4())
 
                     # Use start/end format for compatibility with tests

@@ -4,14 +4,18 @@ Export tools for KiCad projects.
 
 import asyncio
 import os
-import shutil
-import subprocess
 
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.types import Image
 
-from kicad_mcp.config import KICAD_APP_PATH, system
+from kicad_mcp.config import PROGRESS_CONSTANTS, TIMEOUT_CONSTANTS
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.path_validator import (
+    PathValidationError,
+    validate_directory,
+    validate_kicad_file,
+)
+from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, SecureSubprocessRunner
 
 
 def register_export_tools(mcp: FastMCP) -> None:
@@ -39,13 +43,18 @@ def register_export_tools(mcp: FastMCP) -> None:
 
             print(f"Generating thumbnail via CLI for project: {project_path}")
 
-            if not os.path.exists(project_path):
-                print(f"Project not found: {project_path}")
-                await ctx.info(f"Project not found: {project_path}")
+            # Validate and sanitize project path
+            try:
+                validated_project_path = validate_kicad_file(
+                    project_path, "project", must_exist=True
+                )
+            except PathValidationError as e:
+                print(f"Invalid project path: {e}")
+                await ctx.info(f"Invalid project path: {e}")
                 return None
 
             # Get PCB file from project
-            files = get_project_files(project_path)
+            files = get_project_files(validated_project_path)
             if "pcb" not in files:
                 print("PCB file not found in project")
                 await ctx.info("PCB file not found in project")
@@ -60,7 +69,7 @@ def register_export_tools(mcp: FastMCP) -> None:
                 print(f"Using cached CLI thumbnail for {pcb_file}")
                 return app_context.cache[cache_key]
 
-            await ctx.report_progress(10, 100)
+            await ctx.report_progress(PROGRESS_CONSTANTS["start"], PROGRESS_CONSTANTS["complete"])
             await ctx.info(f"Generating thumbnail for {os.path.basename(pcb_file)} using kicad-cli")
 
             # Use command-line tools
@@ -113,71 +122,71 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context):
     """
     try:
         print("Attempting to generate thumbnail using KiCad CLI tools")
-        await ctx.report_progress(20, 100)
+        await ctx.report_progress(PROGRESS_CONSTANTS["detection"], PROGRESS_CONSTANTS["complete"])
 
-        # --- Determine Output Path ---
-        project_dir = os.path.dirname(pcb_file)
-        project_name = os.path.splitext(os.path.basename(pcb_file))[0]
-        output_file = os.path.join(project_dir, f"{project_name}_thumbnail.svg")
-        # ---------------------------
-
-        # Check for required command-line tools based on OS
-        kicad_cli = None
-        if system == "Darwin":  # macOS
-            kicad_cli_path = os.path.join(KICAD_APP_PATH, "Contents/MacOS/kicad-cli")
-            if os.path.exists(kicad_cli_path):
-                kicad_cli = kicad_cli_path
-            elif shutil.which("kicad-cli") is not None:
-                kicad_cli = "kicad-cli"  # Try to use from PATH
-            else:
-                print(f"kicad-cli not found at {kicad_cli_path} or in PATH")
-                return None
-        elif system == "Windows":
-            kicad_cli_path = os.path.join(KICAD_APP_PATH, "bin", "kicad-cli.exe")
-            if os.path.exists(kicad_cli_path):
-                kicad_cli = kicad_cli_path
-            elif shutil.which("kicad-cli.exe") is not None:
-                kicad_cli = "kicad-cli.exe"
-            elif shutil.which("kicad-cli") is not None:
-                kicad_cli = "kicad-cli"  # Try to use from PATH (without .exe)
-            else:
-                print(f"kicad-cli not found at {kicad_cli_path} or in PATH")
-                return None
-        elif system == "Linux":
-            kicad_cli = shutil.which("kicad-cli")
-            if not kicad_cli:
-                print("kicad-cli not found in PATH")
-                return None
-        else:
-            print(f"Unsupported operating system: {system}")
+        # Validate and sanitize PCB file path
+        try:
+            validated_pcb_file = validate_kicad_file(pcb_file, "pcb", must_exist=True)
+        except PathValidationError as e:
+            print(f"Invalid PCB file path: {e}")
+            await ctx.info(f"Invalid PCB file path: {e}")
             return None
 
-        await ctx.report_progress(30, 100)
+        # --- Determine Output Path ---
+        project_dir = os.path.dirname(validated_pcb_file)
+        try:
+            validated_project_dir = validate_directory(project_dir, must_exist=True)
+        except PathValidationError as e:
+            print(f"Invalid project directory: {e}")
+            await ctx.info(f"Invalid project directory: {e}")
+            return None
+
+        project_name = os.path.splitext(os.path.basename(validated_pcb_file))[0]
+        output_file = os.path.join(validated_project_dir, f"{project_name}_thumbnail.svg")
+        # ---------------------------
+
+        await ctx.report_progress(PROGRESS_CONSTANTS["setup"], PROGRESS_CONSTANTS["complete"])
         await ctx.info("Using KiCad command line tools for thumbnail generation")
 
-        # Build command for generating SVG from PCB using kicad-cli (changed from PNG)
-        cmd = [
-            kicad_cli,
+        # Create secure subprocess runner
+        subprocess_runner = SecureSubprocessRunner()
+
+        # Build command for generating SVG from PCB using kicad-cli
+        command_args = [
             "pcb",
             "export",
-            "svg",  # <-- Changed format to svg
+            "svg",
             "--output",
             output_file,
             "--layers",
             "F.Cu,B.Cu,F.SilkS,B.SilkS,F.Mask,B.Mask,Edge.Cuts",  # Keep relevant layers
-            # Consider adding options like --black-and-white if needed
-            pcb_file,
+            validated_pcb_file,
         ]
 
-        print(f"Running command: {' '.join(cmd)}")
-        await ctx.report_progress(50, 100)
+        print(f"Running KiCad CLI command: {' '.join(command_args)}")
+        await ctx.report_progress(PROGRESS_CONSTANTS["processing"], PROGRESS_CONSTANTS["complete"])
 
-        # Run the command
+        # Run the command using secure subprocess runner
         try:
-            process = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=30)
-            print(f"Command successful: {process.stdout}")
+            process = subprocess_runner.run_kicad_command(
+                command_args,
+                input_files=[validated_pcb_file],
+                output_files=[output_file],
+                working_dir=validated_project_dir,
+                timeout=TIMEOUT_CONSTANTS["kicad_cli_export"],
+            )
 
-            await ctx.report_progress(70, 100)
+            if process.returncode != 0:
+                print(f"Command failed with code {process.returncode}")
+                print(f"Stderr: {process.stderr}")
+                print(f"Stdout: {process.stdout}")
+                await ctx.info(f"KiCad CLI command failed: {process.stderr or process.stdout}")
+                return None
+
+            print(f"Command successful: {process.stdout}")
+            await ctx.report_progress(
+                PROGRESS_CONSTANTS["finishing"], PROGRESS_CONSTANTS["complete"]
+            )
 
             # Check if the output file was created
             if not os.path.exists(output_file):
@@ -189,20 +198,16 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context):
                 img_data = f.read()
 
             print(f"Successfully generated thumbnail with CLI, size: {len(img_data)} bytes")
-            await ctx.report_progress(90, 100)
+            await ctx.report_progress(
+                PROGRESS_CONSTANTS["validation"], PROGRESS_CONSTANTS["complete"]
+            )
             # Inform user about the saved file
             await ctx.info(f"Thumbnail saved to: {output_file}")
-            return Image(data=img_data, format="svg")  # <-- Changed format to svg
+            return Image(data=img_data, format="svg")
 
-        except subprocess.CalledProcessError as e:
-            print(f"Command '{' '.join(e.cmd)}' failed with code {e.returncode}")
-            print(f"Stderr: {e.stderr}")
-            print(f"Stdout: {e.stdout}")
-            await ctx.info(f"KiCad CLI command failed: {e.stderr or e.stdout}")
-            return None
-        except subprocess.TimeoutExpired:
-            print(f"Command timed out after 30 seconds: {' '.join(cmd)}")
-            await ctx.info("KiCad CLI command timed out")
+        except SecureSubprocessError as e:
+            print(f"Secure subprocess error: {e}")
+            await ctx.info(f"KiCad CLI command failed: {e}")
             return None
         except Exception as e:
             print(f"Error running CLI command: {str(e)}", exc_info=True)
