@@ -80,7 +80,7 @@ class TestFullWorkflow:
             assert result["success"] is True
 
         # Step 3: Add main components
-        add_component_func = mcp_server._tools["add_component_to_circuit"].func
+        add_component_func = mcp_server._tool_manager._tools["add_component"].fn
 
         # Add ESP32
         result = await add_component_func(
@@ -126,7 +126,7 @@ class TestFullWorkflow:
             capacitor_uuids.append(result["component_uuid"])
 
         # Step 4: Connect components
-        connect_func = mcp_server._tools["connect_components"].func
+        connect_func = mcp_server._tool_manager._tools["create_wire_connection"].fn
 
         # Connect some components
         connections = [
@@ -148,7 +148,7 @@ class TestFullWorkflow:
             # Integration test focuses on workflow, not pin accuracy
 
         # Step 5: Validate circuit
-        validate_func = mcp_server._tools["validate_circuit"].func
+        validate_func = mcp_server._tool_manager._tools["validate_schematic"].fn
         result = await validate_func(project_path=project_file, ctx=mock_context)
         assert result["success"] is True
         validation = result["validation_results"]
@@ -157,7 +157,7 @@ class TestFullWorkflow:
         assert validation["component_count"] >= 8  # 3 power + 1 ESP32 + 3 resistors + 2 capacitors
 
         # Step 6: Extract netlist
-        extract_netlist_func = mcp_server._tools["extract_schematic_netlist"].func
+        extract_netlist_func = mcp_server._tool_manager._tools["extract_schematic_netlist"].fn
         schematic_file = f"{project_path}/{project_name}.kicad_sch"
         result = await extract_netlist_func(schematic_path=schematic_file, ctx=mock_context)
         assert result["success"] is True
@@ -172,8 +172,8 @@ class TestFullWorkflow:
         assert any("power:" in comp.get("lib_id", "") for comp in components)
 
         # Step 7: Export files (if available)
-        if "export_gerbers" in mcp_server._tools:
-            export_func = mcp_server._tools["export_gerbers"].func
+        if "export_gerbers" in mcp_server._tool_manager._tools:
+            export_func = mcp_server._tool_manager._tools["export_gerbers"].fn
             result = await export_func(
                 project_path=project_file,
                 output_directory=str(temp_dir / "gerbers"),
@@ -214,7 +214,7 @@ class TestFullWorkflow:
         assert "files" in result
 
         # Step 3: Extract netlist from existing project
-        extract_netlist_func = mcp_server._tools["extract_schematic_netlist"].func
+        extract_netlist_func = mcp_server._tool_manager._tools["extract_schematic_netlist"].fn
         result = await extract_netlist_func(
             schematic_path=sample_kicad_project["schematic"], ctx=mock_context
         )
@@ -233,7 +233,7 @@ class TestFullWorkflow:
         project_path = str(temp_dir / project_name)
 
         # Step 1: Create project successfully
-        create_func = mcp_server._tools["create_new_circuit"].func
+        create_func = mcp_server._tool_manager._tools["create_new_project"].fn
         result = await create_func(
             project_name=project_name,
             project_path=project_path,
@@ -244,7 +244,7 @@ class TestFullWorkflow:
         project_file = f"{project_path}/{project_name}.kicad_pro"
 
         # Step 2: Try to add invalid component
-        add_component_func = mcp_server._tools["add_component_to_circuit"].func
+        add_component_func = mcp_server._tool_manager._tools["add_component"].fn
         result = await add_component_func(
             project_path=project_file,
             component_type="NonExistent:InvalidComponent",
@@ -258,7 +258,7 @@ class TestFullWorkflow:
         # (Success depends on implementation - might create generic component)
 
         # Step 3: Try to connect non-existent components
-        connect_func = mcp_server._tools["connect_components"].func
+        connect_func = mcp_server._tool_manager._tools["create_wire_connection"].fn
         result = await connect_func(
             project_path=project_file,
             from_component="NonExistent1",
@@ -271,12 +271,12 @@ class TestFullWorkflow:
         assert result["success"] is False
 
         # Step 4: Validate project should still work
-        validate_func = mcp_server._tools["validate_circuit"].func
+        validate_func = mcp_server._tool_manager._tools["validate_schematic"].fn
         result = await validate_func(project_path=project_file, ctx=mock_context)
         assert result["success"] is True
 
         # Step 5: Extract netlist should still work
-        extract_netlist_func = mcp_server._tools["extract_schematic_netlist"].func
+        extract_netlist_func = mcp_server._tool_manager._tools["extract_schematic_netlist"].fn
         schematic_file = f"{project_path}/{project_name}.kicad_sch"
         result = await extract_netlist_func(schematic_path=schematic_file, ctx=mock_context)
         assert result["success"] is True
@@ -288,7 +288,7 @@ class TestFullWorkflow:
         project_path = str(temp_dir / project_name)
 
         # Create project
-        create_func = mcp_server._tools["create_new_circuit"].func
+        create_func = mcp_server._tool_manager._tools["create_new_project"].fn
         result = await create_func(
             project_name=project_name,
             project_path=project_path,
@@ -299,7 +299,7 @@ class TestFullWorkflow:
         project_file = f"{project_path}/{project_name}.kicad_pro"
 
         # Add many components
-        add_component_func = mcp_server._tools["add_component_to_circuit"].func
+        add_component_func = mcp_server._tool_manager._tools["add_component"].fn
 
         import time
 
@@ -321,7 +321,7 @@ class TestFullWorkflow:
         component_time = time.time()
 
         # Extract netlist
-        extract_netlist_func = mcp_server._tools["extract_schematic_netlist"].func
+        extract_netlist_func = mcp_server._tool_manager._tools["extract_schematic_netlist"].fn
         schematic_file = f"{project_path}/{project_name}.kicad_sch"
         result = await extract_netlist_func(schematic_path=schematic_file, ctx=mock_context)
         assert result["success"] is True
@@ -352,7 +352,7 @@ class TestFullWorkflow:
         project_paths = [str(temp_dir / name) for name in project_names]
 
         # Create multiple projects concurrently
-        create_func = mcp_server._tools["create_new_circuit"].func
+        create_func = mcp_server._tool_manager._tools["create_new_project"].fn
 
         async def create_project(name, path):
             return await create_func(
@@ -372,7 +372,7 @@ class TestFullWorkflow:
             assert result["success"] is True
 
         # Add components to projects concurrently
-        add_component_func = mcp_server._tools["add_component_to_circuit"].func
+        add_component_func = mcp_server._tool_manager._tools["add_component"].fn
 
         async def add_components(project_path, project_name):
             tasks = []
@@ -400,7 +400,7 @@ class TestFullWorkflow:
                 assert result["success"] is True
 
         # Extract netlists concurrently
-        extract_netlist_func = mcp_server._tools["extract_schematic_netlist"].func
+        extract_netlist_func = mcp_server._tool_manager._tools["extract_schematic_netlist"].fn
 
         async def extract_netlist(project_path, project_name):
             return await extract_netlist_func(

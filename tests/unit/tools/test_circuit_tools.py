@@ -230,9 +230,9 @@ class TestCircuitTools:
 
         assert result["success"] is False
         assert "error" in result
-        # Check for file/directory not found error messages
+        # Check for improved error message from security validation
         error_msg = result["error"].lower()
-        assert "no such file or directory" in error_msg or "not found" in error_msg
+        assert "no schematic file found in project" in error_msg
 
     @pytest.mark.asyncio
     async def test_add_power_symbols(self, mock_context, sample_kicad_project):

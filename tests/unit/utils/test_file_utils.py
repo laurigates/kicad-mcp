@@ -235,7 +235,7 @@ class TestFileUtils:
 
             assert result is None
 
-    @patch("kicad_mcp.utils.kicad_utils.get_project_name_from_path")
+    @patch("kicad_mcp.utils.file_utils.get_project_name_from_path")
     def test_get_project_files_name_extraction(self, mock_get_name, temp_dir):
         """Test that project name extraction is called correctly."""
         mock_get_name.return_value = "extracted_name"

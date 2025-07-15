@@ -149,9 +149,9 @@ class TestNetlistParser:
         assert len(set(references)) == 2  # All references should be unique
         assert any("PWR" in ref for ref in references)
 
-    def test_parse_sexpr_schematic_components(self, sample_sexpr_schematic):
+    def test_parse_sexpr_schematic_components(self, sample_sexpr_schematic_file):
         """Test S-expression component parsing."""
-        result = extract_netlist(sample_sexpr_schematic)
+        result = extract_netlist(str(sample_sexpr_schematic_file))
 
         assert result["component_count"] >= 1
         assert "components" in result
@@ -170,9 +170,9 @@ class TestNetlistParser:
             assert "reference" in comp
             assert "uuid" in comp
 
-    def test_parse_sexpr_schematic_wires_and_junctions(self, sample_sexpr_schematic):
+    def test_parse_sexpr_schematic_wires_and_junctions(self, sample_sexpr_schematic_file):
         """Test S-expression wire and junction parsing."""
-        result = extract_netlist(sample_sexpr_schematic)
+        result = extract_netlist(str(sample_sexpr_schematic_file))
 
         assert "wires" in result
         assert "junctions" in result
@@ -186,9 +186,9 @@ class TestNetlistParser:
             wire = result["wires"][0]
             assert "uuid" in wire
 
-    def test_parse_sexpr_schematic_labels(self, sample_sexpr_schematic):
+    def test_parse_sexpr_schematic_labels(self, sample_sexpr_schematic_file):
         """Test S-expression label parsing."""
-        result = extract_netlist(sample_sexpr_schematic)
+        result = extract_netlist(str(sample_sexpr_schematic_file))
 
         assert "labels" in result
 
@@ -272,8 +272,10 @@ class TestNetlistParser:
     def test_format_detection_sexpr(self, sample_sexpr_schematic_file):
         """Test automatic format detection for S-expression files."""
         # This test ensures the extract_netlist function correctly detects S-expression format
-        with patch("kicad_mcp.utils.netlist_parser.parse_sexpr_schematic") as mock_sexpr:
-            mock_sexpr.return_value = {
+        with patch("kicad_mcp.utils.netlist_parser.SchematicParser") as mock_parser:
+            # Mock the parser instance and its parse method
+            mock_instance = mock_parser.return_value
+            mock_instance.parse.return_value = {
                 "component_count": 0,
                 "net_count": 0,
                 "components": {},
@@ -282,8 +284,9 @@ class TestNetlistParser:
 
             extract_netlist(str(sample_sexpr_schematic_file))
 
-            # Should have called S-expression parser
-            mock_sexpr.assert_called_once()
+            # Should have created a SchematicParser instance
+            mock_parser.assert_called_once()
+            mock_instance.parse.assert_called_once()
 
     def test_large_schematic_performance(self):
         """Test performance with a large schematic (stress test)."""
