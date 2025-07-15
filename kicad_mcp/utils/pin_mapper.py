@@ -150,6 +150,17 @@ class ComponentPinMapper:
                 "1", "1", PinDirection.POWER_IN, PinType.POWER, (0, 0), 0, 0
             )  # Power connection point
         ],
+        "ic": [
+            # Generic IC with at least 4 pins (VCC, GND, and 2 I/O)
+            PinInfo(
+                "1", "Pin1", PinDirection.BIDIRECTIONAL, PinType.SIGNAL, (-7.62, -2.54), 2.54, 180
+            ),
+            PinInfo(
+                "2", "Pin2", PinDirection.BIDIRECTIONAL, PinType.SIGNAL, (-7.62, 2.54), 2.54, 180
+            ),
+            PinInfo("3", "VCC", PinDirection.POWER_IN, PinType.POWER, (7.62, 2.54), 2.54, 0),
+            PinInfo("4", "GND", PinDirection.POWER_IN, PinType.GROUND, (7.62, -2.54), 2.54, 0),
+        ],
     }
 
     def __init__(self):
