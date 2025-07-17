@@ -12,6 +12,7 @@ import uuid
 from fastmcp import Context, FastMCP
 
 from kicad_mcp.config import KICAD_APP_PATH, system
+from kicad_mcp.utils.boundary_validator import BoundaryValidator
 from kicad_mcp.utils.component_layout import ComponentLayoutManager
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
@@ -362,27 +363,35 @@ async def add_component(
         # Create component UUID
         component_uuid = str(uuid.uuid4())
 
-        # Validate and fix component position using layout manager
+        # Validate and fix component position using boundary validator
+        validator = BoundaryValidator()
         layout_manager = ComponentLayoutManager()
 
         # Determine component type from symbol information
         component_type = _get_component_type_from_symbol(symbol_library, symbol_name)
 
-        # Validate position is within schematic boundaries
-        if layout_manager.validate_position(x_position, y_position, component_type):
+        # Validate position using boundary validator
+        validation_issue = validator.validate_component_position(
+            component_reference, x_position, y_position, component_type
+        )
+
+        if ctx:
+            await ctx.info(f"Position validation: {validation_issue.message}")
+
+        # Handle validation result
+        if validation_issue.suggested_position:
+            # Use suggested corrected position
+            final_x, final_y = validation_issue.suggested_position
+            if ctx:
+                await ctx.info(
+                    f"Component position corrected: ({x_position}, {y_position}) → ({final_x}, {final_y})"
+                )
+        else:
+            # Position is valid, snap to grid
             final_x, final_y = layout_manager.snap_to_grid(x_position, y_position)
             if ctx:
                 await ctx.info(
                     f"Component position validated and snapped to grid: ({final_x}, {final_y})"
-                )
-        else:
-            # Position is outside bounds, find a valid position
-            final_x, final_y = layout_manager.find_valid_position(
-                component_reference, component_type, x_position, y_position
-            )
-            if ctx:
-                await ctx.info(
-                    f"Component position corrected to fit within schematic bounds: ({final_x}, {final_y})"
                 )
 
         # Convert positions to KiCad internal units (0.1mm)
@@ -535,26 +544,46 @@ async def create_wire_connection(
 
         schematic_data = read_result["data"]
 
-        # Validate wire positions using layout manager
+        # Validate wire positions using boundary validator
+        validator = BoundaryValidator()
         layout_manager = ComponentLayoutManager()
 
-        # Validate start position
-        if not layout_manager.validate_position(start_x, start_y, "default"):
-            start_x, start_y = layout_manager.snap_to_grid(
-                max(layout_manager.bounds.min_x, min(start_x, layout_manager.bounds.max_x)),
-                max(layout_manager.bounds.min_y, min(start_y, layout_manager.bounds.max_y)),
-            )
-            if ctx:
-                await ctx.info(f"Wire start position corrected to ({start_x}, {start_y})")
+        # Validate wire connection endpoints
+        wire_issues = validator.validate_wire_connection(start_x, start_y, end_x, end_y)
 
-        # Validate end position
-        if not layout_manager.validate_position(end_x, end_y, "default"):
-            end_x, end_y = layout_manager.snap_to_grid(
-                max(layout_manager.bounds.min_x, min(end_x, layout_manager.bounds.max_x)),
-                max(layout_manager.bounds.min_y, min(end_y, layout_manager.bounds.max_y)),
+        if ctx and wire_issues:
+            for issue in wire_issues:
+                await ctx.info(f"Wire validation: {issue.message}")
+
+        # Apply corrections if needed
+        if wire_issues:
+            # Correct start position if needed
+            start_issue = next(
+                (issue for issue in wire_issues if issue.component_ref == "WIRE_START"), None
             )
-            if ctx:
-                await ctx.info(f"Wire end position corrected to ({end_x}, {end_y})")
+            if start_issue:
+                start_x, start_y = layout_manager.snap_to_grid(
+                    max(layout_manager.bounds.min_x, min(start_x, layout_manager.bounds.max_x)),
+                    max(layout_manager.bounds.min_y, min(start_y, layout_manager.bounds.max_y)),
+                )
+                if ctx:
+                    await ctx.info(f"Wire start position corrected to ({start_x}, {start_y})")
+
+            # Correct end position if needed
+            end_issue = next(
+                (issue for issue in wire_issues if issue.component_ref == "WIRE_END"), None
+            )
+            if end_issue:
+                end_x, end_y = layout_manager.snap_to_grid(
+                    max(layout_manager.bounds.min_x, min(end_x, layout_manager.bounds.max_x)),
+                    max(layout_manager.bounds.min_y, min(end_y, layout_manager.bounds.max_y)),
+                )
+                if ctx:
+                    await ctx.info(f"Wire end position corrected to ({end_x}, {end_y})")
+        else:
+            # Positions are valid, just snap to grid
+            start_x, start_y = layout_manager.snap_to_grid(start_x, start_y)
+            end_x, end_y = layout_manager.snap_to_grid(end_x, end_y)
 
         # Convert positions to KiCad internal units
         start_x_internal = int(start_x * 10)
