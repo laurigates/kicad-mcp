@@ -12,6 +12,7 @@ from typing import Any
 from fastmcp import Context, FastMCP
 import yaml
 
+from kicad_mcp.utils.boundary_validator import BoundaryValidator
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
 
@@ -806,6 +807,52 @@ circuit "I2C Sensor Interface":
             if ctx:
                 await ctx.info(f"Parsed circuit: {circuit.name}")
                 await ctx.report_progress(30, 100)
+
+            # Validate component positions before generation
+            validator = BoundaryValidator()
+
+            # Prepare components for validation
+            components_for_validation = []
+            for comp in circuit.components:
+                components_for_validation.append(
+                    {
+                        "reference": comp.reference,
+                        "position": comp.position,
+                        "component_type": comp.component_type,
+                    }
+                )
+
+            # Run boundary validation
+            validation_report = validator.validate_circuit_components(components_for_validation)
+
+            if ctx:
+                await ctx.info(
+                    f"Boundary validation: {validation_report.out_of_bounds_count} out of bounds components"
+                )
+
+                # Show validation report if there are issues
+                if validation_report.has_errors() or validation_report.has_warnings():
+                    report_text = validator.generate_validation_report_text(validation_report)
+                    await ctx.info(f"Validation Report:\n{report_text}")
+
+            # Auto-correct positions if needed
+            if validation_report.out_of_bounds_count > 0:
+                if ctx:
+                    await ctx.info("Auto-correcting out-of-bounds component positions...")
+
+                corrected_components, _ = validator.auto_correct_positions(
+                    components_for_validation
+                )
+
+                # Update circuit components with corrected positions
+                for i, comp in enumerate(circuit.components):
+                    if i < len(corrected_components):
+                        comp.position = corrected_components[i]["position"]
+
+                if ctx:
+                    await ctx.info(
+                        f"Corrected {len(validation_report.corrected_positions)} component positions"
+                    )
 
             # Get project files
             files = get_project_files(project_path)

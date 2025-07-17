@@ -38,6 +38,7 @@ from kicad_mcp.tools.pattern_tools import register_pattern_tools
 # Import tool handlers
 from kicad_mcp.tools.project_tools import register_project_tools
 from kicad_mcp.tools.text_to_schematic import register_text_to_schematic_tools
+from kicad_mcp.tools.validation_tools import register_validation_tools
 from kicad_mcp.tools.visualization_tools import register_visualization_tools
 
 # Track cleanup handlers
@@ -60,7 +61,17 @@ def add_cleanup_handler(handler: Callable) -> None:
 
 
 def run_cleanup_handlers() -> None:
-    """Run all registered cleanup handlers."""
+    """Run all registered cleanup handlers.
+
+    Executes all cleanup functions in order, with error handling for each.
+    Prevents multiple executions using the global _shutting_down flag.
+
+    Note:
+        This function is idempotent - multiple calls are safe.
+
+    Time Complexity:
+        O(n) where n is the number of cleanup handlers
+    """
     logging.info("Running cleanup handlers...")
 
     global _shutting_down
@@ -80,8 +91,16 @@ def run_cleanup_handlers() -> None:
             logging.error(f"Error in cleanup handler {handler.__name__}: {str(e)}", exc_info=True)
 
 
-def shutdown_server():
-    """Properly shutdown the server if it exists."""
+def shutdown_server() -> None:
+    """Properly shutdown the server if it exists.
+
+    Gracefully shuts down the global server instance and clears the reference.
+    Handles any exceptions that occur during shutdown process.
+
+    Note:
+        Uses the global _server_instance variable.
+        Safe to call even if no server instance exists.
+    """
     global _server_instance
 
     if _server_instance:
@@ -100,7 +119,16 @@ def register_signal_handlers(server: FastMCP) -> None:
         server: The FastMCP server instance
     """
 
-    def handle_exit_signal(signum, frame):
+    def handle_exit_signal(signum: int, frame) -> None:
+        """Handle system exit signals for graceful shutdown.
+
+        Args:
+            signum: Signal number received
+            frame: Current stack frame (unused)
+
+        Note:
+            Calls run_cleanup_handlers(), shutdown_server(), then os._exit(0)
+        """
         logging.info(f"Received signal {signum}, initiating shutdown...")
 
         # Run cleanup first
@@ -123,7 +151,23 @@ def register_signal_handlers(server: FastMCP) -> None:
 
 
 def create_server() -> FastMCP:
-    """Create and configure the KiCad MCP server."""
+    """Create and configure the KiCad MCP server.
+
+    Initializes a complete FastMCP server with all KiCad-specific resources,
+    tools, and prompts. Sets up signal handlers and cleanup procedures.
+
+    Returns:
+        FastMCP: Fully configured MCP server instance ready for use
+
+    Dependencies:
+        - Registers resources: projects, files, DRC, BOM, netlist, patterns
+        - Registers tools: project, analysis, export, DRC, BOM, netlist, pattern,
+          circuit, text-to-schematic, visualization
+        - Registers prompts: general, DRC, BOM, pattern, circuit
+
+    Time Complexity:
+        O(1) - registration is constant time per component
+    """
     logging.info("Initializing KiCad MCP server")
     logging.info("KiCad Python module setup removed; relying on kicad-cli for external operations.")
 
@@ -151,6 +195,7 @@ def create_server() -> FastMCP:
     register_pattern_tools(mcp)
     register_circuit_tools(mcp)
     register_text_to_schematic_tools(mcp)
+    register_validation_tools(mcp)
     register_visualization_tools(mcp)
 
     # Register prompts
@@ -169,8 +214,16 @@ def create_server() -> FastMCP:
     add_cleanup_handler(lambda: logging.info("KiCad MCP server shutdown complete"))
 
     # Add temp directory cleanup
-    def cleanup_temp_dirs():
-        """Clean up any temporary directories created by the server."""
+    def cleanup_temp_dirs() -> None:
+        """Clean up any temporary directories created by the server.
+
+        Removes all temporary directories tracked by temp_dir_manager.
+        This is an internal cleanup function used by the server shutdown process.
+
+        Note:
+            Uses shutil.rmtree with ignore_errors=True for safety.
+            Logs each directory removal and any errors.
+        """
         import shutil
 
         from kicad_mcp.utils.temp_dir_manager import get_temp_dirs
@@ -194,7 +247,14 @@ def create_server() -> FastMCP:
 
 # Logger configuration
 def setup_logging() -> None:
-    """Set up logging configuration."""
+    """Set up logging configuration.
+
+    Configures basic logging at INFO level for the entire application.
+    Should be called once at module import time.
+
+    Note:
+        Uses basicConfig which only takes effect on first call.
+    """
     logging.basicConfig(level=logging.INFO)
 
 
@@ -203,9 +263,26 @@ logger = logging.getLogger(__name__)
 
 
 def setup_signal_handlers() -> None:
-    """Set up signal handlers for graceful shutdown (test-compatible alias)."""
+    """Set up signal handlers for graceful shutdown (test-compatible alias).
 
-    def signal_handler(signum, frame):
+    Registers handlers for SIGTERM and SIGINT signals to enable graceful
+    shutdown during testing and normal operation.
+
+    Note:
+        This is a test-compatible version of signal handling.
+        Uses the module logger instead of logging directly.
+    """
+
+    def signal_handler(signum: int, frame) -> None:
+        """Handle shutdown signals for test compatibility.
+
+        Args:
+            signum: Signal number received
+            frame: Current stack frame (unused)
+
+        Note:
+            Calls cleanup_handler() then sys.exit(0)
+        """
         logger.info(f"Received shutdown signal {signum}")
         cleanup_handler()
         sys.exit(0)
@@ -215,7 +292,17 @@ def setup_signal_handlers() -> None:
 
 
 def cleanup_handler() -> None:
-    """Clean up resources on shutdown (test-compatible alias)."""
+    """Clean up resources on shutdown (test-compatible alias).
+
+    Performs cleanup of temporary directories and runs all registered
+    cleanup handlers. Designed for compatibility with test environments.
+
+    Raises:
+        Exception: Logs any cleanup errors but does not re-raise
+
+    Note:
+        Safe to call multiple times or when resources don't exist.
+    """
     logger.info("Starting server cleanup")
     try:
         cleanup_temp_dirs()
@@ -225,7 +312,19 @@ def cleanup_handler() -> None:
 
 
 def cleanup_temp_dirs() -> None:
-    """Clean up temporary directories."""
+    """Clean up temporary directories.
+
+    Removes all temporary directories tracked by the temp_dir_manager.
+    Handles missing dependencies gracefully for test compatibility.
+
+    Note:
+        Uses shutil.rmtree with ignore_errors=True for robustness.
+        Logs each directory removal and any errors encountered.
+        Gracefully handles ImportError if temp_dir_manager unavailable.
+
+    Time Complexity:
+        O(n*k) where n is number of temp dirs and k is average directory size
+    """
     try:
         import shutil
 
@@ -247,7 +346,24 @@ def cleanup_temp_dirs() -> None:
 
 
 async def main() -> None:
-    """Main server entry point (test-compatible)."""
+    """Main server entry point (test-compatible).
+
+    Starts the KiCad MCP server with proper signal handling and cleanup.
+    Designed to work in both production and test environments.
+
+    Raises:
+        KeyboardInterrupt: Handled gracefully with cleanup
+        Exception: Logged and triggers cleanup before termination
+
+    Flow:
+        1. Setup signal handlers
+        2. Create and configure server
+        3. Start server (async)
+        4. Handle shutdown signals and cleanup
+
+    Note:
+        Sets global _server_instance for shutdown handling.
+    """
     try:
         logger.info("Starting KiCad MCP server")
         setup_signal_handlers()
