@@ -95,8 +95,8 @@ class BoundaryValidator:
         Returns:
             ValidationIssue describing the validation result
         """
-        # Check if position is within A4 bounds
-        if not validate_position(x, y, use_margins=True):
+        # Check if position is within absolute A4 bounds first
+        if not validate_position(x, y, use_margins=False):
             # Find a corrected position
             corrected_x, corrected_y = self.layout_manager.find_valid_position(
                 component_ref, component_type, x, y
@@ -112,7 +112,7 @@ class BoundaryValidator:
             )
 
         # Check if position is within usable area (with margins)
-        if not validate_position(x, y, use_margins=False):
+        if not validate_position(x, y, use_margins=True):
             # Position is within absolute bounds but outside usable area
             return ValidationIssue(
                 severity=ValidationSeverity.WARNING,
@@ -222,7 +222,7 @@ class BoundaryValidator:
         issues = []
 
         # Validate start point
-        if not validate_position(start_x, start_y, use_margins=True):
+        if not validate_position(start_x, start_y, use_margins=False):
             issues.append(
                 ValidationIssue(
                     severity=ValidationSeverity.ERROR,
@@ -233,7 +233,7 @@ class BoundaryValidator:
             )
 
         # Validate end point
-        if not validate_position(end_x, end_y, use_margins=True):
+        if not validate_position(end_x, end_y, use_margins=False):
             issues.append(
                 ValidationIssue(
                     severity=ValidationSeverity.ERROR,

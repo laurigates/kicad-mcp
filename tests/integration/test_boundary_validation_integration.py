@@ -7,7 +7,7 @@ to validation reporting.
 
 import json
 import os
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -194,8 +194,8 @@ circuit "valid_circuit":
 
         # Run project validation
         ctx = Mock()
-        ctx.info = Mock()
-        ctx.report_progress = Mock()
+        ctx.info = AsyncMock()
+        ctx.report_progress = AsyncMock()
 
         validation_result = await validate_project_boundaries(str(project_file), ctx)
 
@@ -238,7 +238,7 @@ circuit "valid_circuit":
             ("resistor", (50, 50), True),  # Valid position
             ("capacitor", (350, 250), False),  # Out of bounds
             ("ic", (20, 20), True),  # Valid but large component
-            ("led", (10, 10), False),  # Too close to edge (outside usable area)
+            ("led", (10, 10), True),  # Too close to edge (outside usable area) - should be warning
             ("transistor", (200, 100), True),  # Valid position
             ("power", (280, 190), True),  # Valid position near edge
             ("connector", (300, 200), False),  # Out of bounds
