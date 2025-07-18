@@ -4,7 +4,7 @@ Tests for validation tools.
 
 import json
 import os
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import AsyncMock, Mock, mock_open, patch
 
 import pytest
 
@@ -76,8 +76,8 @@ class TestValidationTools:
             patch("builtins.open", mock_open(read_data=json.dumps(sample_json_schematic))),
         ):
             ctx = Mock()
-            ctx.info = Mock()
-            ctx.report_progress = Mock()
+            ctx.info = AsyncMock()
+            ctx.report_progress = AsyncMock()
 
             result = await validate_project_boundaries("/path/to/test.kicad_pro", ctx)
 
@@ -104,8 +104,8 @@ class TestValidationTools:
             patch("builtins.open", mock_open(read_data=sample_sexpr_schematic)),
         ):
             ctx = Mock()
-            ctx.info = Mock()
-            ctx.report_progress = Mock()
+            ctx.info = AsyncMock()
+            ctx.report_progress = AsyncMock()
 
             result = await validate_project_boundaries("/path/to/test.kicad_pro", ctx)
 
@@ -143,16 +143,26 @@ class TestValidationTools:
         self, mock_project_files, sample_json_schematic, tmp_path
     ):
         """Test successful validation report generation."""
+        # Use a more targeted mock that only mocks reading the schematic file
+        real_open = open
+
+        def mock_open_func(filename, mode="r", *args, **kwargs):
+            if "test.kicad_sch" in filename and "r" in mode:
+                return mock_open(read_data=json.dumps(sample_json_schematic))()
+            else:
+                # Use real open for other files (like writing the report)
+                return real_open(filename, mode, *args, **kwargs)
+
         with (
             patch(
                 "kicad_mcp.tools.validation_tools.get_project_files",
                 return_value=mock_project_files,
             ),
-            patch("builtins.open", mock_open(read_data=json.dumps(sample_json_schematic))),
+            patch("builtins.open", side_effect=mock_open_func),
         ):
             ctx = Mock()
-            ctx.info = Mock()
-            ctx.report_progress = Mock()
+            ctx.info = AsyncMock()
+            ctx.report_progress = AsyncMock()
 
             output_path = str(tmp_path / "report.json")
             result = await generate_validation_report("/path/to/test.kicad_pro", output_path, ctx)

@@ -136,9 +136,6 @@ async def generate_validation_report(
         # Run validation
         validation_result = await validate_project_boundaries(project_path, ctx)
 
-        if not validation_result["success"]:
-            return validation_result
-
         # Determine output path
         if output_path is None:
             project_dir = os.path.dirname(project_path)
@@ -256,15 +253,25 @@ def _get_component_type_from_lib_id(lib_id: str) -> str:
     """Determine component type from library ID."""
     lib_id_lower = lib_id.lower()
 
-    if "resistor" in lib_id_lower or ":r" in lib_id_lower:
-        return "resistor"
-    elif "capacitor" in lib_id_lower or ":c" in lib_id_lower:
-        return "capacitor"
-    elif "inductor" in lib_id_lower or ":l" in lib_id_lower:
-        return "inductor"
+    if "connector" in lib_id_lower:
+        return "connector"
     elif "led" in lib_id_lower:
         return "led"
-    elif "diode" in lib_id_lower or ":d" in lib_id_lower:
+    elif "resistor" in lib_id_lower or lib_id_lower.endswith(":r") or ":r_" in lib_id_lower:
+        return "resistor"
+    elif (
+        "capacitor" in lib_id_lower
+        or (lib_id_lower.endswith(":c") and "connector" not in lib_id_lower)
+        or (":c_" in lib_id_lower and "connector" not in lib_id_lower)
+    ):
+        return "capacitor"
+    elif (
+        "inductor" in lib_id_lower
+        or (lib_id_lower.endswith(":l") and "led" not in lib_id_lower)
+        or (":l_" in lib_id_lower and "led" not in lib_id_lower)
+    ):
+        return "inductor"
+    elif "diode" in lib_id_lower or lib_id_lower.endswith(":d") or ":d_" in lib_id_lower:
         return "diode"
     elif "transistor" in lib_id_lower or "npn" in lib_id_lower or "pnp" in lib_id_lower:
         return "transistor"
@@ -272,8 +279,6 @@ def _get_component_type_from_lib_id(lib_id: str) -> str:
         return "power"
     elif "switch" in lib_id_lower:
         return "switch"
-    elif "connector" in lib_id_lower:
-        return "connector"
     elif "mcu" in lib_id_lower or "ic" in lib_id_lower or ":u" in lib_id_lower:
         return "ic"
     else:
