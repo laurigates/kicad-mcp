@@ -7,6 +7,7 @@ Converts circuit descriptions to proper KiCad S-expression format.
 import uuid
 
 from kicad_mcp.utils.component_layout import ComponentLayoutManager
+from kicad_mcp.utils.coordinate_converter import layout_to_kicad
 from kicad_mcp.utils.pin_mapper import ComponentPinMapper
 
 
@@ -475,9 +476,8 @@ class SExpressionGenerator:
         comp_uuid = str(uuid.uuid4())
         self.component_uuid_map[component["reference"]] = comp_uuid
 
-        # Convert position from mm to KiCad internal units (0.1mm)
-        x_pos = component["position"][0] * 10
-        y_pos = component["position"][1] * 10
+        # Convert position from ComponentLayoutManager coordinates to KiCad coordinates
+        x_pos, y_pos = layout_to_kicad(component["position"][0], component["position"][1])
 
         lib_id = f"{component.get('symbol_library', 'Device')}:{component.get('symbol_name', 'R')}"
 
@@ -508,9 +508,8 @@ class SExpressionGenerator:
         ref = power_symbol.get("reference", f"#PWR0{len(self.component_uuid_map) + 1:03d}")
         self.component_uuid_map[ref] = power_uuid
 
-        # Convert position from mm to KiCad internal units
-        x_pos = power_symbol["position"][0] * 10
-        y_pos = power_symbol["position"][1] * 10
+        # Convert position from ComponentLayoutManager coordinates to KiCad coordinates
+        x_pos, y_pos = layout_to_kicad(power_symbol["position"][0], power_symbol["position"][1])
 
         power_type = power_symbol["power_type"]
         lib_id = f"power:{power_type}"
