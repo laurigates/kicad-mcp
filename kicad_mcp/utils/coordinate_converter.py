@@ -6,7 +6,7 @@ This module provides conversion between ComponentLayoutManager coordinates
 """
 
 # KiCad coordinate system constants
-KICAD_UNITS_PER_MM = 1  # KiCad S-expression format uses millimeters directly
+KICAD_UNITS_PER_MM = 10  # KiCad uses 0.1mm units (tenths of millimeters)
 KICAD_MILS_PER_MM = 39.37  # 1mm = 39.37 mils
 
 

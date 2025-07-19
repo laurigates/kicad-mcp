@@ -99,12 +99,18 @@ class TextToSchematicParser:
             if "components" in circuit_data:
                 for comp_item in circuit_data["components"]:
                     if isinstance(comp_item, dict):
-                        # YAML parses "R1: resistor..." as {"R1": "resistor..."}
-                        for ref, desc in comp_item.items():
-                            comp_desc = f"{ref}: {desc}"
-                            component = self._parse_component(comp_desc)
+                        # Check if it's structured YAML format (reference, type, value, position)
+                        if "reference" in comp_item and "type" in comp_item:
+                            component = self._parse_structured_component(comp_item)
                             if component:
                                 components.append(component)
+                        else:
+                            # YAML parses "R1: resistor..." as {"R1": "resistor..."}
+                            for ref, desc in comp_item.items():
+                                comp_desc = f"{ref}: {desc}"
+                                component = self._parse_component(comp_desc)
+                                if component:
+                                    components.append(component)
                     else:
                         # String format
                         component = self._parse_component(comp_item)
@@ -239,6 +245,42 @@ class TextToSchematicParser:
 
         except Exception as e:
             print(f"Error parsing component '{comp_desc}': {e}")
+            return None
+
+    def _parse_structured_component(self, comp_data: dict) -> Component | None:
+        """Parse a component from structured YAML format."""
+        try:
+            reference = comp_data.get("reference", "")
+            comp_type = comp_data.get("type", "").lower()
+            value = comp_data.get("value", "")
+            position_data = comp_data.get("position", [0, 0])
+
+            if not reference or not comp_type:
+                return None
+
+            # Convert position to tuple
+            if isinstance(position_data, list | tuple) and len(position_data) >= 2:
+                position = (float(position_data[0]), float(position_data[1]))
+            else:
+                position = (0.0, 0.0)
+
+            # Get symbol info
+            if comp_type in self.COMPONENT_SYMBOLS:
+                symbol_library, symbol_name = self.COMPONENT_SYMBOLS[comp_type]
+            else:
+                symbol_library, symbol_name = "Device", "R"  # Default
+
+            return Component(
+                reference=reference,
+                component_type=comp_type,
+                value=value,
+                position=position,
+                symbol_library=symbol_library,
+                symbol_name=symbol_name,
+            )
+
+        except Exception as e:
+            print(f"Error parsing structured component {comp_data}: {e}")
             return None
 
     def _parse_component_simple(self, line: str) -> Component | None:
