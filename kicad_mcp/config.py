@@ -197,3 +197,29 @@ PROGRESS_CONSTANTS = {
 DISPLAY_CONSTANTS = {
     "bom_preview_limit": 20,  # Maximum number of BOM items to show in preview
 }
+
+# S-expression service feature flags and configuration
+SEXPR_FEATURE_FLAGS = {
+    # Implementation selection
+    "default_implementation": "generator",  # Options: "generator", "handler", "auto"
+    "enable_handler": False,  # Enable the new sexpdata-based handler
+    "enable_fallback": True,  # Enable fallback to generator on handler failure
+    # Rollout and testing
+    "rollout_percentage": 0,  # Percentage of requests to use handler (0-100)
+    "enable_comparison": False,  # Enable A/B comparison between implementations
+    "enable_performance_logging": False,  # Enable performance metrics logging
+    # Validation and quality
+    "validate_output": False,  # Validate generated S-expressions
+    "strict_validation": False,  # Strict validation mode (enforce all KiCad requirements)
+    # Environment variable overrides (these take precedence over defaults)
+    "env_vars": {
+        "implementation": "KICAD_MCP_SEXPR_IMPLEMENTATION",
+        "enable_handler": "KICAD_MCP_ENABLE_SEXPR_HANDLER",
+        "enable_fallback": "KICAD_MCP_ENABLE_SEXPR_FALLBACK",
+        "rollout_percentage": "KICAD_MCP_SEXPR_ROLLOUT_PERCENTAGE",
+        "enable_comparison": "KICAD_MCP_ENABLE_SEXPR_COMPARISON",
+        "enable_performance_logging": "KICAD_MCP_ENABLE_PERFORMANCE_LOGGING",
+        "validate_output": "KICAD_MCP_VALIDATE_SEXPR_OUTPUT",
+        "strict_validation": "KICAD_MCP_STRICT_SEXPR_VALIDATION",
+    },
+}
