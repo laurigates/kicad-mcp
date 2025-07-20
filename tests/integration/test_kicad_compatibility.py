@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from kicad_mcp.tools.circuit_tools import create_new_project
-from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
+from kicad_mcp.utils.sexpr_service import get_sexpr_service
 
 # Mock MCP dependencies for testing
 sys.modules["mcp"] = Mock()
@@ -148,7 +148,7 @@ class TestKiCadCompatibility:
 
     def test_schematic_component_positioning(self, temp_project_dir):
         """Test that schematic components have reasonable positioning."""
-        generator = SExpressionGenerator()
+        service = get_sexpr_service()
 
         # Test component positioning
         components = [
@@ -170,7 +170,7 @@ class TestKiCadCompatibility:
         connections = [{"start": (50, 50), "end": (100, 50)}]
 
         # Generate schematic
-        schematic_content = generator.generate_schematic(
+        schematic_content = service.generate_schematic(
             circuit_name="Position Test",
             components=components,
             power_symbols=power_symbols,
@@ -316,7 +316,7 @@ circuit "ESP32 Basic Setup":
 
     def test_coordinate_system_consistency(self):
         """Test that coordinate systems are consistent."""
-        generator = SExpressionGenerator()
+        service = get_sexpr_service()
 
         # Test with known coordinates
         components = [
@@ -328,7 +328,7 @@ circuit "ESP32 Basic Setup":
             },  # 100mm, 100mm
         ]
 
-        schematic = generator.generate_schematic(
+        schematic = service.generate_schematic(
             circuit_name="Coordinate Test", components=components, power_symbols=[], connections=[]
         )
 

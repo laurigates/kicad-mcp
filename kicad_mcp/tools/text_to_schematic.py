@@ -14,7 +14,7 @@ import yaml
 
 from kicad_mcp.utils.boundary_validator import BoundaryValidator
 from kicad_mcp.utils.file_utils import get_project_files
-from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
+from kicad_mcp.utils.sexpr_service import get_sexpr_service
 
 
 @dataclass
@@ -908,7 +908,7 @@ circuit "I2C Sensor Interface":
 
             if output_format.lower() == "sexpr":
                 # Generate S-expression format
-                generator = SExpressionGenerator()
+                service = get_sexpr_service()
 
                 # Convert circuit objects to dictionaries for the generator
                 components_dict = []
@@ -945,7 +945,7 @@ circuit "I2C Sensor Interface":
                     )
 
                 # Generate S-expression content
-                sexpr_content = generator.generate_schematic(
+                sexpr_content = service.generate_schematic(
                     circuit.name, components_dict, power_symbols_dict, connections_dict
                 )
 

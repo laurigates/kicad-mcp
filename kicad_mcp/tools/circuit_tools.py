@@ -15,7 +15,7 @@ from kicad_mcp.config import KICAD_APP_PATH, system
 from kicad_mcp.utils.boundary_validator import BoundaryValidator
 from kicad_mcp.utils.component_layout import ComponentLayoutManager
 from kicad_mcp.utils.file_utils import get_project_files
-from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
+from kicad_mcp.utils.sexpr_service import get_sexpr_service
 
 
 def _get_component_type_from_symbol(symbol_library: str, symbol_name: str) -> str:
@@ -175,8 +175,8 @@ async def create_new_project(
             await ctx.report_progress(60, 100)
 
         # Create basic schematic file using S-expression format
-        generator = SExpressionGenerator()
-        schematic_content = generator.generate_schematic(
+        service = get_sexpr_service()
+        schematic_content = service.generate_schematic(
             circuit_name=project_name, components=[], power_symbols=[], connections=[]
         )
 
