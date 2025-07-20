@@ -126,10 +126,14 @@ class TestSExpressionHandler:
             if isinstance(item, list) and str(item[0]) == "symbol":
                 # Check if it's a power symbol
                 for prop in item[1:]:
-                    if isinstance(prop, list) and len(prop) >= 2:
-                        if str(prop[0]) == "lib_id" and "power:" in str(prop[1]):
-                            power_symbols.append(item)
-                            break
+                    if (
+                        isinstance(prop, list)
+                        and len(prop) >= 2
+                        and str(prop[0]) == "lib_id"
+                        and "power:" in str(prop[1])
+                    ):
+                        power_symbols.append(item)
+                        break
 
         assert len(power_symbols) == 1
 
@@ -467,10 +471,14 @@ class TestSExpressionHandler:
         # Should generate reference
         ref_prop = None
         for item in result[1:]:
-            if isinstance(item, list) and str(item[0]) == "property" and len(item) >= 3:
-                if item[1] == "Reference":
-                    ref_prop = item[2]
-                    break
+            if (
+                isinstance(item, list)
+                and str(item[0]) == "property"
+                and len(item) >= 3
+                and item[1] == "Reference"
+            ):
+                ref_prop = item[2]
+                break
 
         assert ref_prop is not None
         assert ref_prop.startswith("#PWR")
