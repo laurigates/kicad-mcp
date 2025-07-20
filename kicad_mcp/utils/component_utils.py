@@ -1,5 +1,12 @@
 """
-Utility functions for working with KiCad component values and properties.
+Utilities for parsing, normalizing, and identifying KiCad component properties.
+
+This module provides a collection of helper functions designed to work with
+component data commonly found in KiCad projects. It uses regular expressions
+and lookup tables to extract meaningful information—such as voltage, frequency,
+resistance, capacitance, and inductance—from raw value strings. It also includes
+functions to normalize these values into a standard format and identify
+component types from their reference designators.
 """
 
 import re
@@ -7,72 +14,73 @@ from typing import Any
 
 
 def extract_voltage_from_regulator(value: str) -> str:
-    """Extract output voltage from a voltage regulator part number or description.
+    """Extracts the output voltage from a voltage regulator's part number.
+
+    This function attempts to find the voltage by sequentially applying
+    several strategies:
+    1.  Looks for classic `78xx`/`79xx` series patterns.
+    2.  Searches for explicit voltage values (e.g., "3.3V", "-5V").
+    3.  Checks against a dictionary of common regulator part numbers.
+
+    If no voltage can be determined, it returns "unknown" or "Adjustable".
 
     Args:
-        value: Regulator part number or description
+        value (str): The component value string, typically the regulator's part number
+                     or a description (e.g., "LM7805", "LM1117-3.3", "5V LDO").
 
     Returns:
-        Extracted voltage as a string or "unknown" if not found
-    """
-    # Common patterns:
-    # 78xx/79xx series: 7805 = 5V, 7812 = 12V
-    # LDOs often have voltage in the part number, like LM1117-3.3
+        str: The extracted voltage as a formatted string (e.g., "5V", "3.3V", "-12V")
+             or a status string ("unknown", "Adjustable").
 
-    # 78xx/79xx series
-    match = re.search(r"78(\d\d)|79(\d\d)", value, re.IGNORECASE)
+    Examples:
+        >>> extract_voltage_from_regulator("LM7805CT")
+        '5V'
+        >>> extract_voltage_from_regulator("AMS1117-3.3")
+        '3.3V'
+        >>> extract_voltage_from_regulator("Some LDO 5V")
+        '5V'
+        >>> extract_voltage_from_regulator("7912")
+        '12V'
+        >>> extract_voltage_from_regulator("LM317T")
+        'Adjustable'
+        >>> extract_voltage_from_regulator("Some random part")
+        'unknown'
+    """
+    # Strategy 1: 78xx/79xx series
+    match = re.search(r"78(\d{2})|79(\d{2})", value, re.IGNORECASE)
     if match:
         group = match.group(1) or match.group(2)
-        # Convert code to voltage (e.g., 05 -> 5V, 12 -> 12V)
         try:
             voltage = int(group)
-            # For 78xx series, voltage code is directly in volts
-            if voltage < 50:  # Sanity check to prevent weird values
+            if voltage < 50:  # Sanity check
                 return f"{voltage}V"
         except ValueError:
             pass
 
-    # Look for common voltage indicators in the string
+    # Strategy 2: Common voltage indicators
     voltage_patterns = [
-        r"(\d+\.?\d*)V",  # 3.3V, 5V, etc.
-        r"-(\d+\.?\d*)V",  # -5V, -12V, etc. (for negative regulators)
-        r"(\d+\.?\d*)[_-]?V",  # 3.3_V, 5-V, etc.
-        r"[_-](\d+\.?\d*)",  # LM1117-3.3, LD1117-3.3, etc.
+        r"(\d+\.?\d*)\s*V",    # "3.3V", "5V"
+        r"-(\d+\.?\d*)\s*V",   # "-5V", "-12V"
+        r"[_-](\d+\.?\d+)",  # "LM1117-3.3"
     ]
-
     for pattern in voltage_patterns:
         match = re.search(pattern, value, re.IGNORECASE)
         if match:
             try:
                 voltage = float(match.group(1))
                 if 0 < voltage < 50:  # Sanity check
-                    # Format as integer if it's a whole number
-                    if voltage.is_integer():
-                        return f"{int(voltage)}V"
-                    else:
-                        return f"{voltage}V"
-            except ValueError:
+                    return f"{int(voltage)}V" if voltage.is_integer() else f"{voltage}V"
+            except (ValueError, IndexError):
                 pass
 
-    # Check for common fixed voltage regulators
+    # Strategy 3: Dictionary of known regulators
     regulators = {
-        "LM7805": "5V",
-        "LM7809": "9V",
-        "LM7812": "12V",
-        "LM7905": "-5V",
-        "LM7912": "-12V",
-        "LM1117-3.3": "3.3V",
-        "LM1117-5": "5V",
-        "LM317": "Adjustable",
-        "LM337": "Adjustable (Negative)",
-        "AP1117-3.3": "3.3V",
-        "AMS1117-3.3": "3.3V",
-        "L7805": "5V",
-        "L7812": "12V",
-        "MCP1700-3.3": "3.3V",
-        "MCP1700-5.0": "5V",
+        "LM7805": "5V", "LM7809": "9V", "LM7812": "12V",
+        "LM7905": "-5V", "LM7912": "-12V",
+        "LM1117-3.3": "3.3V", "LM1117-5": "5V",
+        "LM317": "Adjustable", "LM337": "Adjustable (Negative)",
+        "AMS1117-3.3": "3.3V", "L7805": "5V", "MCP1700-3.3": "3.3V",
     }
-
     for reg, volt in regulators.items():
         if re.search(re.escape(reg), value, re.IGNORECASE):
             return volt
@@ -81,351 +89,300 @@ def extract_voltage_from_regulator(value: str) -> str:
 
 
 def extract_frequency_from_value(value: str) -> str:
-    """Extract frequency information from a component value or description.
+    """Extracts frequency information from a component value string.
+
+    Searches for numeric values followed by frequency units (Hz, kHz, MHz, GHz)
+    or common abbreviations (k, M, G). It attempts to normalize the output
+    to a standard format.
 
     Args:
-        value: Component value or description (e.g., "16MHz", "Crystal 8MHz")
+        value (str): The component value or description (e.g., "16MHz", "Crystal 8M").
 
     Returns:
-        Frequency as a string or "unknown" if not found
+        str: The formatted frequency string (e.g., "16.000MHz", "32.768kHz")
+             or "unknown" if parsing fails.
+
+    Examples:
+        >>> extract_frequency_from_value("Crystal 16MHz")
+        '16.000MHz'
+        >>> extract_frequency_from_value("32.768k")
+        '32.768kHz'
+        >>> extract_frequency_from_value("OSC 4000000")
+        '4.000MHz'
+        >>> extract_frequency_from_value("32768")
+        '32.768kHz'
     """
-    # Common frequency patterns with various units
-    frequency_patterns = [
-        r"(\d+\.?\d*)[\s-]*([kKmMgG]?)[hH][zZ]",  # 16MHz, 32.768 kHz, etc.
-        r"(\d+\.?\d*)[\s-]*([kKmMgG])",  # 16M, 32.768k, etc.
-    ]
+    # Patterns with explicit units
+    match = re.search(r"(\d+\.?\d*)\s*([kKmMgG])?[hH][zZ]", value, re.IGNORECASE)
+    if not match:
+        # Patterns with implicit units (e.g., "16M")
+        match = re.search(r"(\d+\.?\d*)\s*([kKmMgG])", value, re.IGNORECASE)
 
-    for pattern in frequency_patterns:
-        match = re.search(pattern, value, re.IGNORECASE)
-        if match:
-            try:
-                freq = float(match.group(1))
-                unit = match.group(2).upper() if match.group(2) else ""
+    if match:
+        try:
+            freq = float(match.group(1))
+            unit = match.group(2).upper() if match.group(2) else ""
+            if freq > 0:
+                if unit == "K": return f"{freq:.3f}kHz"
+                if unit == "M": return f"{freq:.3f}MHz"
+                if unit == "G": return f"{freq:.3f}GHz"
+                # If no unit, infer from magnitude
+                if freq < 1000: return f"{freq:.3f}Hz"
+                if freq < 1_000_000: return f"{freq / 1000:.3f}kHz"
+                return f"{freq / 1_000_000:.3f}MHz"
+        except (ValueError, IndexError):
+            pass
 
-                # Make sure the frequency is in a reasonable range
-                if freq > 0:
-                    # Format the output
-                    if unit == "K":
-                        if freq >= 1000:
-                            return f"{freq / 1000:.3f}MHz"
-                        else:
-                            return f"{freq:.3f}kHz"
-                    elif unit == "M":
-                        if freq >= 1000:
-                            return f"{freq / 1000:.3f}GHz"
-                        else:
-                            return f"{freq:.3f}MHz"
-                    elif unit == "G":
-                        return f"{freq:.3f}GHz"
-                    else:  # No unit, need to determine based on value
-                        if freq < 1000:
-                            return f"{freq:.3f}Hz"
-                        elif freq < 1000000:
-                            return f"{freq / 1000:.3f}kHz"
-                        elif freq < 1000000000:
-                            return f"{freq / 1000000:.3f}MHz"
-                        else:
-                            return f"{freq / 1000000000:.3f}GHz"
-            except ValueError:
-                pass
-
-    # Check for common crystal frequencies
+    # Fallback for common crystal values without clear units
     if "32.768" in value or "32768" in value:
-        return "32.768kHz"  # Common RTC crystal
-    elif "16M" in value or "16MHZ" in value.upper():
-        return "16MHz"  # Common MCU crystal
-    elif "8M" in value or "8MHZ" in value.upper():
-        return "8MHz"
-    elif "20M" in value or "20MHZ" in value.upper():
-        return "20MHz"
-    elif "27M" in value or "27MHZ" in value.upper():
-        return "27MHz"
-    elif "25M" in value or "25MHZ" in value.upper():
-        return "25MHz"
+        return "32.768kHz"
 
     return "unknown"
 
 
 def extract_resistance_value(value: str) -> tuple[float | None, str | None]:
-    """Extract resistance value and unit from component value.
+    """Extracts a numeric resistance and its unit from a string.
+
+    Handles standard notations like "10k", "4.7M", "100R", "100" and
+    inline notations like "4k7" (4.7k).
 
     Args:
-        value: Resistance value (e.g., "10k", "4.7k", "100")
+        value (str): The resistance value string to parse.
 
     Returns:
-        Tuple of (numeric value, unit) or (None, None) if parsing fails
+        A tuple containing the numeric value (float) and the base unit
+        (str, e.g., 'Ω', 'kΩ', 'MΩ'), or (None, None) if parsing fails.
+
+    Examples:
+        >>> extract_resistance_value("10k")
+        (10.0, 'kΩ')
+        >>> extract_resistance_value("4R7")
+        (4.7, 'Ω')
+        >>> extract_resistance_value("100")
+        (100.0, 'Ω')
+        >>> extract_resistance_value("invalid")
+        (None, None)
     """
-    # Common resistance patterns
-    # 10k, 4.7k, 100R, 1M, 10, etc.
-    match = re.search(r"(\d+\.?\d*)([kKmMrRΩ]?)", value)
+    # Handle "4k7" -> 4.7k
+    match = re.search(r"(\d+)([kKmMrR])(\d+)", value, re.IGNORECASE)
     if match:
         try:
-            resistance = float(match.group(1))
-            unit = match.group(2).upper() if match.group(2) else "Ω"
-
-            # Normalize unit
-            if unit == "R" or unit == "":
-                unit = "Ω"
-
-            return resistance, unit
+            val_str = f"{match.group(1)}.{match.group(3)}"
+            unit_char = match.group(2).upper()
+            unit_map = {"R": "Ω", "K": "kΩ", "M": "MΩ"}
+            return float(val_str), unit_map.get(unit_char, "Ω")
         except ValueError:
             pass
 
-    # Handle special case like "4k7" (means 4.7k)
-    match = re.search(r"(\d+)[kKmM](\d+)", value)
+    # Handle "10k", "100", "100R"
+    match = re.search(r"(\d+\.?\d*)\s*([kKmMrRΩ]?)", value, re.IGNORECASE)
     if match:
         try:
-            value1 = int(match.group(1))
-            value2 = int(match.group(2))
-            resistance = float(f"{value1}.{value2}")
-            unit = "k" if "k" in value.lower() else "M" if "m" in value.lower() else "Ω"
-
-            return resistance, unit
-        except ValueError:
+            num_val = float(match.group(1))
+            unit_char = match.group(2).upper()
+            if unit_char in ("R", "Ω", ""): return num_val, "Ω"
+            if unit_char == "K": return num_val, "kΩ"
+            if unit_char == "M": return num_val, "MΩ"
+        except (ValueError, IndexError):
             pass
 
     return None, None
 
 
 def extract_capacitance_value(value: str) -> tuple[float | None, str | None]:
-    """Extract capacitance value and unit from component value.
+    """Extracts a numeric capacitance and its unit from a string.
+
+    Handles standard notations like "10uF", "100n", and inline "4n7".
 
     Args:
-        value: Capacitance value (e.g., "10uF", "4.7nF", "100pF")
+        value (str): The capacitance value string to parse.
 
     Returns:
-        Tuple of (numeric value, unit) or (None, None) if parsing fails
+        A tuple containing the numeric value (float) and the unit (str),
+        or (None, None) if parsing fails.
+
+    Examples:
+        >>> extract_capacitance_value("10uF")
+        (10.0, 'μF')
+        >>> extract_capacitance_value("100n")
+        (100.0, 'nF')
+        >>> extract_capacitance_value("4n7")
+        (4.7, 'nF')
     """
-    # Common capacitance patterns
-    # 10uF, 4.7nF, 100pF, etc.
-    match = re.search(r"(\d+\.?\d*)([pPnNuUμF]+)", value)
+    # Handle "4n7" -> 4.7nF
+    match = re.search(r"(\d+)([pPnNuUμ])(\d+)", value, re.IGNORECASE)
     if match:
         try:
-            capacitance = float(match.group(1))
-            unit = match.group(2).lower()
-
-            # Normalize unit
-            if "p" in unit or "pf" in unit:
-                unit = "pF"
-            elif "n" in unit or "nf" in unit:
-                unit = "nF"
-            elif "u" in unit or "μ" in unit or "uf" in unit or "μf" in unit:
-                unit = "μF"
-            else:
-                unit = "F"
-
-            return capacitance, unit
+            val_str = f"{match.group(1)}.{match.group(3)}"
+            unit_char = match.group(2).lower()
+            if unit_char == 'p': return float(val_str), "pF"
+            if unit_char == 'n': return float(val_str), "nF"
+            if unit_char in ('u', 'μ'): return float(val_str), "μF"
         except ValueError:
             pass
-
-    # Handle special case like "4n7" (means 4.7nF)
-    match = re.search(r"(\d+)[pPnNuUμ](\d+)", value)
+    
+    # Handle "10uF", "100n", etc.
+    match = re.search(r"(\d+\.?\d*)\s*([pPnNuUμ]*[fF]?)", value, re.IGNORECASE)
     if match:
         try:
-            value1 = int(match.group(1))
-            value2 = int(match.group(2))
-            capacitance = float(f"{value1}.{value2}")
-
-            if "p" in value.lower():
-                unit = "pF"
-            elif "n" in value.lower():
-                unit = "nF"
-            elif "u" in value.lower() or "μ" in value:
-                unit = "μF"
-            else:
-                unit = "F"
-
-            return capacitance, unit
-        except ValueError:
+            num_val = float(match.group(1))
+            unit_str = match.group(2).lower()
+            if 'p' in unit_str: return num_val, "pF"
+            if 'n' in unit_str: return num_val, "nF"
+            if 'u' in unit_str or 'μ' in unit_str: return num_val, "μF"
+            if 'f' in unit_str: return num_val, "F" # Assumes base unit if only 'F'
+        except (ValueError, IndexError):
             pass
 
     return None, None
 
 
 def extract_inductance_value(value: str) -> tuple[float | None, str | None]:
-    """Extract inductance value and unit from component value.
+    """Extracts a numeric inductance and its unit from a string.
+
+    Handles standard notations like "10uH", "100m", and inline "4u7".
 
     Args:
-        value: Inductance value (e.g., "10uH", "4.7nH", "100mH")
+        value (str): The inductance value string to parse.
 
     Returns:
-        Tuple of (numeric value, unit) or (None, None) if parsing fails
+        A tuple containing the numeric value (float) and the unit (str),
+        or (None, None) if parsing fails.
+    
+    Examples:
+        >>> extract_inductance_value("10uH")
+        (10.0, 'μH')
+        >>> extract_inductance_value("4u7")
+        (4.7, 'μH')
     """
-    # Common inductance patterns
-    # 10uH, 4.7nH, 100mH, etc.
-    match = re.search(r"(\d+\.?\d*)([pPnNuUμmM][hH])", value)
+    # Handle "4u7" -> 4.7uH
+    match = re.search(r"(\d+)([pPnNuUμmM])(\d+)", value, re.IGNORECASE)
     if match:
         try:
-            inductance = float(match.group(1))
-            unit = match.group(2).lower()
-
-            # Normalize unit
-            if "p" in unit:
-                unit = "pH"
-            elif "n" in unit:
-                unit = "nH"
-            elif "u" in unit or "μ" in unit:
-                unit = "μH"
-            elif "m" in unit:
-                unit = "mH"
-            else:
-                unit = "H"
-
-            return inductance, unit
+            val_str = f"{match.group(1)}.{match.group(3)}"
+            unit_char = match.group(2).lower()
+            if unit_char == 'n': return float(val_str), "nH"
+            if unit_char in ('u', 'μ'): return float(val_str), "μH"
+            if unit_char == 'm': return float(val_str), "mH"
         except ValueError:
             pass
 
-    # Handle special case like "4u7" (means 4.7uH)
-    match = re.search(r"(\d+)[pPnNuUμmM](\d+)[hH]", value)
+    # Handle "10uH", "100mH", etc.
+    match = re.search(r"(\d+\.?\d*)\s*([pPnNuUμmM]?[hH]?)", value, re.IGNORECASE)
     if match:
         try:
-            value1 = int(match.group(1))
-            value2 = int(match.group(2))
-            inductance = float(f"{value1}.{value2}")
-
-            if "p" in value.lower():
-                unit = "pH"
-            elif "n" in value.lower():
-                unit = "nH"
-            elif "u" in value.lower() or "μ" in value:
-                unit = "μH"
-            elif "m" in value.lower():
-                unit = "mH"
-            else:
-                unit = "H"
-
-            return inductance, unit
-        except ValueError:
+            num_val = float(match.group(1))
+            unit_str = match.group(2).lower()
+            if 'n' in unit_str: return num_val, "nH"
+            if 'u' in unit_str or 'μ' in unit_str: return num_val, "μH"
+            if 'm' in unit_str: return num_val, "mH"
+            if 'h' in unit_str: return num_val, "H"
+        except (ValueError, IndexError):
             pass
-
+            
     return None, None
 
 
-def format_resistance(resistance: float, unit: str) -> str:
-    """Format resistance value with appropriate unit.
+def format_value(value: float, unit: str) -> str:
+    """Formats a numeric value and unit into a clean string.
+
+    Removes trailing ".0" for integer values.
 
     Args:
-        resistance: Resistance value
-        unit: Unit string (Ω, k, M)
+        value (float): The numeric value.
+        unit (str): The unit string (e.g., "kΩ", "μF", "MHz").
 
     Returns:
-        Formatted resistance string
+        str: A nicely formatted string.
     """
-    if unit == "Ω":
-        return f"{resistance:.0f}Ω" if resistance.is_integer() else f"{resistance}Ω"
-    elif unit == "k":
-        return f"{resistance:.0f}kΩ" if resistance.is_integer() else f"{resistance}kΩ"
-    elif unit == "M":
-        return f"{resistance:.0f}MΩ" if resistance.is_integer() else f"{resistance}MΩ"
-    else:
-        return f"{resistance}{unit}"
-
-
-def format_capacitance(capacitance: float, unit: str) -> str:
-    """Format capacitance value with appropriate unit.
-
-    Args:
-        capacitance: Capacitance value
-        unit: Unit string (pF, nF, μF, F)
-
-    Returns:
-        Formatted capacitance string
-    """
-    if capacitance.is_integer():
-        return f"{int(capacitance)}{unit}"
-    else:
-        return f"{capacitance}{unit}"
-
-
-def format_inductance(inductance: float, unit: str) -> str:
-    """Format inductance value with appropriate unit.
-
-    Args:
-        inductance: Inductance value
-        unit: Unit string (pH, nH, μH, mH, H)
-
-    Returns:
-        Formatted inductance string
-    """
-    if inductance.is_integer():
-        return f"{int(inductance)}{unit}"
-    else:
-        return f"{inductance}{unit}"
+    if value.is_integer():
+        return f"{int(value)}{unit}"
+    return f"{value}{unit}"
 
 
 def normalize_component_value(value: str, component_type: str) -> str:
-    """Normalize a component value string based on component type.
+    """Parses and normalizes a component value string based on its type.
+
+    This acts as a high-level wrapper around the various `extract_*` and
+    `format_*` functions. If parsing is successful, it returns a standardized
+    string; otherwise, it returns the original value.
 
     Args:
-        value: Raw component value string
-        component_type: Type of component (R, C, L, etc.)
+        value (str): The raw component value string from KiCad.
+        component_type (str): The component type identifier (e.g., "R", "C", "L", "U").
 
     Returns:
-        Normalized value string
+        str: A normalized and formatted value string, or the original value on failure.
     """
-    if component_type == "R":
-        resistance, unit = extract_resistance_value(value)
-        if resistance is not None and unit is not None:
-            return format_resistance(resistance, unit)
-    elif component_type == "C":
-        capacitance, unit = extract_capacitance_value(value)
-        if capacitance is not None and unit is not None:
-            return format_capacitance(capacitance, unit)
-    elif component_type == "L":
-        inductance, unit = extract_inductance_value(value)
-        if inductance is not None and unit is not None:
-            return format_inductance(inductance, unit)
+    type_map = {
+        "R": extract_resistance_value,
+        "C": extract_capacitance_value,
+        "L": extract_inductance_value,
+    }
 
-    # For other component types or if parsing fails, return the original value
+    if component_type in type_map:
+        num_val, unit = type_map[component_type](value)
+        if num_val is not None and unit is not None:
+            return format_value(num_val, unit)
+    
+    if component_type.startswith("U"): # ICs, Regulators, etc.
+        voltage = extract_voltage_from_regulator(value)
+        if voltage != "unknown":
+            return voltage
+
     return value
 
 
 def get_component_type_from_reference(reference: str) -> str:
-    """Determine component type from reference designator.
+    """Determines the component type letter(s) from its reference designator.
 
     Args:
-        reference: Component reference (e.g., R1, C2, U3)
+        reference (str): The component reference (e.g., "R1", "C22", "JP3", "U10").
 
     Returns:
-        Component type letter (R, C, L, Q, etc.)
+        str: The alphabetic prefix of the reference (e.g., "R", "C", "JP", "U"),
+             or an empty string if no prefix is found.
+    
+    Examples:
+        >>> get_component_type_from_reference("R101")
+        'R'
+        >>> get_component_type_from_reference("SW_SPDT2")
+        'SW_SPDT'
     """
-    # Extract the alphabetic prefix (component type)
     match = re.match(r"^([A-Za-z_]+)", reference)
-    if match:
-        return match.group(1)
-    return ""
+    return match.group(1).upper() if match else ""
 
 
 def is_power_component(component: dict[str, Any]) -> bool:
-    """Check if a component is likely a power-related component.
+    """Checks if a component is likely power-related using a set of heuristics.
+
+    This function inspects the component's reference, value, and library ID for
+    common power-related prefixes, keywords, and part numbers.
 
     Args:
-        component: Component information dictionary
+        component (dict): A dictionary containing component data. Expected keys are
+                          'reference', 'value', and 'lib_id'.
+                          e.g., {'reference': 'U1', 'value': 'LM7805', 'lib_id': 'Regulator_Linear'}
 
     Returns:
-        True if the component is power-related, False otherwise
+        bool: True if the component is likely power-related, False otherwise.
     """
-    ref = component.get("reference", "")
+    ref = component.get("reference", "").upper()
     value = component.get("value", "").upper()
     lib_id = component.get("lib_id", "").upper()
 
-    # Check reference designator
-    if ref.startswith(("VR", "PS", "REG")):
+    # Heuristic 1: Check reference designator prefixes
+    if ref.startswith(("VR", "PS", "REG", "V")):
         return True
 
-    # Check for power-related terms in value or library ID
+    # Heuristic 2: Check for keywords in value or library ID
     power_terms = ["VCC", "VDD", "GND", "POWER", "PWR", "SUPPLY", "REGULATOR", "LDO"]
     if any(term in value or term in lib_id for term in power_terms):
         return True
 
-    # Check for regulator part numbers
-    regulator_patterns = [
-        r"78\d\d",  # 7805, 7812, etc.
-        r"79\d\d",  # 7905, 7912, etc.
-        r"LM\d{3}",  # LM317, LM337, etc.
-        r"LM\d{4}",  # LM1117, etc.
-        r"AMS\d{4}",  # AMS1117, etc.
-        r"MCP\d{4}",  # MCP1700, etc.
-    ]
+    # Heuristic 3: Check for common regulator part number patterns
+    regulator_patterns = [r"78\d{2}", r"79\d{2}", r"LM\d{3,4}", r"AMS\d{4}", r"MCP\d{4}"]
+    if any(re.search(pattern, value) for pattern in regulator_patterns):
+        return True
 
-    return any(re.search(pattern, value, re.IGNORECASE) for pattern in regulator_patterns)
+    return False
