@@ -12,7 +12,7 @@ import pytest
 from kicad_mcp.utils.boundary_validator import BoundaryValidator
 from kicad_mcp.utils.component_layout import ComponentLayoutManager
 from kicad_mcp.utils.coordinate_converter import CoordinateConverter
-from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
+from kicad_mcp.utils.sexpr_service import get_sexpr_service
 
 
 class TestVisualValidation:
@@ -34,9 +34,9 @@ class TestVisualValidation:
         return BoundaryValidator()
 
     @pytest.fixture
-    def sexpr_generator(self):
-        """Provide S-expression generator instance."""
-        return SExpressionGenerator()
+    def sexpr_service(self):
+        """Provide S-expression service instance."""
+        return get_sexpr_service()
 
     def test_coordinate_system_validation(self, coordinate_converter):
         """Test coordinate validation within A4 bounds."""
@@ -133,7 +133,7 @@ class TestVisualValidation:
                 assert 20.0 <= x <= 277.0, f"Corrected X position {x} not in usable area"
                 assert 20.0 <= y <= 190.0, f"Corrected Y position {y} not in usable area"
 
-    def test_sexpr_visual_output_structure(self, sexpr_generator):
+    def test_sexpr_visual_output_structure(self, sexpr_service):
         """Test that generated S-expression has proper visual structure."""
         # Simple test circuit
         circuit_name = "Visual Test Circuit"
@@ -164,7 +164,7 @@ class TestVisualValidation:
         ]
 
         # Generate S-expression
-        sexpr_content = sexpr_generator.generate_schematic(
+        sexpr_content = sexpr_service.generate_schematic(
             circuit_name, components, power_symbols, connections
         )
 

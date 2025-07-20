@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "make lint"
+          },
+          {
+            "type": "command",
+            "command": "make test"
+          }
+        ]
+      }
+    ]
+  }
+}

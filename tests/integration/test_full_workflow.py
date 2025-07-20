@@ -68,7 +68,7 @@ class TestFullWorkflow:
         # Step 2: Create a circuit using the text-to-schematic tool
         from kicad_mcp.tools.text_to_schematic import TextToSchematicParser
         from kicad_mcp.utils.file_utils import get_project_files
-        from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
+        from kicad_mcp.utils.sexpr_service import get_sexpr_service
 
         # Define a simple circuit using YAML format
         circuit_description = """
@@ -99,7 +99,7 @@ circuit "Integration Test Circuit":
         schematic_file = files["schematic"]
 
         # Generate S-expression format
-        generator = SExpressionGenerator()
+        service = get_sexpr_service()
 
         # Convert circuit objects to dictionaries for the generator
         components_dict = []
@@ -136,7 +136,7 @@ circuit "Integration Test Circuit":
             )
 
         # Generate S-expression content
-        sexpr_content = generator.generate_schematic(
+        sexpr_content = service.generate_schematic(
             circuit.name, components_dict, power_symbols_dict, connections_dict
         )
 
@@ -319,7 +319,7 @@ circuit "Large Test Circuit":
         # Parse and generate the circuit
         from kicad_mcp.tools.text_to_schematic import TextToSchematicParser
         from kicad_mcp.utils.file_utils import get_project_files
-        from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
+        from kicad_mcp.utils.sexpr_service import get_sexpr_service
 
         parser = TextToSchematicParser()
         circuit = parser.parse_yaml_circuit(large_circuit_description)
@@ -329,7 +329,7 @@ circuit "Large Test Circuit":
         schematic_file = files["schematic"]
 
         # Generate S-expression format
-        generator = SExpressionGenerator()
+        service = get_sexpr_service()
 
         # Convert circuit objects to dictionaries
         components_dict = []
@@ -366,7 +366,7 @@ circuit "Large Test Circuit":
             )
 
         # Generate and write S-expression content
-        sexpr_content = generator.generate_schematic(
+        sexpr_content = service.generate_schematic(
             circuit.name, components_dict, power_symbols_dict, connections_dict
         )
 
@@ -448,7 +448,7 @@ circuit "Concurrent Test Circuit {project_name}":
             # Parse and generate the circuit
             from kicad_mcp.tools.text_to_schematic import TextToSchematicParser
             from kicad_mcp.utils.file_utils import get_project_files
-            from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
+            from kicad_mcp.utils.sexpr_service import get_sexpr_service
 
             parser = TextToSchematicParser()
             circuit = parser.parse_yaml_circuit(circuit_description)
@@ -459,7 +459,7 @@ circuit "Concurrent Test Circuit {project_name}":
             schematic_file = files["schematic"]
 
             # Generate S-expression format
-            generator = SExpressionGenerator()
+            service = get_sexpr_service()
 
             # Convert circuit objects to dictionaries
             components_dict = []
@@ -496,7 +496,7 @@ circuit "Concurrent Test Circuit {project_name}":
                 )
 
             # Generate and write S-expression content
-            sexpr_content = generator.generate_schematic(
+            sexpr_content = service.generate_schematic(
                 circuit.name, components_dict, power_symbols_dict, connections_dict
             )
 
