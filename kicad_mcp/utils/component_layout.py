@@ -259,6 +259,15 @@ class ComponentLayoutManager:
             >>> manager.validate_position(95, 50, "resistor")  # Would exceed right bound
             False
         """
+        # Convert coordinates to float to handle string inputs safely
+        try:
+            x = float(x)
+            y = float(y)
+        except (ValueError, TypeError) as e:
+            raise ValueError(
+                f"Invalid coordinate values: x={x}, y={y}. Coordinates must be numeric."
+            ) from e
+
         width, height = self.COMPONENT_SIZES.get(component_type, self.COMPONENT_SIZES["default"])
 
         if x - width / 2 < self.bounds.min_x:

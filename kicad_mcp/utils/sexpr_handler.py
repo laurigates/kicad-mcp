@@ -1050,7 +1050,11 @@ class SExpressionHandler:
 
             # Check if position is provided
             if "position" in component and component["position"]:
-                x, y = component["position"]
+                position = component["position"]
+                if isinstance(position, dict):
+                    x, y = position["x"], position["y"]
+                else:
+                    x, y = position
                 # Validate position is within bounds
                 if self.layout_manager.validate_position(x, y, component_type):
                     # Position is valid, place component at exact location
@@ -1087,7 +1091,11 @@ class SExpressionHandler:
 
             # Check if position is provided
             if "position" in power_symbol and power_symbol["position"]:
-                x, y = power_symbol["position"]
+                position = power_symbol["position"]
+                if isinstance(position, dict):
+                    x, y = position["x"], position["y"]
+                else:
+                    x, y = position
                 # Validate position is within bounds
                 if self.layout_manager.validate_position(x, y, component_type):
                     # Position is valid, place power symbol at exact location
