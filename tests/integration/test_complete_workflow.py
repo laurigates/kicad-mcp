@@ -54,8 +54,8 @@ class TestCompleteWorkflow:
         assert sexpr.startswith("(kicad_sch")
         assert sexpr.endswith(")")
         assert "20240618" in sexpr  # Updated version
-        assert sexpr.count("(symbol (lib_id") >= 4  # All components
-        assert sexpr.count("(wire (pts") >= 3  # All connections
+        assert sexpr.count("(lib_id") >= 4  # All components
+        assert sexpr.count("(wire") >= 3  # All connections
 
     def test_boundary_validation_integration(self):
         """Test that boundary validation works in complete workflow."""

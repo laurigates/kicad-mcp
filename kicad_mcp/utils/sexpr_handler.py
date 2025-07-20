@@ -963,7 +963,35 @@ class SExpressionHandler:
                 [sexpdata.Symbol("uuid"), wire_uuid],
             ]
 
-        # TODO: Handle pin-level connections
+        # Handle pin-level connections
+        if all(
+            key in connection
+            for key in ["start_component", "start_pin", "end_component", "end_pin"]
+        ):
+            # Get pin positions from pin mapper
+            start_pos = self.pin_mapper.get_pin_connection_point(
+                connection["start_component"], connection["start_pin"]
+            )
+            end_pos = self.pin_mapper.get_pin_connection_point(
+                connection["end_component"], connection["end_pin"]
+            )
+
+            if start_pos and end_pos:
+                return [
+                    sexpdata.Symbol("wire"),
+                    [
+                        sexpdata.Symbol("pts"),
+                        [sexpdata.Symbol("xy"), start_pos[0] * 10, start_pos[1] * 10],
+                        [sexpdata.Symbol("xy"), end_pos[0] * 10, end_pos[1] * 10],
+                    ],
+                    [
+                        sexpdata.Symbol("stroke"),
+                        [sexpdata.Symbol("width"), 0],
+                        [sexpdata.Symbol("type"), sexpdata.Symbol("default")],
+                    ],
+                    [sexpdata.Symbol("uuid"), wire_uuid],
+                ]
+
         return None
 
     def _pretty_dumps(self, data: Any, indent: int = 0) -> str:
