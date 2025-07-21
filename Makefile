@@ -38,8 +38,7 @@ dev:
 
 # Run all tests (matches CI command)
 test:
-	# Run core integration tests for PR validation
-	uv run pytest tests/integration/test_complete_workflow.py::TestCompleteWorkflow::test_simple_circuit_generation tests/integration/test_boundary_validation_integration.py -v --no-cov
+	uv run pytest tests/ -v --cov=kicad_mcp --cov-report=xml --cov-fail-under=30
 
 # Run unit tests only
 test-unit:

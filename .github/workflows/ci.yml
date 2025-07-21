@@ -63,7 +63,7 @@ jobs:
       run: uv sync --group dev
 
     - name: Run tests
-      run: uv run python -m pytest tests/ -v --cov=kicad_mcp --cov-report=xml --cov-fail-under=30
+      run: uv run pytest tests/ -v --cov=kicad_mcp --cov-report=xml --cov-fail-under=30
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -93,7 +93,7 @@ jobs:
       run: uv sync --group dev
 
     - name: Run security scan
-      run: uv run bandit -r kicad_mcp/
+      run: uv run bandit -c pyproject.toml -r kicad_mcp/
 
   build:
     runs-on: ubuntu-latest
