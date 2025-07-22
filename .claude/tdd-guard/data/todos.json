@@ -1,0 +1,58 @@
+{
+  "session_id": "20bb23f7-b612-4c58-bb3d-a131e1e6da7f",
+  "transcript_path": "/Users/lgates/.claude/projects/-Users-lgates-repos-kicad-mcp/20bb23f7-b612-4c58-bb3d-a131e1e6da7f.jsonl",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "TodoWrite",
+  "tool_input": {
+    "todos": [
+      {
+        "content": "Fix remaining 4 failing tests",
+        "status": "in_progress",
+        "priority": "high",
+        "id": "fix-remaining-tests"
+      },
+      {
+        "content": "Implemented pin connection tracking fix for test_pin_level_connectivity",
+        "status": "completed",
+        "priority": "high",
+        "id": "fix-pin-connectivity"
+      },
+      {
+        "content": "Implement missing generate_advanced_wire_routing method",
+        "status": "completed",
+        "priority": "high",
+        "id": "implement-advanced-routing"
+      },
+      {
+        "content": "Fix test pattern matching for pretty-printed S-expressions",
+        "status": "completed",
+        "priority": "high",
+        "id": "fix-test-patterns"
+      },
+      {
+        "content": "Fixed component registration method calls - pins now registering correctly",
+        "status": "completed",
+        "priority": "high",
+        "id": "fix-component-registration"
+      },
+      {
+        "content": "Fixed wire generation issue - corrected test pattern matching",
+        "status": "completed",
+        "priority": "high",
+        "id": "debug-wire-generation"
+      },
+      {
+        "content": "Commit CI configuration changes to run full test suite",
+        "status": "completed",
+        "priority": "high",
+        "id": "commit-ci-changes"
+      },
+      {
+        "content": "Push changes and monitor CI results with full test coverage",
+        "status": "in_progress",
+        "priority": "high",
+        "id": "monitor-full-ci"
+      }
+    ]
+  }
+}

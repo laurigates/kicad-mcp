@@ -2,10 +2,10 @@
 Integration tests for complete workflow functionality.
 
 Tests the complete integration of ComponentLayoutManager, ComponentPinMapper,
-and SExpressionGenerator working together.
+and SExpressionHandler working together.
 """
 
-from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
+from kicad_mcp.utils.sexpr_service import get_sexpr_service
 
 
 class TestCompleteWorkflow:
@@ -13,7 +13,7 @@ class TestCompleteWorkflow:
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.generator = SExpressionGenerator()
+        self.service = get_sexpr_service()
 
     def test_simple_circuit_generation(self):
         """Test generation of a simple circuit."""
@@ -46,7 +46,7 @@ class TestCompleteWorkflow:
         ]
 
         # Generate schematic
-        sexpr = self.generator.generate_schematic(
+        sexpr = self.service.generate_schematic(
             "Test Circuit", components, power_symbols, connections
         )
 
@@ -54,8 +54,8 @@ class TestCompleteWorkflow:
         assert sexpr.startswith("(kicad_sch")
         assert sexpr.endswith(")")
         assert "20240618" in sexpr  # Updated version
-        assert sexpr.count("(symbol (lib_id") >= 4  # All components
-        assert sexpr.count("(wire (pts") >= 3  # All connections
+        assert sexpr.count("(lib_id") >= 4  # All components
+        assert sexpr.count("(wire") >= 3  # All connections
 
     def test_boundary_validation_integration(self):
         """Test that boundary validation works in complete workflow."""
@@ -82,10 +82,10 @@ class TestCompleteWorkflow:
         connections = []
 
         # Generate schematic
-        self.generator.generate_schematic("Boundary Test", components, power_symbols, connections)
+        self.service.generate_schematic("Boundary Test", components, power_symbols, connections)
 
         # Check layout statistics
-        layout_stats = self.generator.layout_manager.get_layout_statistics()
+        layout_stats = self.service.layout_manager.get_layout_statistics()
 
         # Should have corrected the invalid position
         assert layout_stats["total_components"] == 3  # 2 components + 1 power
@@ -119,19 +119,19 @@ class TestCompleteWorkflow:
         ]
 
         # Generate schematic
-        self.generator.generate_schematic(
+        self.service.generate_schematic(
             "Pin Connectivity Test", components, power_symbols, connections
         )
 
         # Check pin mapping statistics
-        pin_stats = self.generator.pin_mapper.get_component_statistics()
+        pin_stats = self.service.pin_mapper.get_component_statistics()
 
         assert pin_stats["total_components"] == 3
         assert pin_stats["total_pins"] >= 5  # At least 5 pins total
         assert pin_stats["total_connections"] >= 2  # At least 2 connections tracked
 
         # Verify specific pin connections
-        vcc_connections = self.generator.pin_mapper.get_connected_pins("VCC", "1")
+        vcc_connections = self.service.pin_mapper.get_connected_pins("VCC", "1")
         assert len(vcc_connections) > 0
 
     def test_advanced_wire_routing(self):
@@ -165,7 +165,7 @@ class TestCompleteWorkflow:
         connections = []
 
         # Generate basic schematic first
-        self.generator.generate_schematic(
+        self.service.generate_schematic(
             "Advanced Routing Test", components, power_symbols, connections
         )
 
@@ -177,10 +177,10 @@ class TestCompleteWorkflow:
             }
         ]
 
-        advanced_wires = self.generator.generate_advanced_wire_routing(net_connections)
+        advanced_wires = self.service.generate_advanced_wire_routing(net_connections)
 
         # Should generate wire segments for the net
-        wire_segments = [line for line in advanced_wires if "(wire (pts" in line]
+        wire_segments = [line for line in advanced_wires if "(wire" in line and "(pts" in line]
         assert len(wire_segments) >= 3  # Should have multiple segments for bus routing
 
     def test_complex_circuit_integration(self):
@@ -231,7 +231,7 @@ class TestCompleteWorkflow:
         ]
 
         # Generate complete schematic
-        sexpr = self.generator.generate_schematic(
+        sexpr = self.service.generate_schematic(
             "Complex Circuit Test", components, power_symbols, connections
         )
 
@@ -242,8 +242,8 @@ class TestCompleteWorkflow:
         assert "20240618" in sexpr
 
         # Check all systems working
-        layout_stats = self.generator.layout_manager.get_layout_statistics()
-        pin_stats = self.generator.pin_mapper.get_component_statistics()
+        layout_stats = self.service.layout_manager.get_layout_statistics()
+        pin_stats = self.service.pin_mapper.get_component_statistics()
 
         assert layout_stats["total_components"] == 6  # 4 components + 2 power
         assert layout_stats["bounds_violations"] <= 1  # Allow minimal violations during correction
@@ -253,7 +253,7 @@ class TestCompleteWorkflow:
         assert pin_stats["total_connections"] >= 6  # All connections tracked
 
         # Count actual wire segments
-        wire_count = sexpr.count("(wire (pts")
+        wire_count = sexpr.count("(wire")
         assert wire_count >= 6  # Should have generated wires for all connections
 
     def test_legacy_compatibility(self):
@@ -274,10 +274,10 @@ class TestCompleteWorkflow:
         connections = [{"start_x": 50, "start_y": 50, "end_x": 100, "end_y": 50}]
 
         # Should still work
-        sexpr = self.generator.generate_schematic(
+        sexpr = self.service.generate_schematic(
             "Legacy Test", components, power_symbols, connections
         )
 
         assert sexpr.startswith("(kicad_sch")
-        assert "(wire (pts" in sexpr
+        assert "(wire" in sexpr
         assert "20240618" in sexpr

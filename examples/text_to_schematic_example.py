@@ -18,7 +18,7 @@ import tempfile
 from kicad_mcp.tools.text_to_schematic import (
     TextToSchematicParser,
 )
-from kicad_mcp.utils.sexpr_generator import SExpressionGenerator
+from kicad_mcp.utils.sexpr_service import get_sexpr_service
 
 
 async def create_sample_project(project_dir: str) -> str:
@@ -133,7 +133,7 @@ def demonstrate_sexpr_generation():
     print("=" * 60)
 
     parser = TextToSchematicParser()
-    generator = SExpressionGenerator()
+    service = get_sexpr_service()
 
     # Simple RC filter circuit
     rc_filter_yaml = """
@@ -188,7 +188,7 @@ circuit "RC Low-Pass Filter":
         )
 
     # Generate S-expression
-    sexpr_content = generator.generate_schematic(
+    sexpr_content = service.generate_schematic(
         circuit.name, components_dict, power_symbols_dict, connections_dict
     )
 
@@ -283,7 +283,7 @@ async def demonstrate_integration():
         await create_sample_project(temp_dir)
 
         parser = TextToSchematicParser()
-        generator = SExpressionGenerator()
+        service = get_sexpr_service()
 
         # Create a complete circuit
         amplifier_circuit = """
@@ -343,7 +343,7 @@ circuit "Simple Amplifier":
             for conn in circuit.connections
         ]
 
-        sexpr_content = generator.generate_schematic(
+        sexpr_content = service.generate_schematic(
             circuit.name, components_dict, power_symbols_dict, connections_dict
         )
 

@@ -1,14 +1,46 @@
 """
 Configuration settings for the KiCad MCP server.
+
+This module provides platform-specific configuration for KiCad integration,
+including file paths, extensions, component libraries, and operational constants.
+All settings are determined at import time based on the operating system.
+
+Module Variables:
+    system (str): Operating system name from platform.system()
+    KICAD_USER_DIR (str): User's KiCad documents directory
+    KICAD_APP_PATH (str): KiCad application installation path
+    ADDITIONAL_SEARCH_PATHS (List[str]): Additional project search locations
+    DEFAULT_PROJECT_LOCATIONS (List[str]): Common project directory patterns
+    KICAD_PYTHON_BASE (str): KiCad Python framework base path (macOS only)
+    KICAD_EXTENSIONS (Dict[str, str]): KiCad file extension mappings
+    DATA_EXTENSIONS (List[str]): Recognized data file extensions
+    CIRCUIT_DEFAULTS (Dict[str, Union[float, List[float]]]): Default circuit parameters
+    COMMON_LIBRARIES (Dict[str, Dict[str, Dict[str, str]]]): Component library mappings
+    DEFAULT_FOOTPRINTS (Dict[str, List[str]]): Default footprint suggestions per component
+    TIMEOUT_CONSTANTS (Dict[str, float]): Operation timeout values in seconds
+    PROGRESS_CONSTANTS (Dict[str, int]): Progress reporting percentage values
+    DISPLAY_CONSTANTS (Dict[str, int]): UI display configuration values
+
+Platform Support:
+    - macOS (Darwin): Full support with application bundle paths
+    - Windows: Standard installation paths
+    - Linux: System package paths
+    - Unknown: Defaults to macOS paths for compatibility
+
+Dependencies:
+    - os: File system operations and environment variables
+    - platform: Operating system detection
 """
 
 import os
 import platform
 
-# Determine operating system
+# Determine operating system for platform-specific configuration
+# Returns 'Darwin' (macOS), 'Windows', 'Linux', or other
 system = platform.system()
 
-# KiCad paths based on operating system
+# Platform-specific KiCad installation and user directory paths
+# These paths are used for finding KiCad resources and user projects
 if system == "Darwin":  # macOS
     KICAD_USER_DIR = os.path.expanduser("~/Documents/KiCad")
     KICAD_APP_PATH = "/Applications/KiCad/KiCad.app"
@@ -19,44 +51,52 @@ elif system == "Linux":
     KICAD_USER_DIR = os.path.expanduser("~/KiCad")
     KICAD_APP_PATH = "/usr/share/kicad"
 else:
-    # Default to macOS paths if system is unknown
+    # Default to macOS paths if system is unknown for maximum compatibility
+    # This ensures the server can start even on unrecognized platforms
     KICAD_USER_DIR = os.path.expanduser("~/Documents/KiCad")
     KICAD_APP_PATH = "/Applications/KiCad/KiCad.app"
 
-# Additional search paths from environment variable
+# Additional search paths from environment variable KICAD_SEARCH_PATHS
+# Users can specify custom project locations as comma-separated paths
 ADDITIONAL_SEARCH_PATHS = []
 env_search_paths = os.environ.get("KICAD_SEARCH_PATHS", "")
 if env_search_paths:
     for path in env_search_paths.split(","):
-        expanded_path = os.path.expanduser(path.strip())
-        if os.path.exists(expanded_path):
+        expanded_path = os.path.expanduser(path.strip())  # Expand ~ and variables
+        if os.path.exists(expanded_path):  # Only add existing directories
             ADDITIONAL_SEARCH_PATHS.append(expanded_path)
 
-# Try to auto-detect common project locations if not specified
+# Auto-detect common project locations for convenient project discovery
+# These are typical directory names users create for electronics projects
 DEFAULT_PROJECT_LOCATIONS = [
-    "~/Documents/PCB",
-    "~/PCB",
-    "~/Electronics",
-    "~/Projects/Electronics",
-    "~/Projects/PCB",
-    "~/Projects/KiCad",
+    "~/Documents/PCB",  # Common Windows/macOS location
+    "~/PCB",  # Simple home directory structure
+    "~/Electronics",  # Generic electronics projects
+    "~/Projects/Electronics",  # Organized project structure
+    "~/Projects/PCB",  # PCB-specific project directory
+    "~/Projects/KiCad",  # KiCad-specific project directory
 ]
 
+# Add existing default locations to search paths
+# Avoids duplicates and only includes directories that actually exist
 for location in DEFAULT_PROJECT_LOCATIONS:
     expanded_path = os.path.expanduser(location)
     if os.path.exists(expanded_path) and expanded_path not in ADDITIONAL_SEARCH_PATHS:
         ADDITIONAL_SEARCH_PATHS.append(expanded_path)
 
-# Base path to KiCad's Python framework
+# Base path to KiCad's Python framework for API access
+# macOS bundles Python framework within the application
 if system == "Darwin":  # macOS
     KICAD_PYTHON_BASE = os.path.join(
         KICAD_APP_PATH, "Contents/Frameworks/Python.framework/Versions"
     )
 else:
+    # Linux/Windows use system Python or require dynamic detection
     KICAD_PYTHON_BASE = ""  # Will be determined dynamically in python_path.py
 
 
-# File extensions
+# KiCad file extension mappings for project file identification
+# Used by file discovery and validation functions
 KICAD_EXTENSIONS = {
     "project": ".kicad_pro",
     "pcb": ".kicad_pcb",
@@ -68,7 +108,8 @@ KICAD_EXTENSIONS = {
     "kibot_config": ".kibot.yaml",
 }
 
-# Recognized data files
+# Additional data file extensions that may be part of KiCad projects
+# Includes manufacturing files, component data, and export formats
 DATA_EXTENSIONS = [
     ".csv",  # BOM or other data
     ".pos",  # Component position file
@@ -77,7 +118,8 @@ DATA_EXTENSIONS = [
     ".drl",  # Drill files
 ]
 
-# Circuit creation constants
+# Default parameters for circuit creation and component placement
+# Values in mm unless otherwise specified, following KiCad conventions
 CIRCUIT_DEFAULTS = {
     "grid_spacing": 1.0,  # Default grid spacing in mm for user coordinates
     "component_spacing": 10.16,  # Default component spacing in mm
@@ -86,7 +128,9 @@ CIRCUIT_DEFAULTS = {
     "pin_length": 2.54,  # Default pin length in mm
 }
 
-# Common component libraries
+# Predefined component library mappings for quick circuit creation
+# Maps common component types to their KiCad library and symbol names
+# Organized by functional categories: basic, power, connectors
 COMMON_LIBRARIES = {
     "basic": {
         "resistor": {"library": "Device", "symbol": "R"},
@@ -110,7 +154,8 @@ COMMON_LIBRARIES = {
     },
 }
 
-# Default footprint suggestions
+# Suggested footprints for common components, ordered by preference
+# SMD variants listed first, followed by through-hole alternatives
 DEFAULT_FOOTPRINTS = {
     "R": [
         "Resistor_SMD:R_0805_2012Metric",
@@ -126,7 +171,8 @@ DEFAULT_FOOTPRINTS = {
     "D": ["Diode_SMD:D_SOD-123", "Diode_THT:D_DO-35_SOD27_P7.62mm_Horizontal"],
 }
 
-# Timeout constants (in seconds)
+# Operation timeout values in seconds for external process management
+# Prevents hanging operations and provides user feedback
 TIMEOUT_CONSTANTS = {
     "kicad_cli_version_check": 10.0,  # Timeout for KiCad CLI version checks
     "kicad_cli_export": 30.0,  # Timeout for KiCad CLI export operations
@@ -134,7 +180,8 @@ TIMEOUT_CONSTANTS = {
     "subprocess_default": 30.0,  # Default timeout for subprocess operations
 }
 
-# Progress reporting constants
+# Progress percentage milestones for long-running operations
+# Provides consistent progress reporting across different tools
 PROGRESS_CONSTANTS = {
     "start": 10,  # Initial progress percentage
     "detection": 20,  # Progress after CLI detection
@@ -145,7 +192,34 @@ PROGRESS_CONSTANTS = {
     "complete": 100,  # Progress when complete
 }
 
-# Display constants
+# User interface display configuration values
+# Controls how much information is shown in previews and summaries
 DISPLAY_CONSTANTS = {
     "bom_preview_limit": 20,  # Maximum number of BOM items to show in preview
+}
+
+# S-expression service feature flags and configuration
+SEXPR_FEATURE_FLAGS = {
+    # Implementation selection
+    "default_implementation": "generator",  # Options: "generator", "handler", "auto"
+    "enable_handler": False,  # Enable the new sexpdata-based handler
+    "enable_fallback": True,  # Enable fallback to generator on handler failure
+    # Rollout and testing
+    "rollout_percentage": 0,  # Percentage of requests to use handler (0-100)
+    "enable_comparison": False,  # Enable A/B comparison between implementations
+    "enable_performance_logging": False,  # Enable performance metrics logging
+    # Validation and quality
+    "validate_output": False,  # Validate generated S-expressions
+    "strict_validation": False,  # Strict validation mode (enforce all KiCad requirements)
+    # Environment variable overrides (these take precedence over defaults)
+    "env_vars": {
+        "implementation": "KICAD_MCP_SEXPR_IMPLEMENTATION",
+        "enable_handler": "KICAD_MCP_ENABLE_SEXPR_HANDLER",
+        "enable_fallback": "KICAD_MCP_ENABLE_SEXPR_FALLBACK",
+        "rollout_percentage": "KICAD_MCP_SEXPR_ROLLOUT_PERCENTAGE",
+        "enable_comparison": "KICAD_MCP_ENABLE_SEXPR_COMPARISON",
+        "enable_performance_logging": "KICAD_MCP_ENABLE_PERFORMANCE_LOGGING",
+        "validate_output": "KICAD_MCP_VALIDATE_SEXPR_OUTPUT",
+        "strict_validation": "KICAD_MCP_STRICT_SEXPR_VALIDATION",
+    },
 }
