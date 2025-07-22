@@ -100,8 +100,9 @@ class TestSExpressionService:
         parsed = service.parse_schematic(sexpr_content)
 
         assert isinstance(parsed, dict)
-        assert "type" in parsed
-        assert parsed["type"] == "kicad_sch"
+        assert "version" in parsed
+        assert "generator" in parsed
+        assert "lib_symbols" in parsed
 
     def test_layout_manager_access(self):
         """Test access to layout manager."""

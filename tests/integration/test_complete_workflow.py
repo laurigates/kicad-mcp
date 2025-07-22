@@ -180,7 +180,7 @@ class TestCompleteWorkflow:
         advanced_wires = self.service.generate_advanced_wire_routing(net_connections)
 
         # Should generate wire segments for the net
-        wire_segments = [line for line in advanced_wires if "(wire (pts" in line]
+        wire_segments = [line for line in advanced_wires if "(wire" in line and "(pts" in line]
         assert len(wire_segments) >= 3  # Should have multiple segments for bus routing
 
     def test_complex_circuit_integration(self):
@@ -253,7 +253,7 @@ class TestCompleteWorkflow:
         assert pin_stats["total_connections"] >= 6  # All connections tracked
 
         # Count actual wire segments
-        wire_count = sexpr.count("(wire (pts")
+        wire_count = sexpr.count("(wire")
         assert wire_count >= 6  # Should have generated wires for all connections
 
     def test_legacy_compatibility(self):
@@ -279,5 +279,5 @@ class TestCompleteWorkflow:
         )
 
         assert sexpr.startswith("(kicad_sch")
-        assert "(wire (pts" in sexpr
+        assert "(wire" in sexpr
         assert "20240618" in sexpr

@@ -1,0 +1,99 @@
+{
+  "testModules": [
+    {
+      "moduleId": "tests/integration/test_boundary_validation_integration.py",
+      "tests": [
+        {
+          "name": "test_parser_boundary_validation_integration",
+          "fullName": "tests/integration/test_boundary_validation_integration.py::TestBoundaryValidationIntegration::test_parser_boundary_validation_integration",
+          "state": "passed"
+        },
+        {
+          "name": "test_valid_circuit_validation",
+          "fullName": "tests/integration/test_boundary_validation_integration.py::TestBoundaryValidationIntegration::test_valid_circuit_validation",
+          "state": "passed"
+        },
+        {
+          "name": "test_project_validation_workflow",
+          "fullName": "tests/integration/test_boundary_validation_integration.py::TestBoundaryValidationIntegration::test_project_validation_workflow",
+          "state": "passed"
+        },
+        {
+          "name": "test_boundary_validation_different_component_types",
+          "fullName": "tests/integration/test_boundary_validation_integration.py::TestBoundaryValidationIntegration::test_boundary_validation_different_component_types",
+          "state": "passed"
+        },
+        {
+          "name": "test_validation_report_text_generation",
+          "fullName": "tests/integration/test_boundary_validation_integration.py::TestBoundaryValidationIntegration::test_validation_report_text_generation",
+          "state": "passed"
+        },
+        {
+          "name": "test_validation_with_missing_positions",
+          "fullName": "tests/integration/test_boundary_validation_integration.py::TestBoundaryValidationIntegration::test_validation_with_missing_positions",
+          "state": "passed"
+        },
+        {
+          "name": "test_wire_validation_integration",
+          "fullName": "tests/integration/test_boundary_validation_integration.py::TestBoundaryValidationIntegration::test_wire_validation_integration",
+          "state": "passed"
+        },
+        {
+          "name": "test_performance_with_large_circuit",
+          "fullName": "tests/integration/test_boundary_validation_integration.py::TestBoundaryValidationIntegration::test_performance_with_large_circuit",
+          "state": "passed"
+        }
+      ]
+    },
+    {
+      "moduleId": "tests/integration/test_complete_workflow.py",
+      "tests": [
+        {
+          "name": "test_simple_circuit_generation",
+          "fullName": "tests/integration/test_complete_workflow.py::TestCompleteWorkflow::test_simple_circuit_generation",
+          "state": "passed"
+        },
+        {
+          "name": "test_boundary_validation_integration",
+          "fullName": "tests/integration/test_complete_workflow.py::TestCompleteWorkflow::test_boundary_validation_integration",
+          "state": "passed"
+        },
+        {
+          "name": "test_pin_level_connectivity",
+          "fullName": "tests/integration/test_complete_workflow.py::TestCompleteWorkflow::test_pin_level_connectivity",
+          "state": "passed"
+        },
+        {
+          "name": "test_advanced_wire_routing",
+          "fullName": "tests/integration/test_complete_workflow.py::TestCompleteWorkflow::test_advanced_wire_routing",
+          "state": "passed"
+        },
+        {
+          "name": "test_complex_circuit_integration",
+          "fullName": "tests/integration/test_complete_workflow.py::TestCompleteWorkflow::test_complex_circuit_integration",
+          "state": "passed"
+        },
+        {
+          "name": "test_legacy_compatibility",
+          "fullName": "tests/integration/test_complete_workflow.py::TestCompleteWorkflow::test_legacy_compatibility",
+          "state": "passed"
+        }
+      ]
+    },
+    {
+      "moduleId": "tests/integration/test_full_workflow.py",
+      "tests": [
+        {
+          "name": "test_complete_project_workflow",
+          "fullName": "tests/integration/test_full_workflow.py::TestFullWorkflow::test_complete_project_workflow",
+          "state": "failed",
+          "errors": [
+            {
+              "message": "tests/integration/test_full_workflow.py:160: in test_complete_project_workflow\n    assert result[\"component_count\"] >= 8  # 3 power + 5 components (3 resistors + 2 capacitors)\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert 0 >= 8"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

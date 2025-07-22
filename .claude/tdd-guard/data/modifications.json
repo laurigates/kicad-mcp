@@ -1,0 +1,11 @@
+{
+  "session_id": "20bb23f7-b612-4c58-bb3d-a131e1e6da7f",
+  "transcript_path": "/Users/lgates/.claude/projects/-Users-lgates-repos-kicad-mcp/20bb23f7-b612-4c58-bb3d-a131e1e6da7f.jsonl",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "/Users/lgates/repos/kicad-mcp/tests/integration/test_complete_workflow.py",
+    "old_string": "        # Count actual wire segments\n        wire_count = sexpr.count(\"(wire (pts\")\n        assert wire_count >= 6  # Should have generated wires for all connections",
+    "new_string": "        # Count actual wire segments\n        wire_count = sexpr.count(\"(wire\")\n        assert wire_count >= 6  # Should have generated wires for all connections"
+  }
+}
