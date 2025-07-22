@@ -847,7 +847,12 @@ class SExpressionHandler:
         y_pos = position[1] * 10
 
         lib_id = f"{component.get('symbol_library', 'Device')}:{component.get('symbol_name', 'R')}"
-
+        # Register component with pin mapper
+        # Register component with pin mapper using proper component type
+        component_type = self._get_component_type(component)
+        self.pin_mapper.add_component(
+            component_ref=component["reference"], component_type=component_type, position=position
+        )
         return [
             sexpdata.Symbol("symbol"),
             [sexpdata.Symbol("lib_id"), lib_id],
@@ -899,7 +904,6 @@ class SExpressionHandler:
 
         power_type = power_symbol["power_type"]
         lib_id = f"power:{power_type}"
-
         return [
             sexpdata.Symbol("symbol"),
             [sexpdata.Symbol("lib_id"), lib_id],
@@ -977,6 +981,14 @@ class SExpressionHandler:
             )
 
             if start_pos and end_pos:
+                # Track the connection in the pin mapper
+                self.pin_mapper.add_connection(
+                    connection["start_component"],
+                    connection["start_pin"],
+                    connection["end_component"],
+                    connection["end_pin"],
+                )
+
                 return [
                     sexpdata.Symbol("wire"),
                     [
@@ -993,6 +1005,60 @@ class SExpressionHandler:
                 ]
 
         return None
+
+    def generate_advanced_wire_routing(self, net_connections: list[dict]) -> list[str]:
+        """Generate advanced wire routing for multi-pin nets."""
+        wire_lines = []
+
+        for net in net_connections:
+            pins = net.get("pins", [])
+
+            if len(pins) < 2:
+                continue
+
+            # Parse component.pin format
+            parsed_pins = []
+            for pin in pins:
+                if "." in pin:
+                    component, pin_num = pin.split(".", 1)
+                    pos = self.pin_mapper.get_pin_connection_point(component, pin_num)
+                    if pos:
+                        parsed_pins.append((component, pin_num, pos))
+
+            if len(parsed_pins) < 2:
+                continue
+
+            # Generate simple point-to-point connections for now
+            # Connect each pin to the first pin (star topology)
+            if len(parsed_pins) >= 2:
+                hub_component, hub_pin, hub_pos = parsed_pins[0]
+
+                for i in range(1, len(parsed_pins)):
+                    component, pin_num, pos = parsed_pins[i]
+                    # Track connections
+                    self.pin_mapper.add_connection(hub_component, hub_pin, component, pin_num)
+
+                    # Create wire route
+                    route = [hub_pos, pos]
+                    start_pos, end_pos = route
+                    wire_uuid = str(uuid.uuid4())
+                    wire_data = [
+                        sexpdata.Symbol("wire"),
+                        [
+                            sexpdata.Symbol("pts"),
+                            [sexpdata.Symbol("xy"), start_pos[0] * 10, start_pos[1] * 10],
+                            [sexpdata.Symbol("xy"), end_pos[0] * 10, end_pos[1] * 10],
+                        ],
+                        [
+                            sexpdata.Symbol("stroke"),
+                            [sexpdata.Symbol("width"), 0],
+                            [sexpdata.Symbol("type"), sexpdata.Symbol("default")],
+                        ],
+                        [sexpdata.Symbol("uuid"), wire_uuid],
+                    ]
+                    wire_lines.append(self._pretty_dumps(wire_data))
+
+        return wire_lines
 
     def _pretty_dumps(self, data: Any, indent: int = 0) -> str:
         """
@@ -1175,7 +1241,7 @@ class SExpressionHandler:
             return "switch"
         elif symbol_library == "connector":
             return "connector"
-        elif "ic" in symbol_name or "mcu" in symbol_name:
+        elif "ic" in symbol_name or "mcu" in symbol_name or "atmega" in symbol_name:
             return "ic"
         else:
             return "default"
