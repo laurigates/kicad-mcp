@@ -1,8 +1,24 @@
-"""
-Component layout manager for KiCad schematics.
+"""Component layout manager for KiCad schematics.
 
-Provides intelligent positioning, boundary validation, and automatic layout
-capabilities for components in KiCad schematics.
+This module provides functionalities for intelligent positioning,
+boundary validation, and automatic layout capabilities for components
+within KiCad schematics. It integrates with configuration settings
+from `kicad_mcp.config` and utilizes standard Python libraries for
+mathematical operations and data structuring.
+
+Features:
+- Intelligent positioning
+- Boundary validation
+- Automatic layout generation
+- Collision detection
+- Support for various layout strategies (Grid, Row, Column, Circular, Hierarchical)
+- Statistical analysis of component layouts
+
+Dependencies:
+    - dataclasses
+    - enum
+    - math
+    - kicad_mcp.config (for CIRCUIT_DEFAULTS)
 """
 
 from dataclasses import dataclass
@@ -13,7 +29,18 @@ from kicad_mcp.config import CIRCUIT_DEFAULTS
 
 
 class LayoutStrategy(Enum):
-    """Layout strategies for automatic component placement."""
+    """Layout strategies for automatic component placement.
+
+    Attributes:
+        GRID: Places components in a grid pattern.
+        ROW: Places components in a single horizontal row.
+        COLUMN: Places components in a single vertical column.
+        CIRCULAR: Arranges components in a circular formation.
+        HIERARCHICAL: Organizes components based on their type in a hierarchical
+            structure.
+    """
+
+    # ...
 
     GRID = "grid"
     ROW = "row"
@@ -24,7 +51,20 @@ class LayoutStrategy(Enum):
 
 @dataclass
 class ComponentBounds:
-    """Component bounding box information."""
+    """Represents the bounding box and position of a component.
+
+    This dataclass stores geometric information about a component,
+    including its reference designator, central coordinates (x, y),
+    and dimensions (width, height), enabling calculations for
+    layout and collision detection.
+
+    Attributes:
+        reference: The reference designator of the component (e.g., 'R1', 'C10').
+        x: The central X-coordinate of the component in millimeters.
+        y: The central Y-coordinate of the component in millimeters.
+        width: The width of the component bounding box in millimeters.
+        height: The height of the component bounding box in millimeters.
+    """
 
     reference: str
     x: float
@@ -34,22 +74,51 @@ class ComponentBounds:
 
     @property
     def left(self) -> float:
+        """Calculates the left edge coordinate of the component bounding box."""
         return self.x - self.width / 2
 
     @property
     def right(self) -> float:
+        """Calculates the right edge coordinate of the component bounding box."""
         return self.x + self.width / 2
 
     @property
     def top(self) -> float:
+        """Calculates the top edge coordinate of the component bounding box."""
         return self.y - self.height / 2
 
     @property
     def bottom(self) -> float:
+        """Calculates the bottom edge coordinate of the component bounding box."""
         return self.y + self.height / 2
 
     def overlaps_with(self, other: "ComponentBounds") -> bool:
-        """Check if this component overlaps with another."""
+        """Checks if this component's bounding box overlaps with another's.
+
+        Args:
+            other:
+                The other component bounding box to check against.
+
+        Returns:
+            True if the bounding boxes overlap, False otherwise.
+
+        Examples:
+            >>> b1 = ComponentBounds("R1", 10, 10, 5, 5)
+            >>> b2 = ComponentBounds("C1", 12, 12, 5, 5)
+            >>> b1.overlaps_with(b2)
+            True
+            >>> b3 = ComponentBounds("D1", 20, 20, 5, 5)
+            >>> b1.overlaps_with(b3)
+            False
+            >>> # Edge case: components touching exactly at edges
+            >>> b4 = ComponentBounds("L1", 17.5, 10, 5, 5)  # Right edge touches left edge
+            >>> b1.overlaps_with(b4)
+            False
+            >>> # Same position components
+            >>> b5 = ComponentBounds("Q1", 10, 10, 5, 5)
+            >>> b1.overlaps_with(b5)
+            True
+        """
         return not (
             self.right < other.left
             or self.left > other.right
@@ -60,7 +129,31 @@ class ComponentBounds:
 
 @dataclass
 class SchematicBounds:
-    """Schematic sheet boundaries."""
+    """Represents the boundaries of a KiCad schematic sheet.
+
+    This dataclass defines the dimensions and margins of the schematic sheet,
+    providing properties to easily calculate usable areas and coordinate limits.
+    It defaults to A4 dimensions with a standard margin.
+
+    Attributes:
+        width: The total width of the schematic sheet in millimeters
+            (default: 297.0 for A4).
+        height: The total height of the schematic sheet in millimeters
+            (default: 210.0 for A4).
+        margin: The margin from the edges of the sheet in millimeters
+            (default: 20.0).
+
+    Examples:
+        >>> bounds = SchematicBounds(width=100, height=80, margin=10)
+        >>> bounds.usable_width
+        80
+        >>> bounds.usable_height
+        60
+        >>> bounds.min_x, bounds.max_x
+        (10, 90)
+        >>> bounds.min_y, bounds.max_y
+        (10, 70)
+    """
 
     width: float = 297.0  # A4 width in mm
     height: float = 210.0  # A4 height in mm
@@ -68,42 +161,44 @@ class SchematicBounds:
 
     @property
     def usable_width(self) -> float:
+        """Calculates the usable width of the schematic area, considering margins."""
         return self.width - 2 * self.margin
 
     @property
     def usable_height(self) -> float:
+        """Calculates the usable height of the schematic area, considering margins."""
         return self.height - 2 * self.margin
 
     @property
     def min_x(self) -> float:
+        """Returns the minimum X-coordinate for component placement."""
         return self.margin
 
     @property
     def max_x(self) -> float:
+        """Returns the maximum X-coordinate for component placement."""
         return self.width - self.margin
 
     @property
     def min_y(self) -> float:
+        """Returns the minimum Y-coordinate for component placement."""
         return self.margin
 
     @property
     def max_y(self) -> float:
+        """Returns the maximum Y-coordinate for component placement."""
         return self.height - self.margin
 
 
 class ComponentLayoutManager:
-    """
-    Manages component layout and positioning for KiCad schematics.
+    """Manages component layout and positioning for KiCad schematics.
 
-    Features:
-    - Boundary validation for component positions
-    - Automatic layout generation when positions not specified
-    - Grid-based positioning with configurable spacing
-    - Collision detection and avoidance
-    - Support for different component types and sizes
+    This class provides robust functionalities for automatically placing components,
+    validating their positions within schematic boundaries, and detecting/avoiding
+    collisions. It supports various automated layout strategies and offers
+    tools for analyzing the resulting component arrangements.
     """
 
-    # Default component sizes (width, height) in mm
     COMPONENT_SIZES = {
         "resistor": (10.0, 5.0),
         "capacitor": (8.0, 6.0),
@@ -119,11 +214,18 @@ class ComponentLayoutManager:
     }
 
     def __init__(self, bounds: SchematicBounds | None = None):
-        """
-        Initialize the layout manager.
+        """Initializes the layout manager.
 
         Args:
-            bounds: Schematic boundaries to use (defaults to A4)
+            bounds:
+                Schematic boundaries to use for layout. If None, defaults to
+                A4 dimensions.
+
+        Attributes:
+            bounds: The schematic boundaries being used.
+            grid_spacing: The spacing for grid snapping, loaded from config.
+            component_spacing: Minimum spacing between components, from config.
+            placed_components: List to store placed components.
         """
         self.bounds = bounds or SchematicBounds()
         self.grid_spacing = CIRCUIT_DEFAULTS["grid_spacing"]
@@ -131,20 +233,34 @@ class ComponentLayoutManager:
         self.placed_components: list[ComponentBounds] = []
 
     def validate_position(self, x: float, y: float, component_type: str = "default") -> bool:
-        """
-        Validate that a component position is within schematic boundaries.
+        """Validates that a component fits within the defined schematic boundaries.
+
+        This method checks if a component, based on its center coordinates (x, y)
+        and type (for size lookup), fits entirely within the usable area of
+        the schematic.
 
         Args:
-            x: X coordinate in mm
-            y: Y coordinate in mm
-            component_type: Type of component for size calculation
+            x: The central X-coordinate of the component in millimeters.
+            y: The central Y-coordinate of the component in millimeters.
+            component_type: The type of component (e.g., "resistor", "ic") used
+                to determine its dimensions. Defaults to "default".
 
         Returns:
-            True if position is valid, False otherwise
+            True if the component's bounding box is entirely within the
+            schematic's usable boundaries, False otherwise.
+
+        Examples:
+            >>> bounds = SchematicBounds(width=100, height=100, margin=10)
+            >>> manager = ComponentLayoutManager(bounds)
+            >>> manager.validate_position(50, 50, "resistor")
+            True
+            >>> manager.validate_position(5, 5, "default")  # Too close to edge
+            False
+            >>> manager.validate_position(95, 50, "resistor")  # Would exceed right bound
+            False
         """
         width, height = self.COMPONENT_SIZES.get(component_type, self.COMPONENT_SIZES["default"])
 
-        # Check boundaries including component size
         if x - width / 2 < self.bounds.min_x:
             return False
         if x + width / 2 > self.bounds.max_x:
@@ -154,15 +270,30 @@ class ComponentLayoutManager:
         return not y + height / 2 > self.bounds.max_y
 
     def snap_to_grid(self, x: float, y: float) -> tuple[float, float]:
-        """
-        Snap coordinates to the nearest grid point.
+        """Snaps coordinates to the nearest grid point.
+
+        This function takes a given (x, y) coordinate and adjusts it to align
+        with the nearest grid intersection point, ensuring components are
+        placed neatly on the schematic.
 
         Args:
-            x: X coordinate in mm
-            y: Y coordinate in mm
+            x: The X coordinate in millimeters.
+            y: The Y coordinate in millimeters.
 
         Returns:
-            Tuple of (snapped_x, snapped_y)
+            A tuple containing the snapped (snapped_x, snapped_y)
+            coordinates in millimeters.
+
+        Examples:
+            >>> manager = ComponentLayoutManager()
+            >>> manager.grid_spacing = 10.0  # Set explicit grid spacing
+            >>> manager.snap_to_grid(12.3, 27.8)
+            (10.0, 30.0)
+            >>> manager.snap_to_grid(5.1, 4.9)
+            (10.0, 0.0)
+            >>> manager.grid_spacing = 5.0
+            >>> manager.snap_to_grid(12.3, 27.8)
+            (10.0, 30.0)
         """
         snapped_x = round(x / self.grid_spacing) * self.grid_spacing
         snapped_y = round(y / self.grid_spacing) * self.grid_spacing
@@ -175,21 +306,27 @@ class ComponentLayoutManager:
         preferred_x: float | None = None,
         preferred_y: float | None = None,
     ) -> tuple[float, float]:
-        """
-        Find a valid position for a component, avoiding collisions.
+        """Finds a valid position for a component, avoiding collisions.
+
+        If preferred coordinates are provided and valid, they are used.
+        Otherwise, it falls back to a grid-based search for the next
+        available position.
+
+        Complexity:
+            O(1) if preferred position is valid. O(N*M) in the worst-case for
+            grid search, where N and M are the number of grid points.
 
         Args:
-            component_ref: Component reference (e.g., 'R1')
-            component_type: Type of component
-            preferred_x: Preferred X coordinate (optional)
-            preferred_y: Preferred Y coordinate (optional)
+            component_ref: Component reference (e.g., 'R1', 'U2').
+            component_type: Type of component (e.g., "resistor", "ic").
+            preferred_x: Optional preferred X-coordinate in mm.
+            preferred_y: Optional preferred Y-coordinate in mm.
 
         Returns:
-            Tuple of (x, y) coordinates in mm
+            A tuple of (x, y) coordinates for the found valid position.
         """
         width, height = self.COMPONENT_SIZES.get(component_type, self.COMPONENT_SIZES["default"])
 
-        # If preferred position is provided and valid, try to use it
         if preferred_x is not None and preferred_y is not None:
             x, y = self.snap_to_grid(preferred_x, preferred_y)
             if self.validate_position(x, y, component_type):
@@ -197,27 +334,39 @@ class ComponentLayoutManager:
                 if not self._has_collision(candidate):
                     return x, y
 
-        # Find next available position using grid search
         return self._find_next_grid_position(component_ref, component_type)
 
     def _find_next_grid_position(
         self, component_ref: str, component_type: str
     ) -> tuple[float, float]:
-        """Find the next available grid position."""
+        """Finds the next available grid position within the schematic bounds.
+
+        This private helper performs a systematic grid search starting from the
+        top-left corner of the usable area, considering component size and
+        avoiding collisions.
+
+        Complexity:
+            O(W * H / S^2) in the worst case, where W and H are usable
+            width/height and S is grid_spacing.
+
+        Args:
+            component_ref: Component reference (e.g., 'R1').
+            component_type: Type of component (e.g., "resistor").
+
+        Returns:
+            A tuple of (x, y) coordinates for the found position.
+        """
         width, height = self.COMPONENT_SIZES.get(component_type, self.COMPONENT_SIZES["default"])
 
-        # Start from top-left of usable area
         start_x = self.bounds.min_x + width / 2
         start_y = self.bounds.min_y + height / 2
 
-        # Search in rows
         current_y = start_y
         while current_y + height / 2 <= self.bounds.max_y:
             current_x = start_x
             while current_x + width / 2 <= self.bounds.max_x:
                 x, y = self.snap_to_grid(current_x, current_y)
 
-                # Validate position after grid snapping
                 if self.validate_position(x, y, component_type):
                     candidate = ComponentBounds(component_ref, x, y, width, height)
                     if not self._has_collision(candidate):
@@ -227,11 +376,35 @@ class ComponentLayoutManager:
 
             current_y += self.component_spacing
 
-        # If no position found, place at origin with warning
         return self.snap_to_grid(self.bounds.min_x + width / 2, self.bounds.min_y + height / 2)
 
     def _has_collision(self, candidate: ComponentBounds) -> bool:
-        """Check if candidate component collides with any placed components."""
+        """Checks if a component's bounding box collides with placed components.
+
+        Complexity:
+            O(N), where N is the number of `placed_components`.
+
+        Args:
+            candidate: The component to check for collisions.
+
+        Returns:
+            True if the candidate component overlaps with any placed component.
+
+        Examples:
+            >>> bounds = SchematicBounds(width=100, height=100, margin=10)
+            >>> manager = ComponentLayoutManager(bounds)
+            >>> manager.grid_spacing = 10.0  # Set explicit grid spacing
+            >>> manager.place_component("R1", "resistor", 30, 30)
+            (30.0, 30.0)
+            >>> # Create overlapping component bounds
+            >>> candidate_overlap = ComponentBounds("C1", 32, 32, 8, 6)
+            >>> manager._has_collision(candidate_overlap)
+            True
+            >>> # Create non-overlapping component bounds
+            >>> candidate_clear = ComponentBounds("C2", 50, 50, 8, 6)
+            >>> manager._has_collision(candidate_clear)
+            False
+        """
         return any(candidate.overlaps_with(placed) for placed in self.placed_components)
 
     def place_component(
@@ -241,17 +414,21 @@ class ComponentLayoutManager:
         x: float | None = None,
         y: float | None = None,
     ) -> tuple[float, float]:
-        """
-        Place a component and record its position.
+        """Places a component on the schematic and records its position.
+
+        This method finds a valid position for the component, using explicit
+        coordinates if provided, otherwise finding an available spot. The
+        component's bounds are then added to the list of placed components.
 
         Args:
-            component_ref: Component reference
-            component_type: Type of component
-            x: X coordinate (optional, will auto-place if not provided)
-            y: Y coordinate (optional, will auto-place if not provided)
+            component_ref: The reference designator of the component.
+            component_type: The type of component for size lookup.
+            x: Optional preferred X-coordinate in mm.
+            y: Optional preferred Y-coordinate in mm.
 
         Returns:
-            Tuple of final (x, y) coordinates
+            A tuple of the final (x, y) coordinates where the component
+            was placed.
         """
         final_x, final_y = self.find_valid_position(component_ref, component_type, x, y)
 
@@ -264,17 +441,24 @@ class ComponentLayoutManager:
     def auto_layout_components(
         self, components: list[dict], strategy: LayoutStrategy = LayoutStrategy.GRID
     ) -> list[dict]:
-        """
-        Automatically layout a list of components.
+        """Automatically layouts components based on a specified strategy.
+
+        This method dispatches the layout task to a specific private function
+        based on the chosen `LayoutStrategy`.
+
+        Complexity:
+            Varies by strategy. Generally at least O(N).
 
         Args:
-            components: List of component dictionaries
-            strategy: Layout strategy to use
+            components: A list of component dictionaries, each containing at
+                least a "reference".
+            strategy: The layout strategy to apply.
 
         Returns:
-            List of components with updated positions
+            A list of the component dictionaries with their "position" updated.
         """
         updated_components = []
+        self.clear_layout()
 
         if strategy == LayoutStrategy.GRID:
             updated_components = self._layout_grid(components)
@@ -287,110 +471,126 @@ class ComponentLayoutManager:
         elif strategy == LayoutStrategy.HIERARCHICAL:
             updated_components = self._layout_hierarchical(components)
         else:
-            # Default to individual placement
             for component in components:
                 x, y = self.place_component(
                     component["reference"], component.get("component_type", "default")
                 )
-                component = component.copy()
-                component["position"] = (x, y)
-                updated_components.append(component)
+                component_copy = component.copy()
+                component_copy["position"] = (x, y)
+                updated_components.append(component_copy)
 
         return updated_components
 
     def _layout_grid(self, components: list[dict]) -> list[dict]:
-        """Layout components in a grid pattern."""
-        updated_components = []
+        """Layouts components in a grid pattern.
 
-        # Calculate grid dimensions
+        Components are placed row by row, snapping to the grid and attempting
+        to fit within schematic bounds.
+
+        Args:
+            components: List of component dictionaries to layout.
+
+        Returns:
+            List of components with updated positions.
+        """
+        updated_components = []
         num_components = len(components)
         cols = math.ceil(math.sqrt(num_components))
-        rows = math.ceil(num_components / cols)
 
-        # Calculate spacing
         available_width = self.bounds.usable_width
         available_height = self.bounds.usable_height
 
         col_spacing = available_width / max(1, cols - 1) if cols > 1 else available_width / 2
-        row_spacing = available_height / max(1, rows - 1) if rows > 1 else available_height / 2
+        row_spacing = (
+            available_height / max(1, math.ceil(num_components / cols) - 1)
+            if num_components > cols
+            else available_height / 2
+        )
 
-        # Ensure minimum spacing
         col_spacing = max(col_spacing, self.component_spacing)
         row_spacing = max(row_spacing, self.component_spacing)
 
-        # Place components
         for i, component in enumerate(components):
             row = i // cols
             col = i % cols
-
             x = self.bounds.min_x + col * col_spacing
             y = self.bounds.min_y + row * row_spacing
-
-            # Snap to grid and validate
             x, y = self.snap_to_grid(x, y)
-            component_type = component.get("component_type", "default")
 
-            if not self.validate_position(x, y, component_type):
-                # Fall back to auto placement
-                x, y = self.place_component(component["reference"], component_type)
-            else:
-                x, y = self.place_component(component["reference"], component_type, x, y)
+            component_type = component.get("component_type", "default")
+            final_x, final_y = self.place_component(component["reference"], component_type, x, y)
 
             updated_component = component.copy()
-            updated_component["position"] = (x, y)
+            updated_component["position"] = (final_x, final_y)
             updated_components.append(updated_component)
 
         return updated_components
 
     def _layout_row(self, components: list[dict]) -> list[dict]:
-        """Layout components in a single row."""
-        updated_components = []
+        """Layouts components in a single horizontal row.
 
+        Components are evenly spaced across the usable width of the schematic.
+
+        Args:
+            components: List of component dictionaries to layout.
+
+        Returns:
+            List of components with updated positions.
+        """
+        updated_components = []
         y = self.bounds.min_y + self.bounds.usable_height / 2
         available_width = self.bounds.usable_width
+
         spacing = available_width / max(1, len(components) - 1) if len(components) > 1 else 0
         spacing = max(spacing, self.component_spacing)
 
         for i, component in enumerate(components):
             x = self.bounds.min_x + i * spacing
-            x, y = self.snap_to_grid(x, y)
+            x, y_snapped = self.snap_to_grid(x, y)
 
             component_type = component.get("component_type", "default")
-            x, y = self.place_component(component["reference"], component_type, x, y)
+            final_x, final_y = self.place_component(
+                component["reference"], component_type, x, y_snapped
+            )
 
             updated_component = component.copy()
-            updated_component["position"] = (x, y)
+            updated_component["position"] = (final_x, final_y)
             updated_components.append(updated_component)
 
         return updated_components
 
     def _layout_column(self, components: list[dict]) -> list[dict]:
-        """Layout components in a single column."""
+        """Layouts components in a single vertical column.
+
+        Components are evenly spaced along the usable height of the schematic.
+
+        Args:
+            components: List of component dictionaries to layout.
+
+        Returns:
+            List of components with updated positions.
+        """
         updated_components = []
-
-        # Clear existing components to avoid collision detection issues during layout
-        self.clear_layout()
-
         x = self.bounds.min_x + self.bounds.usable_width / 2
         available_height = self.bounds.usable_height
 
-        # Calculate proper spacing considering component heights
-        max_component_height = max(
-            self.COMPONENT_SIZES.get(
-                comp.get("component_type", "default"), self.COMPONENT_SIZES["default"]
-            )[1]
-            for comp in components
+        max_h = max(
+            (
+                self.COMPONENT_SIZES.get(
+                    c.get("component_type", "default"), self.COMPONENT_SIZES["default"]
+                )[1]
+                for c in components
+            ),
+            default=0,
         )
-        min_spacing = max(self.component_spacing, max_component_height + 5.0)  # Add 5mm buffer
+        min_spacing = max(self.component_spacing, max_h + 5.0)
 
-        # Use either calculated spacing or minimum spacing, whichever is larger
-        if len(components) > 1:
-            calculated_spacing = available_height / (len(components) - 1)
-            spacing = max(calculated_spacing, min_spacing)
-        else:
-            spacing = min_spacing
+        spacing = (
+            max(available_height / max(1, len(components) - 1), min_spacing)
+            if len(components) > 1
+            else min_spacing
+        )
 
-        # Fix the X coordinate for all components in the column
         column_x, _ = self.snap_to_grid(x, 0)
 
         for i, component in enumerate(components):
@@ -398,17 +598,9 @@ class ComponentLayoutManager:
             _, snapped_y = self.snap_to_grid(0, y)
 
             component_type = component.get("component_type", "default")
-
-            # Force the x-coordinate to stay in the column by bypassing collision detection
-            width, height = self.COMPONENT_SIZES.get(
-                component_type, self.COMPONENT_SIZES["default"]
+            final_x, final_y = self.place_component(
+                component["reference"], component_type, column_x, snapped_y
             )
-            component_bounds = ComponentBounds(
-                component["reference"], column_x, snapped_y, width, height
-            )
-            self.placed_components.append(component_bounds)
-
-            final_x, final_y = column_x, snapped_y
 
             updated_component = component.copy()
             updated_component["position"] = (final_x, final_y)
@@ -417,13 +609,20 @@ class ComponentLayoutManager:
         return updated_components
 
     def _layout_circular(self, components: list[dict]) -> list[dict]:
-        """Layout components in a circular pattern."""
-        updated_components = []
+        """Layouts components in a circular pattern.
 
+        Components are distributed evenly along the circumference of a circle
+        within the usable schematic area.
+
+        Args:
+            components: List of component dictionaries to layout.
+
+        Returns:
+            List of components with updated positions.
+        """
+        updated_components = []
         center_x = self.bounds.min_x + self.bounds.usable_width / 2
         center_y = self.bounds.min_y + self.bounds.usable_height / 2
-
-        # Calculate radius to fit within bounds
         max_radius = min(self.bounds.usable_width, self.bounds.usable_height) / 3
 
         num_components = len(components)
@@ -436,70 +635,75 @@ class ComponentLayoutManager:
 
             x, y = self.snap_to_grid(x, y)
             component_type = component.get("component_type", "default")
-
-            if not self.validate_position(x, y, component_type):
-                x, y = self.place_component(component["reference"], component_type)
-            else:
-                x, y = self.place_component(component["reference"], component_type, x, y)
+            final_x, final_y = self.place_component(component["reference"], component_type, x, y)
 
             updated_component = component.copy()
-            updated_component["position"] = (x, y)
+            updated_component["position"] = (final_x, final_y)
             updated_components.append(updated_component)
 
         return updated_components
 
     def _layout_hierarchical(self, components: list[dict]) -> list[dict]:
-        """Layout components in a hierarchical pattern based on component types."""
-        updated_components = []
+        """Layouts components in a hierarchical pattern based on type.
 
-        # Group components by type
+        Components are grouped by their type, and each group is then laid out
+        within its own dedicated zone on the schematic.
+
+        Args:
+            components: List of component dictionaries to layout.
+
+        Returns:
+            List of components with updated positions.
+        """
+        updated_components = []
         type_groups = {}
         for component in components:
             comp_type = component.get("component_type", "default")
-            if comp_type not in type_groups:
-                type_groups[comp_type] = []
-            type_groups[comp_type].append(component)
+            type_groups.setdefault(comp_type, []).append(component)
 
-        # Layout each group in a different area
         num_groups = len(type_groups)
-        if num_groups == 0:
-            return updated_components
+        if not num_groups:
+            return []
 
-        # Divide schematic into zones
         cols = math.ceil(math.sqrt(num_groups))
         rows = math.ceil(num_groups / cols)
-
         zone_width = self.bounds.usable_width / cols
         zone_height = self.bounds.usable_height / rows
 
-        for group_index, (comp_type, group_components) in enumerate(type_groups.items()):
-            zone_row = group_index // cols
-            zone_col = group_index % cols
+        for i, (comp_type, group_components) in enumerate(type_groups.items()):
+            zone_row, zone_col = divmod(i, cols)
+            zone_x_offset = self.bounds.min_x + zone_col * zone_width
+            zone_y_offset = self.bounds.min_y + zone_row * zone_height
 
-            zone_x = self.bounds.min_x + zone_col * zone_width
-            zone_y = self.bounds.min_y + zone_row * zone_height
-
-            # Create temporary layout manager for this zone
             zone_bounds = SchematicBounds(width=zone_width, height=zone_height, margin=5.0)
             zone_manager = ComponentLayoutManager(zone_bounds)
 
-            # Layout components in this zone
             for component in group_components:
-                x, y = zone_manager.place_component(component["reference"], comp_type)
-                # Adjust coordinates to global schematic space
-                global_x = zone_x + x
-                global_y = zone_y + y
+                local_x, local_y = zone_manager.place_component(component["reference"], comp_type)
+                global_x = zone_x_offset + local_x
+                global_y = zone_y_offset + local_y
 
                 updated_component = component.copy()
                 updated_component["position"] = (global_x, global_y)
                 updated_components.append(updated_component)
 
-            group_index += 1
-
         return updated_components
 
     def get_layout_statistics(self) -> dict:
-        """Get statistics about the current layout."""
+        """Gets statistics about the current component layout.
+
+        Provides insights into the density and arrangement of placed components.
+
+        Complexity:
+            O(N^2) due to the nested loop for calculating average spacing.
+
+        Returns:
+            A dictionary containing layout statistics:
+                - total_components: The number of components placed.
+                - area_utilization: The percentage of usable area covered.
+                - average_spacing: The average Euclidean distance between pairs.
+                - bounds_violations: The number of components outside bounds.
+        """
         if not self.placed_components:
             return {
                 "total_components": 0,
@@ -508,31 +712,26 @@ class ComponentLayoutManager:
                 "bounds_violations": 0,
             }
 
-        total_area = sum(comp.width * comp.height for comp in self.placed_components)
+        total_area = sum(c.width * c.height for c in self.placed_components)
         schematic_area = self.bounds.usable_width * self.bounds.usable_height
         area_utilization = total_area / schematic_area if schematic_area > 0 else 0
 
-        # Calculate average spacing between components
-        total_distance = 0
-        distance_count = 0
+        total_distance, distance_count = 0, 0
         for i, comp1 in enumerate(self.placed_components):
             for comp2 in self.placed_components[i + 1 :]:
-                distance = math.sqrt((comp1.x - comp2.x) ** 2 + (comp1.y - comp2.y) ** 2)
+                distance = math.hypot(comp1.x - comp2.x, comp1.y - comp2.y)
                 total_distance += distance
                 distance_count += 1
-
         average_spacing = total_distance / distance_count if distance_count > 0 else 0
 
-        # Check for bounds violations
-        bounds_violations = 0
-        for comp in self.placed_components:
-            if (
-                comp.left < self.bounds.min_x
-                or comp.right > self.bounds.max_x
-                or comp.top < self.bounds.min_y
-                or comp.bottom > self.bounds.max_y
-            ):
-                bounds_violations += 1
+        bounds_violations = sum(
+            1
+            for c in self.placed_components
+            if c.left < self.bounds.min_x
+            or c.right > self.bounds.max_x
+            or c.top < self.bounds.min_y
+            or c.bottom > self.bounds.max_y
+        )
 
         return {
             "total_components": len(self.placed_components),
@@ -542,5 +741,11 @@ class ComponentLayoutManager:
         }
 
     def clear_layout(self):
-        """Clear all placed components."""
+        """Clears all currently placed components from the layout manager.
+
+        Resets the `placed_components` list to an empty state.
+
+        Complexity:
+            O(1).
+        """
         self.placed_components.clear()
