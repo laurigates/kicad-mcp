@@ -39,6 +39,7 @@ class LayoutStrategy(Enum):
         HIERARCHICAL: Organizes components based on their type in a hierarchical
             structure.
     """
+
     # ...
 
     GRID = "grid"
@@ -109,6 +110,14 @@ class ComponentBounds:
             >>> b3 = ComponentBounds("D1", 20, 20, 5, 5)
             >>> b1.overlaps_with(b3)
             False
+            >>> # Edge case: components touching exactly at edges
+            >>> b4 = ComponentBounds("L1", 17.5, 10, 5, 5)  # Right edge touches left edge
+            >>> b1.overlaps_with(b4)
+            False
+            >>> # Same position components
+            >>> b5 = ComponentBounds("Q1", 10, 10, 5, 5)
+            >>> b1.overlaps_with(b5)
+            True
         """
         return not (
             self.right < other.left
@@ -133,6 +142,17 @@ class SchematicBounds:
             (default: 210.0 for A4).
         margin: The margin from the edges of the sheet in millimeters
             (default: 20.0).
+
+    Examples:
+        >>> bounds = SchematicBounds(width=100, height=80, margin=10)
+        >>> bounds.usable_width
+        80
+        >>> bounds.usable_height
+        60
+        >>> bounds.min_x, bounds.max_x
+        (10, 90)
+        >>> bounds.min_y, bounds.max_y
+        (10, 70)
     """
 
     width: float = 297.0  # A4 width in mm
@@ -230,10 +250,13 @@ class ComponentLayoutManager:
             schematic's usable boundaries, False otherwise.
 
         Examples:
-            >>> manager = ComponentLayoutManager(SchematicBounds(width=100, height=100, margin=10))
+            >>> bounds = SchematicBounds(width=100, height=100, margin=10)
+            >>> manager = ComponentLayoutManager(bounds)
             >>> manager.validate_position(50, 50, "resistor")
             True
-            >>> manager.validate_position(5, 5, "default")
+            >>> manager.validate_position(5, 5, "default")  # Too close to edge
+            False
+            >>> manager.validate_position(95, 50, "resistor")  # Would exceed right bound
             False
         """
         width, height = self.COMPONENT_SIZES.get(component_type, self.COMPONENT_SIZES["default"])
@@ -263,11 +286,14 @@ class ComponentLayoutManager:
 
         Examples:
             >>> manager = ComponentLayoutManager()
-            >>> manager.grid_spacing = 10.0
+            >>> manager.grid_spacing = 10.0  # Set explicit grid spacing
             >>> manager.snap_to_grid(12.3, 27.8)
             (10.0, 30.0)
             >>> manager.snap_to_grid(5.1, 4.9)
             (10.0, 0.0)
+            >>> manager.grid_spacing = 5.0
+            >>> manager.snap_to_grid(12.3, 27.8)
+            (10.0, 30.0)
         """
         snapped_x = round(x / self.grid_spacing) * self.grid_spacing
         snapped_y = round(y / self.grid_spacing) * self.grid_spacing
@@ -365,12 +391,19 @@ class ComponentLayoutManager:
             True if the candidate component overlaps with any placed component.
 
         Examples:
-            >>> manager = ComponentLayoutManager()
-            >>> manager.place_component("R1", "resistor", 10, 10)
-            (10.0, 10.0)
-            >>> candidate_overlap = ComponentBounds("C1", 12, 12, 5, 5)
+            >>> bounds = SchematicBounds(width=100, height=100, margin=10)
+            >>> manager = ComponentLayoutManager(bounds)
+            >>> manager.grid_spacing = 10.0  # Set explicit grid spacing
+            >>> manager.place_component("R1", "resistor", 30, 30)
+            (30.0, 30.0)
+            >>> # Create overlapping component bounds
+            >>> candidate_overlap = ComponentBounds("C1", 32, 32, 8, 6)
             >>> manager._has_collision(candidate_overlap)
             True
+            >>> # Create non-overlapping component bounds
+            >>> candidate_clear = ComponentBounds("C2", 50, 50, 8, 6)
+            >>> manager._has_collision(candidate_clear)
+            False
         """
         return any(candidate.overlaps_with(placed) for placed in self.placed_components)
 
@@ -463,12 +496,16 @@ class ComponentLayoutManager:
         updated_components = []
         num_components = len(components)
         cols = math.ceil(math.sqrt(num_components))
-        
+
         available_width = self.bounds.usable_width
         available_height = self.bounds.usable_height
-        
+
         col_spacing = available_width / max(1, cols - 1) if cols > 1 else available_width / 2
-        row_spacing = available_height / max(1, math.ceil(num_components / cols) - 1) if num_components > cols else available_height / 2
+        row_spacing = (
+            available_height / max(1, math.ceil(num_components / cols) - 1)
+            if num_components > cols
+            else available_height / 2
+        )
 
         col_spacing = max(col_spacing, self.component_spacing)
         row_spacing = max(row_spacing, self.component_spacing)
@@ -479,10 +516,10 @@ class ComponentLayoutManager:
             x = self.bounds.min_x + col * col_spacing
             y = self.bounds.min_y + row * row_spacing
             x, y = self.snap_to_grid(x, y)
-            
+
             component_type = component.get("component_type", "default")
             final_x, final_y = self.place_component(component["reference"], component_type, x, y)
-            
+
             updated_component = component.copy()
             updated_component["position"] = (final_x, final_y)
             updated_components.append(updated_component)
@@ -503,17 +540,19 @@ class ComponentLayoutManager:
         updated_components = []
         y = self.bounds.min_y + self.bounds.usable_height / 2
         available_width = self.bounds.usable_width
-        
+
         spacing = available_width / max(1, len(components) - 1) if len(components) > 1 else 0
         spacing = max(spacing, self.component_spacing)
-        
+
         for i, component in enumerate(components):
             x = self.bounds.min_x + i * spacing
             x, y_snapped = self.snap_to_grid(x, y)
-            
+
             component_type = component.get("component_type", "default")
-            final_x, final_y = self.place_component(component["reference"], component_type, x, y_snapped)
-            
+            final_x, final_y = self.place_component(
+                component["reference"], component_type, x, y_snapped
+            )
+
             updated_component = component.copy()
             updated_component["position"] = (final_x, final_y)
             updated_components.append(updated_component)
@@ -534,24 +573,35 @@ class ComponentLayoutManager:
         updated_components = []
         x = self.bounds.min_x + self.bounds.usable_width / 2
         available_height = self.bounds.usable_height
-        
+
         max_h = max(
-            (self.COMPONENT_SIZES.get(c.get("component_type", "default"), self.COMPONENT_SIZES["default"])[1] for c in components),
-            default=0
+            (
+                self.COMPONENT_SIZES.get(
+                    c.get("component_type", "default"), self.COMPONENT_SIZES["default"]
+                )[1]
+                for c in components
+            ),
+            default=0,
         )
         min_spacing = max(self.component_spacing, max_h + 5.0)
-        
-        spacing = max(available_height / max(1, len(components) - 1), min_spacing) if len(components) > 1 else min_spacing
+
+        spacing = (
+            max(available_height / max(1, len(components) - 1), min_spacing)
+            if len(components) > 1
+            else min_spacing
+        )
 
         column_x, _ = self.snap_to_grid(x, 0)
-        
+
         for i, component in enumerate(components):
             y = self.bounds.min_y + i * spacing
             _, snapped_y = self.snap_to_grid(0, y)
-            
+
             component_type = component.get("component_type", "default")
-            final_x, final_y = self.place_component(component["reference"], component_type, column_x, snapped_y)
-            
+            final_x, final_y = self.place_component(
+                component["reference"], component_type, column_x, snapped_y
+            )
+
             updated_component = component.copy()
             updated_component["position"] = (final_x, final_y)
             updated_components.append(updated_component)
@@ -574,23 +624,23 @@ class ComponentLayoutManager:
         center_x = self.bounds.min_x + self.bounds.usable_width / 2
         center_y = self.bounds.min_y + self.bounds.usable_height / 2
         max_radius = min(self.bounds.usable_width, self.bounds.usable_height) / 3
-        
+
         num_components = len(components)
         angle_step = 2 * math.pi / num_components if num_components > 0 else 0
-        
+
         for i, component in enumerate(components):
             angle = i * angle_step
             x = center_x + max_radius * math.cos(angle)
             y = center_y + max_radius * math.sin(angle)
-            
+
             x, y = self.snap_to_grid(x, y)
             component_type = component.get("component_type", "default")
             final_x, final_y = self.place_component(component["reference"], component_type, x, y)
-            
+
             updated_component = component.copy()
             updated_component["position"] = (final_x, final_y)
             updated_components.append(updated_component)
-            
+
         return updated_components
 
     def _layout_hierarchical(self, components: list[dict]) -> list[dict]:
@@ -610,7 +660,7 @@ class ComponentLayoutManager:
         for component in components:
             comp_type = component.get("component_type", "default")
             type_groups.setdefault(comp_type, []).append(component)
-        
+
         num_groups = len(type_groups)
         if not num_groups:
             return []
@@ -619,24 +669,24 @@ class ComponentLayoutManager:
         rows = math.ceil(num_groups / cols)
         zone_width = self.bounds.usable_width / cols
         zone_height = self.bounds.usable_height / rows
-        
+
         for i, (comp_type, group_components) in enumerate(type_groups.items()):
             zone_row, zone_col = divmod(i, cols)
             zone_x_offset = self.bounds.min_x + zone_col * zone_width
             zone_y_offset = self.bounds.min_y + zone_row * zone_height
-            
+
             zone_bounds = SchematicBounds(width=zone_width, height=zone_height, margin=5.0)
             zone_manager = ComponentLayoutManager(zone_bounds)
-            
+
             for component in group_components:
                 local_x, local_y = zone_manager.place_component(component["reference"], comp_type)
                 global_x = zone_x_offset + local_x
                 global_y = zone_y_offset + local_y
-                
+
                 updated_component = component.copy()
                 updated_component["position"] = (global_x, global_y)
                 updated_components.append(updated_component)
-                
+
         return updated_components
 
     def get_layout_statistics(self) -> dict:
@@ -668,15 +718,20 @@ class ComponentLayoutManager:
 
         total_distance, distance_count = 0, 0
         for i, comp1 in enumerate(self.placed_components):
-            for comp2 in self.placed_components[i + 1:]:
+            for comp2 in self.placed_components[i + 1 :]:
                 distance = math.hypot(comp1.x - comp2.x, comp1.y - comp2.y)
                 total_distance += distance
                 distance_count += 1
         average_spacing = total_distance / distance_count if distance_count > 0 else 0
 
-        bounds_violations = sum(1 for c in self.placed_components if 
-            c.left < self.bounds.min_x or c.right > self.bounds.max_x or
-            c.top < self.bounds.min_y or c.bottom > self.bounds.max_y)
+        bounds_violations = sum(
+            1
+            for c in self.placed_components
+            if c.left < self.bounds.min_x
+            or c.right > self.bounds.max_x
+            or c.top < self.bounds.min_y
+            or c.bottom > self.bounds.max_y
+        )
 
         return {
             "total_components": len(self.placed_components),
