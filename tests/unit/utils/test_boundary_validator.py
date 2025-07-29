@@ -220,7 +220,7 @@ class TestBoundaryValidator:
 
         assert "BOUNDARY VALIDATION REPORT" in report_text
         assert "Total Components: 3" in report_text
-        assert "Out of Bounds: 1" in report_text
+        assert "Out of Bounds: 2" in report_text
         assert "ERRORS:" in report_text
         assert "WARNINGS:" in report_text
         assert "R2" in report_text

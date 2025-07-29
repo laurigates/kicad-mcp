@@ -109,10 +109,13 @@ circuit "valid_circuit":
 
         # Check validation results
         assert validation_report.total_components == 4
-        assert validation_report.out_of_bounds_count == 1  # R2 is out of bounds
+        assert (
+            validation_report.out_of_bounds_count == 2
+        )  # R2 is out of bounds, C1 is outside usable area
         assert validation_report.has_errors() is True
         assert validation_report.has_warnings() is True  # C1 is outside usable area
         assert "R2" in validation_report.corrected_positions
+        assert "C1" in validation_report.corrected_positions  # C1 now also gets corrected
 
         # Test auto-correction
         corrected_components, _ = validator.auto_correct_positions(components_for_validation)
@@ -201,8 +204,9 @@ circuit "valid_circuit":
 
         assert validation_result["success"] is False
         assert validation_result["total_components"] == 4
-        assert validation_result["out_of_bounds_count"] == 1
+        assert validation_result["out_of_bounds_count"] == 2
         assert "R2" in validation_result["corrected_positions"]
+        assert "C1" in validation_result["corrected_positions"]
 
         # Generate validation report
         report_result = await generate_validation_report(str(project_file), ctx=ctx)
@@ -215,7 +219,7 @@ circuit "valid_circuit":
             report_data = json.load(f)
 
         assert report_data["summary"]["total_components"] == 4
-        assert report_data["summary"]["out_of_bounds_count"] == 1
+        assert report_data["summary"]["out_of_bounds_count"] == 2
         assert report_data["summary"]["has_errors"] is True
         assert report_data["summary"]["has_warnings"] is True
 
@@ -285,7 +289,7 @@ circuit "valid_circuit":
         # Check report structure
         assert "BOUNDARY VALIDATION REPORT" in report_text
         assert "Total Components: 5" in report_text
-        assert "Out of Bounds: 2" in report_text
+        assert "Out of Bounds: 3" in report_text
         assert "ERRORS:" in report_text
         assert "WARNINGS:" in report_text
         assert "INFO:" in report_text
@@ -297,7 +301,7 @@ circuit "valid_circuit":
 
         # Check corrected positions are shown
         assert "CORRECTED POSITIONS:" in report_text
-        assert len(validation_report.corrected_positions) == 2
+        assert len(validation_report.corrected_positions) == 3
 
     def test_validation_with_missing_positions(self):
         """Test validation handling of components with missing positions."""

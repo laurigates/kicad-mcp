@@ -114,11 +114,17 @@ class BoundaryValidator:
         # Check if position is within usable area (with margins)
         if not validate_position(x, y, use_margins=True):
             # Position is within absolute bounds but outside usable area
+            # Find a corrected position for margin violations too
+            corrected_x, corrected_y = self.layout_manager.find_valid_position(
+                component_ref, component_type, x, y
+            )
+
             return ValidationIssue(
                 severity=ValidationSeverity.WARNING,
                 component_ref=component_ref,
                 message=f"Component {component_ref} at ({x:.2f}, {y:.2f}) is outside usable area (margins)",
                 position=(x, y),
+                suggested_position=(corrected_x, corrected_y),
                 component_type=component_type,
             )
 
@@ -186,18 +192,28 @@ class BoundaryValidator:
             validation_issue = self.validate_component_position(component_ref, x, y, component_type)
             issues.append(validation_issue)
 
-            # Track out of bounds components
-            if validation_issue.severity == ValidationSeverity.ERROR:
+            # Track out of bounds components (both ERROR and WARNING are out of bounds)
+            if validation_issue.severity in [ValidationSeverity.ERROR, ValidationSeverity.WARNING]:
                 out_of_bounds_count += 1
                 if validation_issue.suggested_position:
                     corrected_positions[component_ref] = validation_issue.suggested_position
+
+        # Count truly validated components (only INFO severity, meaning fully valid)
+        validated_count = len(
+            [
+                issue
+                for issue in issues
+                if issue.severity == ValidationSeverity.INFO
+                and "position is valid" in issue.message
+            ]
+        )
 
         # Generate report
         report = ValidationReport(
             success=out_of_bounds_count == 0,
             issues=issues,
             total_components=len(components),
-            validated_components=len([c for c in components if c.get("position") is not None]),
+            validated_components=validated_count,
             out_of_bounds_count=out_of_bounds_count,
             corrected_positions=corrected_positions,
         )
