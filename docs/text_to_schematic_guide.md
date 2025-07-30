@@ -277,7 +277,7 @@ The S-expression format generates native KiCad schematic files that can be opene
 
 ```lisp
 (kicad_sch
-  (version 20230121)
+  (version 20241201)
   (generator kicad-mcp)
   (uuid "12345678-1234-1234-1234-123456789abc")
   (paper "A4")
@@ -294,7 +294,7 @@ The JSON format uses the existing KiCad MCP circuit tools (compatible but less s
 
 ```json
 {
-  "version": 20230121,
+  "version": 20241201,
   "generator": "kicad-mcp",
   "symbol": [
     {

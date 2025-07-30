@@ -231,7 +231,7 @@ class TestSExpressionHandler:
     def test_parse_basic_schematic(self):
         """Test parsing a basic S-expression schematic."""
         basic_sexpr = """(kicad_sch
-  (version 20230121)
+  (version 20241201)
   (generator eeschema)
   (uuid "12345678-1234-1234-1234-123456789abc")
   (paper "A4")
@@ -256,7 +256,7 @@ class TestSExpressionHandler:
 
     def test_parse_invalid_sexpr(self):
         """Test parsing invalid S-expression raises appropriate error."""
-        invalid_sexpr = "(kicad_sch (version 20230121) (incomplete"
+        invalid_sexpr = "(kicad_sch (version 20241201) (incomplete"
 
         with pytest.raises(ValueError, match="Failed to parse S-expression"):
             self.handler.parse_schematic(invalid_sexpr)

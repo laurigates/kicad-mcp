@@ -52,7 +52,7 @@ class TestValidationTools:
     @pytest.fixture
     def sample_sexpr_schematic(self):
         """Sample S-expression schematic content."""
-        return """(kicad_sch (version 20230121) (generator eeschema)
+        return """(kicad_sch (version 20241201) (generator eeschema)
             (symbol (lib_id "Device:R") (at 50.0 50.0 0) (uuid "abc123")
                 (property "Reference" "R1" (at 50.0 48.0 0))
                 (property "Value" "10k" (at 50.0 52.0 0))
