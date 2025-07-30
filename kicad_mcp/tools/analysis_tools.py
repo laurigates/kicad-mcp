@@ -15,6 +15,7 @@ import os
 from typing import Any
 
 from fastmcp import FastMCP
+
 from kicad_mcp.utils.file_utils import get_project_files
 
 
@@ -28,6 +29,7 @@ def register_analysis_tools(mcp: FastMCP) -> None:
     Returns:
         None
     """
+
     @mcp.tool()
     def validate_project(project_path: str) -> dict[str, Any]:
         """
@@ -72,6 +74,7 @@ def register_analysis_tools(mcp: FastMCP) -> None:
         try:
             with open(project_path) as f:
                 import json
+
                 json.load(f)
         except json.JSONDecodeError:
             issues.append("Invalid project file format (JSON parsing error)")

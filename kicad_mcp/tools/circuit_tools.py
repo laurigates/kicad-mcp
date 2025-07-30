@@ -843,10 +843,9 @@ def _parse_sexpr_for_validation(content: str) -> dict[str, Any]:
 
     # Find all symbol instances in the schematic
     # Pattern matches: (symbol (lib_id "Device:R") ... (property "Reference" "R1") ... (property "Value" "10k") ... )
-    re.findall(r'\(symbol\s+[^)]*\(lib_id\s+"([^"]+)"[^)]*\)', content, re.DOTALL)
 
     # For each symbol, find its properties
-    for symbol_block in re.finditer(r'\(symbol[^)]*\(lib_id\s+"([^"]+)".*?\)', content, re.DOTALL):
+    for symbol_block in re.finditer(r"\(symbol[^)]*\(lib_id\s+([^)]+)\).*?\)", content, re.DOTALL):
         lib_id = symbol_block.group(1)
         symbol_content = symbol_block.group(0)
 
