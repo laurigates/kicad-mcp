@@ -12,6 +12,7 @@ import sexpdata
 
 from kicad_mcp.utils.component_layout import ComponentLayoutManager
 from kicad_mcp.utils.pin_mapper import ComponentPinMapper
+from kicad_mcp.utils.version import KICAD_FILE_FORMAT_VERSION
 
 
 class SExpressionHandler:
@@ -95,7 +96,7 @@ class SExpressionHandler:
 
         schematic = [
             sexpdata.Symbol("kicad_sch"),
-            [sexpdata.Symbol("version"), 20240618],
+            [sexpdata.Symbol("version"), KICAD_FILE_FORMAT_VERSION],
             [sexpdata.Symbol("generator"), "kicad-mcp"],
             [sexpdata.Symbol("generator_version"), "0.2.0"],
             # UUID for the schematic

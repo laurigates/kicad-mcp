@@ -16,6 +16,7 @@ from kicad_mcp.utils.boundary_validator import BoundaryValidator
 from kicad_mcp.utils.component_layout import ComponentLayoutManager
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.sexpr_service import get_sexpr_service
+from kicad_mcp.utils.version import KICAD_FILE_FORMAT_VERSION
 
 
 def _get_component_type_from_symbol(symbol_library: str, symbol_name: str) -> str:
@@ -188,7 +189,7 @@ async def create_new_project(
 
         # Create basic PCB file in S-expression format
         pcb_content = f"""(kicad_pcb
-  (version 20240618)
+  (version {KICAD_FILE_FORMAT_VERSION})
   (generator "kicad-mcp")
   (general
     (thickness 1.6)
