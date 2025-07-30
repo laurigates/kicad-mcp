@@ -8,6 +8,8 @@ import re
 from typing import Any
 import uuid
 
+import sexpdata
+
 
 class SchematicParser:
     """Parser for KiCad schematic files to extract netlist information."""
@@ -152,7 +154,7 @@ class SchematicParser:
 
         for symbol in symbols:
             # Skip library symbols
-            if "(in_bom yes)" not in symbol:
+            if not re.search(r'\(in_bom\s+"?yes"?\)', symbol):
                 continue
             component = self._parse_component(symbol)
             if component:
@@ -173,57 +175,52 @@ class SchematicParser:
         Returns:
             Component information dictionary
         """
-        component = {}
+        try:
+            component = {}
+            parsed_symbol = sexpdata.loads(symbol_expr)
 
-        # Extract library component ID
-        lib_id_match = re.search(r'\(lib_id\s+"([^"]+)"\)', symbol_expr)
-        if lib_id_match:
-            component["lib_id"] = lib_id_match.group(1)
+            for item in parsed_symbol:
+                if not isinstance(item, list) or not item:
+                    continue
 
-        # Extract reference (e.g., R1, C2)
-        property_matches = re.finditer(r'\(property\s+"([^"]+)"\s+"([^"]+)"', symbol_expr)
-        for match in property_matches:
-            prop_name = match.group(1)
-            prop_value = match.group(2)
+                key = str(item[0])
+                if key == "lib_id":
+                    component["lib_id"] = item[1]
+                elif key == "at":
+                    component["position"] = {
+                        "x": item[1],
+                        "y": item[2],
+                        "angle": item[3] if len(item) > 3 else 0,
+                    }
+                elif key == "uuid":
+                    component["uuid"] = item[1]
+                elif key == "property":
+                    prop_name = item[1]
+                    prop_value = item[2]
+                    if prop_name == "Reference":
+                        component["reference"] = prop_value
+                    elif prop_name == "Value":
+                        component["value"] = prop_value
+                    elif prop_name == "Footprint":
+                        component["footprint"] = prop_value
+                    else:
+                        if "properties" not in component:
+                            component["properties"] = {}
+                        component["properties"][prop_name] = prop_value
+                elif key == "pin":
+                    if "pins" not in component:
+                        component["pins"] = []
+                    pin_num = item[1]
+                    pin_uuid_item = item[2]
+                    if isinstance(pin_uuid_item, list) and pin_uuid_item[0] == sexpdata.Symbol(
+                        "uuid"
+                    ):
+                        component["pins"].append({"num": pin_num, "uuid": pin_uuid_item[1]})
 
-            if prop_name == "Reference":
-                component["reference"] = prop_value
-            elif prop_name == "Value":
-                component["value"] = prop_value
-            elif prop_name == "Footprint":
-                component["footprint"] = prop_value
-            else:
-                # Store other properties
-                if "properties" not in component:
-                    component["properties"] = {}
-                component["properties"][prop_name] = prop_value
-
-        # Extract uuid
-        uuid_match = re.search(r"\(uuid\s+([^\s\)]+)\)", symbol_expr)
-        if uuid_match:
-            component["uuid"] = uuid_match.group(1).strip('"')
-
-        # Extract position
-        pos_match = re.search(r"\(at\s+([\d\.-]+)\s+([\d\.-]+)(\s+[\d\.-]+)?\)", symbol_expr)
-        if pos_match:
-            component["position"] = {
-                "x": float(pos_match.group(1)),
-                "y": float(pos_match.group(2)),
-                "angle": float(pos_match.group(3).strip() if pos_match.group(3) else 0),
-            }
-
-        # Extract pins
-        pins = []
-        pin_matches = re.finditer(r'\(pin\s+"([^"]+)"\s+\(uuid\s+([^\s\)]+)\)\)', symbol_expr)
-        for match in pin_matches:
-            pin_num = match.group(1)
-            pin_uuid = match.group(2).strip('"')
-            pins.append({"num": pin_num, "uuid": pin_uuid})
-
-        if pins:
-            component["pins"] = pins
-
-        return component
+            return component
+        except Exception as e:
+            print(f"Failed to parse component expression: {e}\nExpression:\n{symbol_expr}")
+            return {}
 
     def _extract_wires(self, content: str) -> list[dict[str, Any]]:
         """Extract all wire expressions from the schematic content."""

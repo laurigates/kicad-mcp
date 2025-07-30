@@ -53,8 +53,8 @@ def extract_voltage_from_regulator(value: str) -> str:
 
     # Strategy 2: Common voltage indicators
     voltage_patterns = [
-        r"(\d+\.?\d*)\s*V",    # "3.3V", "5V"
-        r"-(\d+\.?\d*)\s*V",   # "-5V", "-12V"
+        r"(\d+\.?\d*)\s*V",  # "3.3V", "5V"
+        r"-(\d+\.?\d*)\s*V",  # "-5V", "-12V"
         r"[_-](\d+\.?\d+)",  # "LM1117-3.3"
     ]
     for pattern in voltage_patterns:
@@ -69,11 +69,18 @@ def extract_voltage_from_regulator(value: str) -> str:
 
     # Strategy 3: Dictionary of known regulators
     regulators = {
-        "LM7805": "5V", "LM7809": "9V", "LM7812": "12V",
-        "LM7905": "-5V", "LM7912": "-12V",
-        "LM1117-3.3": "3.3V", "LM1117-5": "5V",
-        "LM317": "Adjustable", "LM337": "Adjustable (Negative)",
-        "AMS1117-3.3": "3.3V", "L7805": "5V", "MCP1700-3.3": "3.3V",
+        "LM7805": "5V",
+        "LM7809": "9V",
+        "LM7812": "12V",
+        "LM7905": "-5V",
+        "LM7912": "-12V",
+        "LM1117-3.3": "3.3V",
+        "LM1117-5": "5V",
+        "LM317": "Adjustable",
+        "LM337": "Adjustable (Negative)",
+        "AMS1117-3.3": "3.3V",
+        "L7805": "5V",
+        "MCP1700-3.3": "3.3V",
     }
     for reg, volt in regulators.items():
         if re.search(re.escape(reg), value, re.IGNORECASE):
@@ -114,12 +121,17 @@ def extract_frequency_from_value(value: str) -> str:
             freq = float(match.group(1))
             unit = match.group(2).upper() if match.group(2) else ""
             if freq > 0:
-                if unit == "K": return f"{freq:.3f}kHz"
-                if unit == "M": return f"{freq:.3f}MHz"
-                if unit == "G": return f"{freq:.3f}GHz"
+                if unit == "K":
+                    return f"{freq:.3f}kHz"
+                if unit == "M":
+                    return f"{freq:.3f}MHz"
+                if unit == "G":
+                    return f"{freq:.3f}GHz"
                 # If no unit, infer from magnitude
-                if freq < 1000: return f"{freq:.3f}Hz"
-                if freq < 1_000_000: return f"{freq / 1000:.3f}kHz"
+                if freq < 1000:
+                    return f"{freq:.3f}Hz"
+                if freq < 1_000_000:
+                    return f"{freq / 1000:.3f}kHz"
                 return f"{freq / 1_000_000:.3f}MHz"
         except (ValueError, IndexError):
             pass
@@ -164,9 +176,12 @@ def extract_resistance_value(value: str) -> tuple[float | None, str | None]:
         try:
             num_val = float(match.group(1))
             unit_char = match.group(2).upper()
-            if unit_char in ("R", "Ω", ""): return num_val, "Ω"
-            if unit_char == "K": return num_val, "kΩ"
-            if unit_char == "M": return num_val, "MΩ"
+            if unit_char in ("R", "Ω", ""):
+                return num_val, "Ω"
+            if unit_char == "K":
+                return num_val, "kΩ"
+            if unit_char == "M":
+                return num_val, "MΩ"
         except (ValueError, IndexError):
             pass
 
@@ -196,9 +211,12 @@ def extract_capacitance_value(value: str) -> tuple[float | None, str | None]:
         try:
             val_str = f"{match.group(1)}.{match.group(3)}"
             unit_char = match.group(2).lower()
-            if unit_char == 'p': return float(val_str), "pF"
-            if unit_char == 'n': return float(val_str), "nF"
-            if unit_char in ('u', 'μ'): return float(val_str), "μF"
+            if unit_char == "p":
+                return float(val_str), "pF"
+            if unit_char == "n":
+                return float(val_str), "nF"
+            if unit_char in ("u", "μ"):
+                return float(val_str), "μF"
         except ValueError:
             pass
 
@@ -207,10 +225,14 @@ def extract_capacitance_value(value: str) -> tuple[float | None, str | None]:
         try:
             num_val = float(match.group(1))
             unit_str = match.group(2).lower()
-            if 'p' in unit_str: return num_val, "pF"
-            if 'n' in unit_str: return num_val, "nF"
-            if 'u' in unit_str or 'μ' in unit_str: return num_val, "μF"
-            if 'f' in unit_str: return num_val, "F"
+            if "p" in unit_str:
+                return num_val, "pF"
+            if "n" in unit_str:
+                return num_val, "nF"
+            if "u" in unit_str or "μ" in unit_str:
+                return num_val, "μF"
+            if "f" in unit_str:
+                return num_val, "F"
         except (ValueError, IndexError):
             pass
 
@@ -240,9 +262,12 @@ def extract_inductance_value(value: str) -> tuple[float | None, str | None]:
         try:
             val_str = f"{match.group(1)}.{match.group(3)}"
             unit_char = match.group(2).lower()
-            if unit_char == 'n': return float(val_str), "nH"
-            if unit_char in ('u', 'μ'): return float(val_str), "μH"
-            if unit_char == 'm': return float(val_str), "mH"
+            if unit_char == "n":
+                return float(val_str), "nH"
+            if unit_char in ("u", "μ"):
+                return float(val_str), "μH"
+            if unit_char == "m":
+                return float(val_str), "mH"
         except ValueError:
             pass
 
@@ -251,10 +276,14 @@ def extract_inductance_value(value: str) -> tuple[float | None, str | None]:
         try:
             num_val = float(match.group(1))
             unit_str = match.group(2).lower()
-            if 'n' in unit_str: return num_val, "nH"
-            if 'u' in unit_str or 'μ' in unit_str: return num_val, "μH"
-            if 'm' in unit_str: return num_val, "mH"
-            if 'h' in unit_str: return num_val, "H"
+            if "n" in unit_str:
+                return num_val, "nH"
+            if "u" in unit_str or "μ" in unit_str:
+                return num_val, "μH"
+            if "m" in unit_str:
+                return num_val, "mH"
+            if "h" in unit_str:
+                return num_val, "H"
         except (ValueError, IndexError):
             pass
 
@@ -360,7 +389,4 @@ def is_power_component(component: dict[str, Any]) -> bool:
 
     # Heuristic 3: Check for common regulator part number patterns
     regulator_patterns = [r"78\d{2}", r"79\d{2}", r"LM\d{3,4}", r"AMS\d{4}", r"MCP\d{4}"]
-    if any(re.search(pattern, value) for pattern in regulator_patterns):
-        return True
-
-    return False
+    return bool(any(re.search(pattern, value) for pattern in regulator_patterns))
