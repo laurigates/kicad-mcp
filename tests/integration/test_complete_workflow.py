@@ -53,7 +53,7 @@ class TestCompleteWorkflow:
         # Validate output
         assert sexpr.startswith("(kicad_sch")
         assert sexpr.endswith(")")
-        assert "20240618" in sexpr  # Updated version
+        assert "20241201" in sexpr  # KiCad 9.0 version
         assert sexpr.count("(lib_id") >= 4  # All components
         assert sexpr.count("(wire") >= 3  # All connections
 
@@ -239,7 +239,7 @@ class TestCompleteWorkflow:
         assert len(sexpr) > 5000  # Should be substantial
         assert sexpr.startswith("(kicad_sch")
         assert sexpr.endswith(")")
-        assert "20240618" in sexpr
+        assert "20241201" in sexpr
 
         # Check all systems working
         layout_stats = self.service.layout_manager.get_layout_statistics()
@@ -280,4 +280,4 @@ class TestCompleteWorkflow:
 
         assert sexpr.startswith("(kicad_sch")
         assert "(wire" in sexpr
-        assert "20240618" in sexpr
+        assert "20241201" in sexpr
