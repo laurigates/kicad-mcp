@@ -1,6 +1,6 @@
-# CLAUDE.md
+# Documentation for agents
 
-This file provides guidance to Claude Code when working with the KiCad MCP project.
+This file provides guidance to programming agents when working with the KiCad MCP project.
 
 ## Project Overview
 
@@ -129,7 +129,7 @@ uv run pytest tests/unit/utils/test_component_layout.py -v
 ## KiCad Documentation
 
 - Using Context7 MCP: /kicad/kicad-source-mirror
-- KiCad Developer Documentation: https://dev-docs.kicad.org/
+- Using Context7 MCP: /context7/dev-docs_kicad
 
 ## KiCad Integration Details
 
