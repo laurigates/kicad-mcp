@@ -126,6 +126,10 @@ CIRCUIT_DEFAULTS = {
     "wire_width": 6,  # Default wire width in KiCad units (0.006 inch)
     "text_size": [1.27, 1.27],  # Default text size in mm
     "pin_length": 2.54,  # Default pin length in mm
+    # Schematic page boundaries (standard A4 size)
+    "schematic_page_width": 297.0,  # A4 width in mm
+    "schematic_page_height": 210.0,  # A4 height in mm
+    "schematic_margin": 30.0,  # Conservative margin in mm for better visibility
 }
 
 # Predefined component library mappings for quick circuit creation

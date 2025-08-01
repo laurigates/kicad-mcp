@@ -642,3 +642,211 @@ class TestSExpressionHandlerIntegration:
 
         assert symbol_count == 15  # 10 components + 5 power symbols
         assert wire_count == 5  # 5 connections
+
+
+class TestSExpressionBooleanFormat:
+    """Test cases for proper KiCad boolean format generation."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.handler = SExpressionHandler()
+
+    def test_component_boolean_properties_are_symbols(self):
+        """
+        Test that component boolean properties are generated as sexpdata.Symbol objects.
+
+        This test should FAIL initially because current implementation uses quoted strings.
+        KiCad expects: (exclude_from_sim no) not (exclude_from_sim "no")
+        """
+        component = {
+            "reference": "U1",
+            "value": "ESP32",
+            "symbol_library": "Device",
+            "symbol_name": "U",
+            "position": (100, 100),
+        }
+
+        result = self.handler.generate_schematic(
+            circuit_name="Boolean Test", components=[component], power_symbols=[], connections=[]
+        )
+
+        # Parse the generated schematic
+        parsed = sexpdata.loads(result)
+
+        # Find the component symbol
+        component_symbol = None
+        for item in parsed[1:]:
+            if isinstance(item, list) and str(item[0]) == "symbol":
+                component_symbol = item
+                break
+
+        assert component_symbol is not None, "Component symbol not found"
+
+        # Check boolean properties are symbols, not strings
+        boolean_props = {}
+        for prop in component_symbol[1:]:
+            if isinstance(prop, list) and len(prop) == 2:
+                prop_name = str(prop[0])
+                if prop_name in ["exclude_from_sim", "in_bom", "on_board", "dnp"]:
+                    boolean_props[prop_name] = prop[1]
+
+        # Assert all boolean properties are Symbol objects
+        for prop_name, prop_value in boolean_props.items():
+            assert isinstance(prop_value, sexpdata.Symbol), (
+                f"Property '{prop_name}' should be a Symbol, got {type(prop_value)}: {prop_value}"
+            )
+            assert str(prop_value) in ["yes", "no"], (
+                f"Property '{prop_name}' should be 'yes' or 'no', got: {prop_value}"
+            )
+
+    def test_boolean_values_in_sexpr_string_output(self):
+        """Test that boolean values appear unquoted in the final S-expression string."""
+        component = {
+            "reference": "R1",
+            "value": "10k",
+            "symbol_library": "Device",
+            "symbol_name": "R",
+            "position": (50, 50),
+        }
+
+        result = self.handler.generate_schematic(
+            circuit_name="String Output Test",
+            components=[component],
+            power_symbols=[],
+            connections=[],
+        )
+
+        # Check that boolean values are unquoted in the string
+        boolean_patterns_correct = [
+            "(exclude_from_sim no)",
+            "(exclude_from_sim yes)",
+            "(in_bom no)",
+            "(in_bom yes)",
+            "(on_board no)",
+            "(on_board yes)",
+            "(dnp no)",
+            "(dnp yes)",
+        ]
+
+        boolean_patterns_incorrect = [
+            '(exclude_from_sim "no")',
+            '(exclude_from_sim "yes")',
+            '(in_bom "no")',
+            '(in_bom "yes")',
+            '(on_board "no")',
+            '(on_board "yes")',
+            '(dnp "no")',
+            '(dnp "yes")',
+        ]
+
+        # At least some correct patterns should be present
+        has_correct_pattern = any(pattern in result for pattern in boolean_patterns_correct)
+        assert has_correct_pattern, f"No correct boolean patterns found in:\n{result}"
+
+        # No incorrect patterns should be present
+        for pattern in boolean_patterns_incorrect:
+            assert pattern not in result, f"Found incorrect quoted boolean pattern: {pattern}"
+
+    def test_multiple_components_boolean_consistency(self):
+        """Test boolean format consistency across multiple components."""
+        components = [
+            {
+                "reference": "U1",
+                "value": "IC1",
+                "symbol_library": "Device",
+                "symbol_name": "U",
+                "position": (10, 10),
+            },
+            {
+                "reference": "R1",
+                "value": "10k",
+                "symbol_library": "Device",
+                "symbol_name": "R",
+                "position": (20, 20),
+            },
+            {
+                "reference": "C1",
+                "value": "100nF",
+                "symbol_library": "Device",
+                "symbol_name": "C",
+                "position": (30, 30),
+            },
+        ]
+
+        result = self.handler.generate_schematic(
+            circuit_name="Multi-Component Boolean Test",
+            components=components,
+            power_symbols=[],
+            connections=[],
+        )
+
+        parsed = sexpdata.loads(result)
+
+        # Find all component symbols
+        symbols = [
+            item for item in parsed[1:] if isinstance(item, list) and str(item[0]) == "symbol"
+        ]
+
+        assert len(symbols) == len(components), (
+            f"Expected {len(components)} symbols, found {len(symbols)}"
+        )
+
+        # Check each symbol has proper boolean format
+        for symbol in symbols:
+            boolean_props = {}
+            for prop in symbol[1:]:
+                if isinstance(prop, list) and len(prop) == 2:
+                    prop_name = str(prop[0])
+                    if prop_name in ["exclude_from_sim", "in_bom", "on_board", "dnp"]:
+                        boolean_props[prop_name] = prop[1]
+
+            # All symbols should have boolean properties as Symbol objects
+            assert len(boolean_props) >= 4, f"Symbol missing boolean properties: {boolean_props}"
+
+            for prop_name, prop_value in boolean_props.items():
+                assert isinstance(prop_value, sexpdata.Symbol), (
+                    f"Property '{prop_name}' should be Symbol, got {type(prop_value)}"
+                )
+
+    def test_power_symbol_boolean_format(self):
+        """Test that power symbols also use proper boolean format."""
+        power_symbol = {"reference": "#PWR001", "power_type": "VCC", "position": (50, 50)}
+
+        result = self.handler.generate_schematic(
+            circuit_name="Power Boolean Test",
+            components=[],
+            power_symbols=[power_symbol],
+            connections=[],
+        )
+
+        parsed = sexpdata.loads(result)
+
+        # Find power symbol
+        power_symbols = []
+        for item in parsed[1:]:
+            if isinstance(item, list) and str(item[0]) == "symbol":
+                for prop in item[1:]:
+                    if (
+                        isinstance(prop, list)
+                        and str(prop[0]) == "lib_id"
+                        and "power:" in str(prop[1])
+                    ):
+                        power_symbols.append(item)
+                        break
+
+        assert len(power_symbols) == 1, "Power symbol not found"
+
+        # Check boolean properties format
+        power_symbol = power_symbols[0]
+        boolean_props = {}
+        for prop in power_symbol[1:]:
+            if isinstance(prop, list) and len(prop) == 2:
+                prop_name = str(prop[0])
+                if prop_name in ["exclude_from_sim", "in_bom", "on_board", "dnp"]:
+                    boolean_props[prop_name] = prop[1]
+
+        # Power symbols should also have proper boolean format
+        for prop_name, prop_value in boolean_props.items():
+            assert isinstance(prop_value, sexpdata.Symbol), (
+                f"Power symbol property '{prop_name}' should be Symbol, got {type(prop_value)}"
+            )

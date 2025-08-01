@@ -155,9 +155,9 @@ class SchematicBounds:
         (10, 70)
     """
 
-    width: float = 297.0  # A4 width in mm
-    height: float = 210.0  # A4 height in mm
-    margin: float = 20.0  # Margin from edges in mm
+    width: float = CIRCUIT_DEFAULTS["schematic_page_width"]  # A4 width in mm
+    height: float = CIRCUIT_DEFAULTS["schematic_page_height"]  # A4 height in mm
+    margin: float = CIRCUIT_DEFAULTS["schematic_margin"]  # Margin from edges in mm
 
     @property
     def usable_width(self) -> float:
