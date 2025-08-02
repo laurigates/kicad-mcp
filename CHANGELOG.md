@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/laurigates/kicad-mcp/compare/v0.1.0...v0.2.0) (2025-08-02)
+
+
+### Features
+
+* enhance component boundary validation and intelligent wiring system ([#34](https://github.com/laurigates/kicad-mcp/issues/34)) ([b4a44ea](https://github.com/laurigates/kicad-mcp/commit/b4a44eaf99734c7464ae4d8df6e1a059d317e0b2))
+
 ## 0.1.0 (2025-07-30)
 
 
