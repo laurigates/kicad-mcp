@@ -1,0 +1,39 @@
+{
+  "test_name": "basic_project_creation",
+  "description": "Create a basic KiCad project with minimal components",
+  "mcp_calls": [
+    {
+      "tool": "create_new_project",
+      "params": {
+        "project_name": "basic_test",
+        "project_path": "{temp_dir}/basic_test"
+      }
+    }
+  ],
+  "validations": [
+    {
+      "type": "file_exists",
+      "path": "{temp_dir}/basic_test/basic_test.kicad_pro"
+    },
+    {
+      "type": "file_exists",
+      "path": "{temp_dir}/basic_test/basic_test.kicad_sch"
+    },
+    {
+      "type": "file_exists",
+      "path": "{temp_dir}/basic_test/basic_test.kicad_pcb"
+    },
+    {
+      "type": "file_format",
+      "path": "{temp_dir}/basic_test/basic_test.kicad_pro",
+      "format": "json"
+    },
+    {
+      "type": "file_format",
+      "path": "{temp_dir}/basic_test/basic_test.kicad_sch",
+      "format": "sexpr"
+    }
+  ],
+  "timeout": 30,
+  "skip_cleanup": false
+}

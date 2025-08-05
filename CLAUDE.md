@@ -1,6 +1,6 @@
-# Documentation for agents
+# KiCad MCP - Claude Code Guidance
 
-This file provides guidance to programming agents when working with the KiCad MCP project.
+This file provides essential guidance to Claude Code when working with the KiCad MCP project, focusing on efficient tool selection and optimal workflow patterns.
 
 ## Project Overview
 

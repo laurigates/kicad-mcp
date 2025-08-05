@@ -48,6 +48,7 @@ dependencies = [
     "pyyaml>=6.0.0",
     "defusedxml>=0.7.0", # Secure XML parsing
     "sexpdata>=1.0.2",
+    "uvicorn>=0.35.0",
 ]
 
 [project.urls]

@@ -755,6 +755,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pyyaml" },
     { name = "sexpdata" },
+    { name = "uvicorn" },
 ]
 
 [package.dev-dependencies]
@@ -797,6 +798,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "pyyaml", specifier = ">=6.0.0" },
     { name = "sexpdata", specifier = ">=1.0.2" },
+    { name = "uvicorn", specifier = ">=0.35.0" },
 ]
 
 [package.metadata.requires-dev]
