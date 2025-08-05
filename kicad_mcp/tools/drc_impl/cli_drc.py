@@ -4,6 +4,7 @@ Design Rule Check (DRC) implementation using KiCad command-line interface.
 
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 from typing import Any
@@ -112,18 +113,18 @@ def find_kicad_cli() -> str | None:
     Returns:
         Path to kicad-cli if found, None otherwise
     """
-    # Check if kicad-cli is in PATH
+    # Check if kicad-cli is in PATH using shutil.which() for security
     try:
         if system == "Windows":
             # On Windows, check for kicad-cli.exe
-            result = subprocess.run(["where", "kicad-cli.exe"], capture_output=True, text=True)
-            if result.returncode == 0:
-                return result.stdout.strip().split("\n")[0]
+            kicad_path = shutil.which("kicad-cli.exe")
+            if kicad_path:
+                return kicad_path
         else:
-            # On Unix-like systems, use which
-            result = subprocess.run(["which", "kicad-cli"], capture_output=True, text=True)
-            if result.returncode == 0:
-                return result.stdout.strip()
+            # On Unix-like systems, check for kicad-cli
+            kicad_path = shutil.which("kicad-cli")
+            if kicad_path:
+                return kicad_path
 
     except Exception as e:
         print(f"Error finding kicad-cli: {str(e)}")
