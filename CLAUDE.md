@@ -1,6 +1,6 @@
-# CLAUDE.md
+# KiCad MCP - Claude Code Guidance
 
-This file provides guidance to Claude Code when working with the KiCad MCP project.
+This file provides essential guidance to Claude Code when working with the KiCad MCP project, focusing on efficient tool selection and optimal workflow patterns.
 
 ## Project Overview
 
@@ -129,7 +129,7 @@ uv run pytest tests/unit/utils/test_component_layout.py -v
 ## KiCad Documentation
 
 - Using Context7 MCP: /kicad/kicad-source-mirror
-- KiCad Developer Documentation: https://dev-docs.kicad.org/
+- Using Context7 MCP: /context7/dev-docs_kicad
 
 ## KiCad Integration Details
 

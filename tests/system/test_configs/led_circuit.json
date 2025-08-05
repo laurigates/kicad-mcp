@@ -1,0 +1,47 @@
+{
+  "test_name": "led_circuit",
+  "description": "Create basic LED circuit with resistor and power symbols",
+  "mcp_calls": [
+    {
+      "tool": "create_new_project",
+      "params": {
+        "project_name": "led_test",
+        "project_path": "{temp_dir}/led_test"
+      }
+    },
+    {
+      "tool": "create_kicad_schematic_from_text",
+      "params": {
+        "project_path": "{temp_dir}/led_test/led_test.kicad_pro",
+        "circuit_description": "circuit \"LED\":\n  components:\n    - R1: resistor 220Ω at (50, 50)\n    - LED1: led red at (100, 50)\n  power:\n    - VCC: +5V at (30, 30)\n    - GND: GND at (30, 70)"
+      }
+    }
+  ],
+  "validations": [
+    {
+      "type": "file_exists",
+      "path": "{temp_dir}/led_test/led_test.kicad_pro"
+    },
+    {
+      "type": "file_exists",
+      "path": "{temp_dir}/led_test/led_test.kicad_sch"
+    },
+    {
+      "type": "file_format",
+      "path": "{temp_dir}/led_test/led_test.kicad_sch",
+      "format": "sexpr"
+    },
+    {
+      "type": "component_count",
+      "path": "{temp_dir}/led_test/led_test.kicad_sch",
+      "expected": 2
+    },
+    {
+      "type": "power_symbol_count",
+      "path": "{temp_dir}/led_test/led_test.kicad_sch",
+      "expected": 2
+    }
+  ],
+  "timeout": 60,
+  "skip_cleanup": false
+}
