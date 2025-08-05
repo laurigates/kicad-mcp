@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from kicad_mcp.tools.circuit_tools import create_new_project
+from kicad_mcp.utils.kicad_cli import get_kicad_cli_path, is_kicad_cli_available
 from kicad_mcp.utils.sexpr_service import get_sexpr_service
 
 # Mock MCP dependencies for testing
@@ -40,35 +41,16 @@ class TestKiCadCompatibility:
         return ctx
 
     def _find_kicad_cli(self):
-        """Find KiCad CLI path and return tuple (found: bool, path: str)."""
-        import platform
+        """Find KiCad CLI path and return tuple (found: bool, path: str).
 
-        system = platform.system()
-        cli_paths = []
-
-        if system == "Darwin":  # macOS
-            cli_paths = ["/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli", "kicad-cli"]
-        elif system == "Linux":
-            cli_paths = ["/usr/bin/kicad-cli", "/usr/local/bin/kicad-cli", "kicad-cli"]
-        elif system == "Windows":
-            cli_paths = [
-                r"C:\Program Files\KiCad\bin\kicad-cli.exe",
-                r"C:\Program Files (x86)\KiCad\bin\kicad-cli.exe",
-                "kicad-cli.exe",
-            ]
-        else:
-            cli_paths = ["kicad-cli"]
-
-        for cli_path in cli_paths:
+        Uses the centralized KiCad CLI utility for cross-platform support.
+        """
+        if is_kicad_cli_available():
             try:
-                result = subprocess.run(
-                    [cli_path, "--version"], capture_output=True, text=True, timeout=10
-                )
-                if result.returncode == 0:
-                    return True, cli_path
-            except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
-                continue
-
+                cli_path = get_kicad_cli_path(required=True)
+                return True, cli_path
+            except Exception:
+                pass
         return False, None
 
     def test_kicad_cli_available(self):

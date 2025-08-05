@@ -18,21 +18,92 @@ class TestSchematicBounds:
         bounds = SchematicBounds()
         assert bounds.width == 297.0  # A4 width
         assert bounds.height == 210.0  # A4 height
-        assert bounds.margin == 20.0
+        assert bounds.margin == 30.0
 
     def test_usable_area(self):
         """Test usable area calculations."""
         bounds = SchematicBounds()
-        assert bounds.usable_width == 257.0  # 297 - 2*20
-        assert bounds.usable_height == 170.0  # 210 - 2*20
+        assert bounds.usable_width == 237.0  # 297 - 2*30
+        assert bounds.usable_height == 150.0  # 210 - 2*30
 
     def test_boundary_coordinates(self):
         """Test boundary coordinate properties."""
         bounds = SchematicBounds()
-        assert bounds.min_x == 20.0
-        assert bounds.max_x == 277.0  # 297 - 20
-        assert bounds.min_y == 20.0
-        assert bounds.max_y == 190.0  # 210 - 20
+        assert bounds.min_x == 30.0
+        assert bounds.max_x == 267.0  # 297 - 30
+        assert bounds.min_y == 30.0
+        assert bounds.max_y == 180.0  # 210 - 30
+
+    def test_enhanced_boundary_validation_issue3(self):
+        """Test enhanced boundary validation addresses Issue #3.
+
+        This test verifies that components are placed with conservative
+        margins that provide better visibility in KiCad by using a 30mm
+        margin instead of the previous 20mm margin.
+        """
+        bounds = SchematicBounds()
+        manager = ComponentLayoutManager(bounds)
+
+        # Test coordinates from Issue #3
+        # Default component size is (10.0, 8.0) mm, so we need to account for half-size margins
+        test_cases = [
+            # Coordinates that were valid with 20mm margin but caused visibility issues
+            {
+                "pos": (127.0, 76.2),
+                "expected": True,
+                "description": "Previously valid, now with better margins",
+            },
+            {
+                "pos": (203.2, 76.2),
+                "expected": True,
+                "description": "Previously valid, now with better margins",
+            },
+            # Coordinates that were invalid and should remain invalid
+            {
+                "pos": (355.6, 76.2),
+                "expected": False,
+                "description": "Outside bounds (x too large)",
+            },
+            # Edge cases with new 30mm margins (considering component half-sizes: 5.0 x 4.0)
+            {
+                "pos": (35.0, 34.0),
+                "expected": True,
+                "description": "Valid with component size at min boundary",
+            },
+            {
+                "pos": (262.0, 176.0),
+                "expected": True,
+                "description": "Valid with component size at max boundary",
+            },
+            {
+                "pos": (34.9, 76.2),
+                "expected": False,
+                "description": "Just outside min x (considering component width)",
+            },
+            {
+                "pos": (127.0, 33.9),
+                "expected": False,
+                "description": "Just outside min y (considering component height)",
+            },
+            {
+                "pos": (262.1, 76.2),
+                "expected": False,
+                "description": "Just outside max x (considering component width)",
+            },
+            {
+                "pos": (127.0, 176.1),
+                "expected": False,
+                "description": "Just outside max y (considering component height)",
+            },
+        ]
+
+        for case in test_cases:
+            x, y = case["pos"]
+            expected = case["expected"]
+            description = case["description"]
+
+            result = manager.validate_position(x, y)
+            assert result == expected, f"Position ({x}, {y}) validation failed: {description}"
 
 
 class TestComponentBounds:

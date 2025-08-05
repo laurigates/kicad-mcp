@@ -13,6 +13,7 @@ import sexpdata
 from kicad_mcp.utils.component_layout import ComponentLayoutManager
 from kicad_mcp.utils.pin_mapper import ComponentPinMapper
 from kicad_mcp.utils.version import KICAD_FILE_FORMAT_VERSION
+from kicad_mcp.utils.wire_router import RouteStrategy, RoutingObstacle, WireRouter
 
 
 class SExpressionHandler:
@@ -27,6 +28,7 @@ class SExpressionHandler:
         """Initialize the S-expression handler."""
         self.layout_manager = ComponentLayoutManager()
         self.pin_mapper = ComponentPinMapper()
+        self.wire_router = WireRouter(self.layout_manager.bounds)
         self.symbol_libraries = {}  # Maintain compatibility with tests
         self.component_uuid_map = {}  # Maintain compatibility with tests
 
@@ -81,6 +83,85 @@ class SExpressionHandler:
         )
 
         return self._format_sexpr(schematic_expr, pretty_print)
+
+    def generate_schematic_with_intelligent_wiring(
+        self,
+        circuit_name: str,
+        circuit_description: dict[str, Any],
+        components: list[dict[str, Any]],
+        power_symbols: list[dict[str, Any]] | None = None,
+        strategy: RouteStrategy = RouteStrategy.MANHATTAN,
+        pretty_print: bool = True,
+    ) -> str:
+        """
+        Generate a KiCad schematic with intelligent wire routing from circuit description.
+
+        This method combines component placement, circuit analysis, and intelligent
+        wire routing to create functional schematics with proper connections.
+
+        Args:
+            circuit_name: Name of the circuit
+            circuit_description: Circuit description for connection analysis
+            components: List of component dictionaries
+            power_symbols: List of power symbol dictionaries (optional)
+            strategy: Wire routing strategy
+            pretty_print: Whether to format output for readability
+
+        Returns:
+            S-expression formatted schematic as string with intelligent wiring
+        """
+        self.layout_manager.clear_layout()
+        self.pin_mapper.clear_mappings()
+
+        # Default empty power symbols if none provided
+        if power_symbols is None:
+            power_symbols = []
+
+        # Validate component positions
+        validated_components = self._validate_component_positions(components)
+        validated_power_symbols = self._validate_power_positions(power_symbols)
+
+        # Map component pins
+        self._map_component_pins(validated_components, validated_power_symbols)
+
+        # Generate intelligent wire routing
+        wire_sexprs = self.generate_intelligent_wiring(
+            circuit_description, validated_components, strategy
+        )
+
+        # Build the complete schematic S-expression with intelligent wiring
+        schematic_expr = self._build_schematic_sexpr_with_wires(
+            circuit_name, validated_components, validated_power_symbols, wire_sexprs
+        )
+
+        return self._format_sexpr(schematic_expr, pretty_print)
+
+    def _create_boolean_symbol(self, value: str) -> sexpdata.Symbol:
+        """
+        Create a proper sexpdata.Symbol for KiCad boolean values.
+
+        KiCad expects boolean values as unquoted symbols (yes/no), not quoted strings.
+        This utility function ensures consistency across all boolean property generation.
+
+        Args:
+            value: The boolean value as string ("yes", "no", "true", "false")
+
+        Returns:
+            sexpdata.Symbol: Proper symbol for KiCad S-expression format
+
+        Raises:
+            ValueError: If value is not a valid boolean string
+        """
+        # Normalize boolean values to KiCad's yes/no format
+        value_lower = value.lower()
+        if value_lower in ["yes", "true"]:
+            return sexpdata.Symbol("yes")
+        elif value_lower in ["no", "false"]:
+            return sexpdata.Symbol("no")
+        else:
+            raise ValueError(
+                f"Invalid boolean value: {value}. Expected 'yes', 'no', 'true', or 'false'"
+            )
 
     def _build_schematic_sexpr(
         self,
@@ -159,6 +240,82 @@ class SExpressionHandler:
 
         return schematic
 
+    def _build_schematic_sexpr_with_wires(
+        self,
+        circuit_name: str,
+        components: list[dict[str, Any]],
+        power_symbols: list[dict[str, Any]],
+        wire_sexprs: list[list[Any]],
+    ) -> list[Any]:
+        """Build schematic S-expression with pre-generated wire S-expressions."""
+
+        # Generate a unique UUID for the sheet
+        sheet_uuid = str(uuid.uuid4())
+
+        schematic = [
+            sexpdata.Symbol("kicad_sch"),
+            [sexpdata.Symbol("version"), KICAD_FILE_FORMAT_VERSION],
+            [sexpdata.Symbol("generator"), "kicad-mcp"],
+            [sexpdata.Symbol("generator_version"), "0.2.0"],
+            # UUID for the schematic
+            [sexpdata.Symbol("uuid"), sheet_uuid],
+            # Paper size
+            [sexpdata.Symbol("paper"), "A4"],
+            # Title block
+            [
+                sexpdata.Symbol("title_block"),
+                [sexpdata.Symbol("title"), circuit_name],
+                [sexpdata.Symbol("date"), ""],
+                [sexpdata.Symbol("rev"), ""],
+                [sexpdata.Symbol("company"), ""],
+            ],
+        ]
+
+        # Build symbol library table with unique symbol definitions
+        lib_symbols = [sexpdata.Symbol("lib_symbols")]
+
+        # Collect unique symbol libraries from components
+        unique_symbols = set()
+        for component in components:
+            symbol_library = component.get("symbol_library", "Device")
+            symbol_name = component.get("symbol_name", "R")
+            lib_id = f"{symbol_library}:{symbol_name}"
+            unique_symbols.add((symbol_library, symbol_name, lib_id))
+
+        # Add power symbols
+        for power_symbol in power_symbols:
+            power_type = power_symbol.get("power_type", "VCC")
+            lib_id = f"power:{power_type}"
+            unique_symbols.add(("power", power_type, lib_id))
+
+        # Add symbol definitions to lib_symbols
+        for library, symbol, _lib_id in unique_symbols:
+            symbol_def = self._build_symbol_definition(library, symbol)
+            lib_symbols.append(symbol_def)
+
+        schematic.append(lib_symbols)
+
+        # Add sheet instances (required for KiCad compatibility)
+        schematic.append(
+            [
+                sexpdata.Symbol("sheet_instances"),
+                [sexpdata.Symbol("path"), "/", [sexpdata.Symbol("page"), "1"]],
+            ]
+        )
+
+        # Add all symbols (components + power symbols)
+        all_symbols = components + power_symbols
+        for symbol in all_symbols:
+            symbol_expr = self._build_symbol_sexpr(symbol)
+            schematic.append(symbol_expr)
+
+        # Add intelligently routed wire connections
+        for wire_expr in wire_sexprs:
+            if wire_expr:
+                schematic.append(wire_expr)
+
+        return schematic
+
     def _build_symbol_sexpr(self, component: dict[str, Any]) -> list[Any]:
         """Build S-expression for a symbol (component or power symbol)."""
 
@@ -203,10 +360,10 @@ class SExpressionHandler:
             [sexpdata.Symbol("lib_id"), lib_id],
             [sexpdata.Symbol("at"), x, y, angle],
             [sexpdata.Symbol("unit"), 1],
-            [sexpdata.Symbol("exclude_from_sim"), "no"],
-            [sexpdata.Symbol("in_bom"), "yes"],
-            [sexpdata.Symbol("on_board"), "yes"],
-            [sexpdata.Symbol("dnp"), "no"],
+            [sexpdata.Symbol("exclude_from_sim"), sexpdata.Symbol("no")],
+            [sexpdata.Symbol("in_bom"), sexpdata.Symbol("yes")],
+            [sexpdata.Symbol("on_board"), sexpdata.Symbol("yes")],
+            [sexpdata.Symbol("dnp"), sexpdata.Symbol("no")],
             [sexpdata.Symbol("uuid"), symbol_uuid],
         ]
 
@@ -238,6 +395,188 @@ class SExpressionHandler:
         # Symbol instances don't have pins - those are in the symbol definitions
 
         return symbol_expr
+
+    def generate_intelligent_wiring(
+        self,
+        circuit_description: dict[str, Any],
+        components: list[dict[str, Any]],
+        strategy: RouteStrategy = RouteStrategy.MANHATTAN,
+    ) -> list[list[Any]]:
+        """
+        Generate intelligent wire routing from circuit description.
+
+        Args:
+            circuit_description: Circuit description with components and connections
+            components: List of placed components with positions
+            strategy: Wire routing strategy
+
+        Returns:
+            List of wire S-expressions
+        """
+        # Clear previous routing state
+        self.wire_router.clear_routes()
+        self.wire_router.clear_obstacles()
+
+        # Add component placement obstacles for routing
+        self._setup_routing_obstacles(components)
+
+        # Add components to pin mapper
+        for component in components:
+            if "position" in component:
+                self.pin_mapper.add_component(
+                    component["reference"],
+                    component.get("type", "default").lower(),
+                    component["position"],
+                    component.get("angle", 0.0),
+                )
+
+        # Parse circuit connections using enhanced pin mapper
+        connections = self.pin_mapper.parse_circuit_connections(circuit_description)
+
+        # Generate wire routes
+        wire_sexprs = []
+        processed_nets = set()
+
+        for conn in connections:
+            net_name = conn["net_name"]
+
+            # Handle multi-point nets (power, ground) by grouping
+            if conn["connection_type"] in ["power", "ground"] and net_name not in processed_nets:
+                # Find all connections for this net
+                net_connections = [c for c in connections if c["net_name"] == net_name]
+                wire_sexprs.extend(self._route_multi_point_net(net_connections, strategy))
+                processed_nets.add(net_name)
+            elif conn["connection_type"] == "signal" and net_name not in processed_nets:
+                # Handle point-to-point signal connections
+                wire_sexprs.extend(self._route_signal_connection(conn, strategy))
+                processed_nets.add(net_name)
+
+        return wire_sexprs
+
+    def _setup_routing_obstacles(self, components: list[dict[str, Any]]) -> None:
+        """Setup routing obstacles from component placements."""
+        for component in components:
+            if "position" not in component:
+                continue
+
+            x, y = component["position"]
+            comp_type = component.get("type", "default").lower()
+
+            # Get component dimensions for obstacle bounds
+            # Using ComponentLayoutManager's COMPONENT_SIZES
+            width, height = self.layout_manager.COMPONENT_SIZES.get(
+                comp_type, self.layout_manager.COMPONENT_SIZES["default"]
+            )
+
+            # Create obstacle with some clearance
+            clearance = 1.0  # 1mm clearance around components
+            obstacle = RoutingObstacle(
+                bounds=(
+                    x - width / 2 - clearance,
+                    y - height / 2 - clearance,
+                    x + width / 2 + clearance,
+                    y + height / 2 + clearance,
+                ),
+                obstacle_type="component",
+                reference=component["reference"],
+            )
+
+            self.wire_router.add_obstacle(obstacle)
+
+    def _route_multi_point_net(
+        self, net_connections: list[dict[str, Any]], strategy: RouteStrategy
+    ) -> list[list[Any]]:
+        """Route a multi-point net (power/ground) using star topology."""
+        if len(net_connections) < 1:
+            return []
+
+        # Handle single connection as point-to-point
+        if len(net_connections) == 1:
+            return self._route_signal_connection(net_connections[0], strategy)
+
+        wire_sexprs = []
+
+        # Get all unique pins for this net
+        pins = []
+        for conn in net_connections:
+            source_pin = self.pin_mapper.get_pin(conn["source_component"], conn["source_pin"])
+            target_pin = self.pin_mapper.get_pin(conn["target_component"], conn["target_pin"])
+
+            if source_pin and source_pin not in pins:
+                pins.append(source_pin)
+            if target_pin and target_pin not in pins:
+                pins.append(target_pin)
+
+        if len(pins) >= 2:
+            # Use wire router for multi-point routing
+            routes = self.wire_router.route_multi_point_net(
+                pins,
+                net_connections[0]["net_name"],
+                strategy,
+                priority=2 if net_connections[0]["connection_type"] in ["power", "ground"] else 1,
+            )
+
+            # Convert routes to S-expressions
+            for route in routes:
+                for segment in route.segments:
+                    wire_expr = self._create_wire_sexpr_from_segment(segment)
+                    if wire_expr:
+                        wire_sexprs.append(wire_expr)
+
+        return wire_sexprs
+
+    def _route_signal_connection(
+        self, connection: dict[str, Any], strategy: RouteStrategy
+    ) -> list[list[Any]]:
+        """Route a point-to-point signal connection."""
+        source_pin = self.pin_mapper.get_pin(
+            connection["source_component"], connection["source_pin"]
+        )
+        target_pin = self.pin_mapper.get_pin(
+            connection["target_component"], connection["target_pin"]
+        )
+
+        if not source_pin or not target_pin:
+            return []
+
+        # Route the connection
+        route = self.wire_router.route_connection(
+            source_pin, target_pin, connection["net_name"], strategy, priority=1
+        )
+
+        # Convert route segments to S-expressions
+        wire_sexprs = []
+        for segment in route.segments:
+            wire_expr = self._create_wire_sexpr_from_segment(segment)
+            if wire_expr:
+                wire_sexprs.append(wire_expr)
+
+        return wire_sexprs
+
+    def _create_wire_sexpr_from_segment(self, segment) -> list[Any] | None:
+        """Create a wire S-expression from a wire segment."""
+        if not segment:
+            return None
+
+        # Generate UUID for the wire
+        wire_uuid = str(uuid.uuid4())
+
+        wire_expr = [
+            sexpdata.Symbol("wire"),
+            [
+                sexpdata.Symbol("pts"),
+                [sexpdata.Symbol("xy"), segment.start[0], segment.start[1]],
+                [sexpdata.Symbol("xy"), segment.end[0], segment.end[1]],
+            ],
+            [
+                sexpdata.Symbol("stroke"),
+                [sexpdata.Symbol("width"), segment.width],
+                [sexpdata.Symbol("type"), sexpdata.Symbol("default")],
+            ],
+            [sexpdata.Symbol("uuid"), wire_uuid],
+        ]
+
+        return wire_expr
 
     def _build_wire_sexpr(self, connection: dict[str, Any]) -> list[Any] | None:
         """Build S-expression for a wire connection."""

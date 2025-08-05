@@ -22,7 +22,7 @@ class TestBoundaryValidator:
 
         assert validator.bounds.width == 297.0
         assert validator.bounds.height == 210.0
-        assert validator.bounds.margin == 20.0
+        assert validator.bounds.margin == 30.0  # Enhanced margin from Phase 1
 
     def test_init_custom_bounds(self):
         """Test initialization with custom bounds."""
