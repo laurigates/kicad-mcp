@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/laurigates/kicad-mcp/compare/v0.1.0...v0.2.0) (2025-08-05)
+
+
+### Features
+
+* complete HTTP testing framework with MCP protocol integration ([#36](https://github.com/laurigates/kicad-mcp/issues/36)) ([29cf562](https://github.com/laurigates/kicad-mcp/commit/29cf562e0351f5aea0459226d845f4fc9ff6273b))
+* enhance component boundary validation and intelligent wiring system ([#34](https://github.com/laurigates/kicad-mcp/issues/34)) ([b4a44ea](https://github.com/laurigates/kicad-mcp/commit/b4a44eaf99734c7464ae4d8df6e1a059d317e0b2))
+
+
+### Bug Fixes
+
+* **security:** resolve B607 subprocess security issues in DRC CLI ([#37](https://github.com/laurigates/kicad-mcp/issues/37)) ([62e1218](https://github.com/laurigates/kicad-mcp/commit/62e1218473e34a5a7d1004bf0b8b8e038ae4c2fb))
+
 ## 0.1.0 (2025-07-30)
 
 
