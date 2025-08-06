@@ -62,8 +62,32 @@ jobs:
     - name: Install dependencies
       run: uv sync --group dev
 
+    - name: Setup KiCad CLI for Docker (Ubuntu only)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        # Create a wrapper script for docker-based kicad-cli
+        sudo tee /usr/local/bin/kicad-cli > /dev/null << 'EOF'
+        #!/bin/bash
+        # Docker wrapper for KiCad CLI in GitHub Actions
+        # Mount the current working directory and pass through all arguments
+        docker run --rm --platform=linux/amd64 \
+          -v "$(pwd):/workspace" \
+          -w /workspace \
+          docker.io/kicad/kicad:9.0 \
+          kicad-cli "$@"
+        EOF
+        sudo chmod +x /usr/local/bin/kicad-cli
+        # Verify the wrapper works
+        /usr/local/bin/kicad-cli --version
+      env:
+        # Let the tests know KiCad CLI is available via Docker
+        KICAD_CLI_PATH: /usr/local/bin/kicad-cli
+
     - name: Run tests
       run: uv run pytest tests/ -v --cov=kicad_mcp --cov-report=xml --cov-fail-under=30
+      env:
+        # Set KiCad CLI path for Ubuntu runs
+        KICAD_CLI_PATH: ${{ matrix.os == 'ubuntu-latest' && '/usr/local/bin/kicad-cli' || '' }}
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
