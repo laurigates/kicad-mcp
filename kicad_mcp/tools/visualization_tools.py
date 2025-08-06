@@ -5,13 +5,13 @@ Provides screenshot and rendering capabilities for debugging and testing.
 
 import io
 import os
-import subprocess
 from typing import Any
 
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.types import Image
 
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.secure_subprocess import get_subprocess_runner
 
 
 def register_visualization_tools(mcp: FastMCP) -> None:
@@ -204,34 +204,28 @@ async def export_schematic_to_svg(
         Dictionary with export results
     """
     try:
-        # Check if kicad-cli is available (try macOS path first)
-        kicad_cli_paths = [
-            "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli",
-            "kicad-cli",  # fallback to PATH
-        ]
-
-        kicad_cli = None
-        for cli_path in kicad_cli_paths:
-            try:
-                result = subprocess.run(
-                    [cli_path, "--version"], capture_output=True, text=True, timeout=10
-                )
-                if result.returncode == 0:
-                    kicad_cli = cli_path
-                    break
-            except FileNotFoundError:
-                continue
-
-        if kicad_cli is None:
-            # Fallback to mock renderer
+        # Use secure subprocess runner to find KiCad CLI
+        try:
+            runner = get_subprocess_runner()
+            # Test if KiCad CLI is available using secure runner
+            test_result = await runner.run_kicad_command_async(
+                command_args=["--version"],
+                input_files=None,
+                output_files=None,
+            )
+            if test_result.returncode != 0:
+                # Fallback to mock renderer if KiCad CLI not available
+                await ctx.info("KiCad CLI not available, using mock renderer")
+                return await export_schematic_to_svg_mock(schematic_file, output_dir, ctx)
+        except Exception:
+            # Fallback to mock renderer if CLI detection fails
             await ctx.info("KiCad CLI not available, using mock renderer")
             return await export_schematic_to_svg_mock(schematic_file, output_dir, ctx)
 
         await ctx.report_progress(25, 100)
 
-        # Export schematic to SVG
-        cmd = [
-            kicad_cli,
+        # Export schematic to SVG using secure subprocess runner
+        command_args = [
             "sch",
             "export",
             "svg",
@@ -242,17 +236,20 @@ async def export_schematic_to_svg(
             schematic_file,
         ]
 
-        await ctx.info(f"Running: {' '.join(cmd)}")
+        # Expected SVG output file
+        schematic_name = os.path.splitext(os.path.basename(schematic_file))[0]
+        svg_file = os.path.join(output_dir, f"{schematic_name}.svg")
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        result = await runner.run_kicad_command_async(
+            command_args=command_args,
+            input_files=[schematic_file],
+            output_files=[svg_file],
+        )
 
         await ctx.report_progress(75, 100)
 
         if result.returncode == 0:
-            # Find the generated SVG file
-            schematic_name = os.path.splitext(os.path.basename(schematic_file))[0]
-            svg_file = os.path.join(output_dir, f"{schematic_name}.svg")
-
+            # Check if the expected SVG file was created
             if os.path.exists(svg_file):
                 await ctx.report_progress(100, 100)
                 return {"success": True, "svg_file": svg_file, "command_output": result.stdout}
@@ -277,9 +274,9 @@ async def export_schematic_to_svg(
                 "command_error": result.stderr,
             }
 
-    except subprocess.TimeoutExpired:
-        return {"success": False, "error": "kicad-cli export timed out"}
     except Exception as e:
+        if "timeout" in str(e).lower():
+            return {"success": False, "error": "kicad-cli export timed out"}
         return {"success": False, "error": f"Unexpected error during SVG export: {str(e)}"}
 
 

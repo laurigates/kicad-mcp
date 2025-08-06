@@ -11,6 +11,7 @@ from fastmcp import Context, FastMCP
 import pandas as pd
 
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.secure_subprocess import get_subprocess_runner
 
 
 def register_bom_tools(mcp: FastMCP) -> None:
@@ -641,7 +642,6 @@ async def export_bom_with_cli(
         Dictionary with export results
     """
     import platform
-    import subprocess
 
     system = platform.system()
     print(f"Exporting BOM using CLI tools on {system}")
@@ -650,59 +650,19 @@ async def export_bom_with_cli(
     # Output file path
     output_file = os.path.join(output_dir, f"{project_name}_bom.csv")
 
-    # Define the command based on operating system
-    if system == "Darwin":  # macOS
-        from kicad_mcp.config import KICAD_APP_PATH
-
-        # Path to KiCad command-line tools on macOS
-        kicad_cli = os.path.join(KICAD_APP_PATH, "Contents/MacOS/kicad-cli")
-
-        if not os.path.exists(kicad_cli):
-            return {
-                "success": False,
-                "error": f"KiCad CLI tool not found at {kicad_cli}",
-                "schematic_file": schematic_file,
-            }
-
-        # Command to generate BOM
-        cmd = [kicad_cli, "sch", "export", "bom", "--output", output_file, schematic_file]
-
-    elif system == "Windows":
-        from kicad_mcp.config import KICAD_APP_PATH
-
-        # Path to KiCad command-line tools on Windows
-        kicad_cli = os.path.join(KICAD_APP_PATH, "bin", "kicad-cli.exe")
-
-        if not os.path.exists(kicad_cli):
-            return {
-                "success": False,
-                "error": f"KiCad CLI tool not found at {kicad_cli}",
-                "schematic_file": schematic_file,
-            }
-
-        # Command to generate BOM
-        cmd = [kicad_cli, "sch", "export", "bom", "--output", output_file, schematic_file]
-
-    elif system == "Linux":
-        # Assume kicad-cli is in the PATH
-        kicad_cli = "kicad-cli"
-
-        # Command to generate BOM
-        cmd = [kicad_cli, "sch", "export", "bom", "--output", output_file, schematic_file]
-
-    else:
-        return {
-            "success": False,
-            "error": f"Unsupported operating system: {system}",
-            "schematic_file": schematic_file,
-        }
+    # Build the BOM command args (excluding the kicad-cli executable)
+    command_args = ["sch", "export", "bom", "--output", output_file, schematic_file]
 
     try:
-        print(f"Running command: {' '.join(cmd)}")
         await ctx.report_progress(60, 100)
 
-        # Run the command
-        process = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        # Use secure subprocess runner to execute the command
+        runner = get_subprocess_runner()
+        process = await runner.run_kicad_command_async(
+            command_args=command_args,
+            input_files=[schematic_file],
+            output_files=[output_file],
+        )
 
         # Check if the command was successful
         if process.returncode != 0:
@@ -713,7 +673,7 @@ async def export_bom_with_cli(
                 "success": False,
                 "error": f"BOM export command failed: {process.stderr}",
                 "schematic_file": schematic_file,
-                "command": " ".join(cmd),
+                "command": f"kicad-cli {' '.join(command_args)}",
             }
 
         # Check if the output file was created
@@ -747,16 +707,16 @@ async def export_bom_with_cli(
             "message": "BOM exported successfully",
         }
 
-    except subprocess.TimeoutExpired:
-        print("BOM export command timed out after 30 seconds")
-        return {
-            "success": False,
-            "error": "BOM export command timed out after 30 seconds",
-            "schematic_file": schematic_file,
-        }
-
     except Exception as e:
-        print(f"Error exporting BOM: {str(e)}", exc_info=True)
+        if "timeout" in str(e).lower():
+            print("BOM export command timed out")
+            return {
+                "success": False,
+                "error": "BOM export command timed out",
+                "schematic_file": schematic_file,
+            }
+
+        print(f"Error exporting BOM: {str(e)}")
         return {
             "success": False,
             "error": f"Error exporting BOM: {str(e)}",

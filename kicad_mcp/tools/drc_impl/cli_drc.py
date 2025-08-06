@@ -5,13 +5,13 @@ Design Rule Check (DRC) implementation using KiCad command-line interface.
 import json
 import os
 import shutil
-import subprocess
 import tempfile
 from typing import Any
 
 from fastmcp import Context
 
 from kicad_mcp.config import system
+from kicad_mcp.utils.secure_subprocess import get_subprocess_runner
 
 
 async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
@@ -45,11 +45,16 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
             await ctx.report_progress(50, 100)
             ctx.info("Running DRC using KiCad CLI...")
 
-            # Build the DRC command
-            cmd = [kicad_cli, "pcb", "drc", "--format", "json", "--output", output_file, pcb_file]
+            # Build the DRC command args (excluding the kicad-cli executable)
+            command_args = ["pcb", "drc", "--format", "json", "--output", output_file, pcb_file]
 
-            print(f"Running command: {' '.join(cmd)}")
-            process = subprocess.run(cmd, capture_output=True, text=True)
+            # Use secure subprocess runner to execute the command
+            runner = get_subprocess_runner()
+            process = await runner.run_kicad_command_async(
+                command_args=command_args,
+                input_files=[pcb_file],
+                output_files=[output_file],
+            )
 
             # Check if the command was successful
             if process.returncode != 0:
@@ -102,7 +107,7 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
             return results
 
     except Exception as e:
-        print(f"Error in CLI DRC: {str(e)}", exc_info=True)
+        print(f"Error in CLI DRC: {str(e)}")
         results["error"] = f"Error in CLI DRC: {str(e)}"
         return results
 
