@@ -1,0 +1,34 @@
+blueprint:
+  project: kicad-mcp
+  description: Model Context Protocol server for KiCad electronic design automation files
+  created: "2026-03-05"
+  version: "0.1.0"
+
+artifacts:
+  - id: PRD-001
+    path: docs/blueprint/PRD.md
+    type: prd
+    title: KiCad MCP Server Product Requirements
+    status: accepted
+    created: "2026-03-05"
+
+  - id: ADR-001
+    path: docs/blueprint/ADR-001-mcp-framework.md
+    type: adr
+    title: Use FastMCP as the MCP Framework
+    status: accepted
+    created: "2026-03-05"
+
+  - id: ADR-002
+    path: docs/blueprint/ADR-002-python-toolchain.md
+    type: adr
+    title: Python Toolchain Choices (uv, ruff, pytest, hatchling)
+    status: accepted
+    created: "2026-03-05"
+
+  - id: ADR-003
+    path: docs/blueprint/ADR-003-sexpr-parsing.md
+    type: adr
+    title: S-Expression Parsing Approach for KiCad File Formats
+    status: accepted
+    created: "2026-03-05"
