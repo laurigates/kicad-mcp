@@ -1,0 +1,49 @@
+version: 2
+updates:
+  # Monitor pip dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 10
+    rebase-strategy: "auto"
+    commit-message:
+      prefix: "chore(deps):"
+      prefix-development: "chore(deps-dev):"
+    groups:
+      minor-and-patch:
+        dependency-types:
+          - "production"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-minor-and-patch:
+        dependency-types:
+          - "development"
+        update-types:
+          - "minor"
+          - "patch"
+      major-updates:
+        dependency-types:
+          - "production"
+        update-types:
+          - "major"
+
+  # Monitor GitHub Actions versions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 10
+    rebase-strategy: "auto"
+    commit-message:
+      prefix: "chore(ci):"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
