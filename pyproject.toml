@@ -52,11 +52,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/kicad-mcp"
-Documentation = "https://github.com/your-org/kicad-mcp/blob/main/README.md"
-Repository = "https://github.com/your-org/kicad-mcp"
-"Bug Tracker" = "https://github.com/your-org/kicad-mcp/issues"
-Changelog = "https://github.com/your-org/kicad-mcp/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/laurigates/kicad-mcp"
+Documentation = "https://github.com/laurigates/kicad-mcp/blob/main/README.md"
+Repository = "https://github.com/laurigates/kicad-mcp"
+"Bug Tracker" = "https://github.com/laurigates/kicad-mcp/issues"
+Changelog = "https://github.com/laurigates/kicad-mcp/blob/main/CHANGELOG.md"
 
 [project.scripts]
 kicad-mcp = "kicad_mcp.server:main"

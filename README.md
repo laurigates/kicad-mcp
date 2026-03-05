@@ -32,7 +32,7 @@ First, let's install dependencies and set up our environment:
 
 ```bash
 # Clone the repository
-git clone https://github.com/lamaalrajih/kicad-mcp.git .
+git clone https://github.com/laurigates/kicad-mcp.git .
 
 # Create a virtual environment and activate it
 python3 -m venv venv
