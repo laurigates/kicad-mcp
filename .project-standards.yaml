@@ -1,0 +1,50 @@
+project-type: python
+last-audit: "2026-03-05"
+components:
+  makefile:
+    status: pass
+  pre-commit:
+    status: warn
+    notes: bandit hook disabled
+  release-please:
+    status: pass
+    notes: config and manifest files added
+  dockerfile:
+    status: skip
+    notes: not applicable for Python library
+  container:
+    status: skip
+  skaffold:
+    status: skip
+  workflows:
+    status: pass
+  sentry:
+    status: skip
+  docs:
+    status: pass
+  github-pages:
+    status: skip
+  cache-busting:
+    status: skip
+  tests:
+    status: pass
+  coverage:
+    status: warn
+    notes: threshold raised from 30% to 39%, current coverage 39.57%
+  memory-profiling:
+    status: warn
+    notes: memory-profiler in deps but pytest-memray not configured
+  linting:
+    status: warn
+    notes: mypy disabled due to 200+ type errors
+  formatting:
+    status: pass
+  dead-code:
+    status: fail
+    notes: no vulture or equivalent configured
+  editor:
+    status: pass
+    notes: .editorconfig added
+  security:
+    status: warn
+    notes: SECURITY.md added, bandit in CI, safety not in CI

@@ -55,3 +55,7 @@ logs/
 visual_output/
 *.svg
 tmp/
+
+# MCP configuration (machine-specific)
+.mcp.json
+cclsp.json
