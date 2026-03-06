@@ -4,14 +4,13 @@ Design Rule Check (DRC) implementation using KiCad command-line interface.
 
 import json
 import os
-import shutil
-import subprocess
 import tempfile
 from typing import Any
 
 from fastmcp import Context
 
-from kicad_mcp.config import system
+from kicad_mcp.utils.kicad_cli import KiCadCLIError, find_kicad_cli
+from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, get_subprocess_runner
 
 
 async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
@@ -45,11 +44,21 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
             await ctx.report_progress(50, 100)
             ctx.info("Running DRC using KiCad CLI...")
 
-            # Build the DRC command
-            cmd = [kicad_cli, "pcb", "drc", "--format", "json", "--output", output_file, pcb_file]
+            # Build the DRC command args (without kicad-cli executable)
+            command_args = ["pcb", "drc", "--format", "json", "--output", output_file, pcb_file]
 
-            print(f"Running command: {' '.join(cmd)}")
-            process = subprocess.run(cmd, capture_output=True, text=True)
+            print("Running DRC command via SecureSubprocessRunner")
+            try:
+                runner = get_subprocess_runner()
+                process = runner.run_kicad_command(
+                    command_args=command_args,
+                    input_files=[pcb_file],
+                    output_files=[output_file],
+                )
+            except (SecureSubprocessError, KiCadCLIError) as e:
+                print(f"DRC command failed: {e}")
+                results["error"] = f"DRC command failed: {e}"
+                return results
 
             # Check if the command was successful
             if process.returncode != 0:
@@ -105,56 +114,3 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
         print(f"Error in CLI DRC: {str(e)}", exc_info=True)
         results["error"] = f"Error in CLI DRC: {str(e)}"
         return results
-
-
-def find_kicad_cli() -> str | None:
-    """Find the kicad-cli executable in the system PATH.
-
-    Returns:
-        Path to kicad-cli if found, None otherwise
-    """
-    # Check if kicad-cli is in PATH using shutil.which() for security
-    try:
-        if system == "Windows":
-            # On Windows, check for kicad-cli.exe
-            kicad_path = shutil.which("kicad-cli.exe")
-            if kicad_path:
-                return kicad_path
-        else:
-            # On Unix-like systems, check for kicad-cli
-            kicad_path = shutil.which("kicad-cli")
-            if kicad_path:
-                return kicad_path
-
-    except Exception as e:
-        print(f"Error finding kicad-cli: {str(e)}")
-
-    # If we get here, kicad-cli is not in PATH
-    # Try common installation locations
-    if system == "Windows":
-        # Common Windows installation path
-        potential_paths = [
-            r"C:\Program Files\KiCad\bin\kicad-cli.exe",
-            r"C:\Program Files (x86)\KiCad\bin\kicad-cli.exe",
-        ]
-    elif system == "Darwin":  # macOS
-        # Common macOS installation paths
-        potential_paths = [
-            "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli",
-            "/Applications/KiCad/kicad-cli",
-        ]
-    else:  # Linux and other Unix-like systems
-        # Common Linux installation paths
-        potential_paths = [
-            "/usr/bin/kicad-cli",
-            "/usr/local/bin/kicad-cli",
-            "/opt/kicad/bin/kicad-cli",
-        ]
-
-    # Check each potential path
-    for path in potential_paths:
-        if os.path.exists(path) and os.access(path, os.X_OK):
-            return path
-
-    # If still not found, return None
-    return None

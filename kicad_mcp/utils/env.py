@@ -45,7 +45,7 @@ def load_dotenv(env_file: str = ".env") -> dict[str, str]:
                     key, value = line.split("=", 1)
                     key = key.strip()
                     value = value.strip()
-                    logging.debug(f"Parsed line {line_num}: Key='{key}', RawValue='{value}'")
+                    logging.debug(f"Parsed line {line_num}: Key='{key}', RawValue='***'")
 
                     # Remove quotes if present
                     if (
@@ -66,7 +66,7 @@ def load_dotenv(env_file: str = ".env") -> dict[str, str]:
                             )
 
                     # Set environment variable
-                    logging.info(f"Setting os.environ['{key}'] = '{value}'")
+                    logging.info(f"Setting os.environ['{key}'] = '***'")
                     os.environ[key] = value
                     env_vars[key] = value
                 else:
@@ -77,7 +77,7 @@ def load_dotenv(env_file: str = ".env") -> dict[str, str]:
         # Use logging.exception to include traceback
         logging.exception(f"Error loading .env file '{env_path}'")
 
-    logging.info(f"load_dotenv returning: {env_vars}")
+    logging.info(f"load_dotenv returning keys: {list(env_vars.keys())}")
     return env_vars
 
 
