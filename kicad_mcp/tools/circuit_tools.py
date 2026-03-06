@@ -19,6 +19,24 @@ from kicad_mcp.utils.sexpr_service import get_sexpr_service
 from kicad_mcp.utils.version import KICAD_FILE_FORMAT_VERSION
 
 
+async def _capture_screenshot_with_feedback(
+    project_path: str, ctx: Context, success_msg: str
+) -> None:
+    """Capture a schematic screenshot and report result via ctx."""
+    try:
+        from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
+
+        screenshot_result = await capture_schematic_screenshot(project_path, ctx)
+        if screenshot_result:
+            await ctx.info(success_msg)
+        else:
+            await ctx.info("⚠ Screenshot capture failed - proceeding without visual feedback")
+    except ImportError:
+        await ctx.info("⚠ Visualization tools not available - proceeding without visual feedback")
+    except Exception as e:
+        await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
+
+
 def _get_component_type_from_symbol(symbol_library: str, symbol_name: str) -> str:
     """Determine component type from symbol library and name."""
     library = symbol_library.lower()
@@ -271,24 +289,9 @@ async def create_new_project(
         if ctx:
             await ctx.report_progress(90, 100)
             await ctx.info("Generating visual feedback...")
-
-            # Generate visual feedback for the created schematic
-            try:
-                from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
-
-                screenshot_result = await capture_schematic_screenshot(project_path, ctx)
-                if screenshot_result:
-                    await ctx.info("✓ Schematic screenshot captured successfully")
-                else:
-                    await ctx.info(
-                        "⚠ Screenshot capture failed - proceeding without visual feedback"
-                    )
-            except ImportError:
-                await ctx.info(
-                    "⚠ Visualization tools not available - proceeding without visual feedback"
-                )
-            except Exception as e:
-                await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
+            await _capture_screenshot_with_feedback(
+                project_path, ctx, "✓ Schematic screenshot captured successfully"
+            )
 
             await ctx.report_progress(100, 100)
             await ctx.info(f"Successfully created project at {project_file}")
@@ -455,22 +458,9 @@ async def add_component(
         if ctx:
             await ctx.report_progress(90, 100)
             await ctx.info("Generating visual feedback for updated schematic...")
-
-            # Generate visual feedback after adding component
-            try:
-                from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
-
-                screenshot_result = await capture_schematic_screenshot(project_path, ctx)
-                if screenshot_result:
-                    await ctx.info("✓ Updated schematic screenshot captured")
-                else:
-                    await ctx.info(
-                        "⚠ Screenshot capture failed - proceeding without visual feedback"
-                    )
-            except ImportError:
-                await ctx.info("⚠ Visualization tools not available")
-            except Exception as e:
-                await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
+            await _capture_screenshot_with_feedback(
+                project_path, ctx, "✓ Updated schematic screenshot captured"
+            )
 
             await ctx.report_progress(100, 100)
             await ctx.info(f"Successfully added component {component_reference}")
@@ -618,22 +608,9 @@ async def create_wire_connection(
         if ctx:
             await ctx.report_progress(90, 100)
             await ctx.info("Generating visual feedback for wire connection...")
-
-            # Generate visual feedback after adding wire
-            try:
-                from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
-
-                screenshot_result = await capture_schematic_screenshot(project_path, ctx)
-                if screenshot_result:
-                    await ctx.info("✓ Wire connection screenshot captured")
-                else:
-                    await ctx.info(
-                        "⚠ Screenshot capture failed - proceeding without visual feedback"
-                    )
-            except ImportError:
-                await ctx.info("⚠ Visualization tools not available")
-            except Exception as e:
-                await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
+            await _capture_screenshot_with_feedback(
+                project_path, ctx, "✓ Wire connection screenshot captured"
+            )
 
             await ctx.report_progress(100, 100)
             await ctx.info("Successfully created wire connection")
@@ -770,22 +747,9 @@ async def add_power_symbol(
         if ctx:
             await ctx.report_progress(90, 100)
             await ctx.info("Generating visual feedback for power symbol...")
-
-            # Generate visual feedback after adding power symbol
-            try:
-                from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
-
-                screenshot_result = await capture_schematic_screenshot(project_path, ctx)
-                if screenshot_result:
-                    await ctx.info("✓ Power symbol screenshot captured")
-                else:
-                    await ctx.info(
-                        "⚠ Screenshot capture failed - proceeding without visual feedback"
-                    )
-            except ImportError:
-                await ctx.info("⚠ Visualization tools not available")
-            except Exception as e:
-                await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
+            await _capture_screenshot_with_feedback(
+                project_path, ctx, "✓ Power symbol screenshot captured"
+            )
 
             await ctx.report_progress(100, 100)
             await ctx.info(f"Successfully added power symbol {power_ref}")

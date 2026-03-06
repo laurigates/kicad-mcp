@@ -477,7 +477,7 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
                 "circuit_name": circuit.name,
                 "components_added": [],
                 "power_symbols_added": [],
-                "connections_created": [],
+                "connections_planned": [],
                 "errors": [],
             }
 
@@ -537,14 +537,11 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
             if ctx:
                 await ctx.report_progress(80, 100)
 
-            # Create connections (simplified - just connecting adjacent components for now)
-            # TODO: Implement proper pin-to-pin connections based on component data
+            # STUB: actual wiring not yet implemented
             for _, connection in enumerate(circuit.connections):
                 try:
-                    # For now, create simple wire connections
-                    # This is a simplified implementation - real pin connections need component pin data
-                    results["connections_created"].append(
-                        f"{connection.start_component} -> {connection.end_component}"
+                    results["connections_planned"].append(
+                        f"{connection.start_component} -> {connection.end_component} (not yet wired)"
                     )
                 except Exception as e:
                     results["errors"].append(f"Error creating connection: {str(e)}")

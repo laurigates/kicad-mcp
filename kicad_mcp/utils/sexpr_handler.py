@@ -163,15 +163,17 @@ class SExpressionHandler:
                 f"Invalid boolean value: {value}. Expected 'yes', 'no', 'true', or 'false'"
             )
 
-    def _build_schematic_sexpr(
+    def _build_schematic_base(
         self,
         circuit_name: str,
         components: list[dict[str, Any]],
         power_symbols: list[dict[str, Any]],
-        connections: list[dict[str, Any]],
     ) -> list[Any]:
-        """Build the complete schematic S-expression structure."""
+        """Build the common schematic S-expression structure shared by all builders.
 
+        Returns the schematic list containing header, lib_symbols, sheet_instances,
+        and component symbols. Callers append their specific wire logic.
+        """
         # Generate a unique UUID for the sheet
         sheet_uuid = str(uuid.uuid4())
 
@@ -231,6 +233,18 @@ class SExpressionHandler:
         for symbol in all_symbols:
             symbol_expr = self._build_symbol_sexpr(symbol)
             schematic.append(symbol_expr)
+
+        return schematic
+
+    def _build_schematic_sexpr(
+        self,
+        circuit_name: str,
+        components: list[dict[str, Any]],
+        power_symbols: list[dict[str, Any]],
+        connections: list[dict[str, Any]],
+    ) -> list[Any]:
+        """Build the complete schematic S-expression structure."""
+        schematic = self._build_schematic_base(circuit_name, components, power_symbols)
 
         # Add wire connections
         for connection in connections:
@@ -248,66 +262,7 @@ class SExpressionHandler:
         wire_sexprs: list[list[Any]],
     ) -> list[Any]:
         """Build schematic S-expression with pre-generated wire S-expressions."""
-
-        # Generate a unique UUID for the sheet
-        sheet_uuid = str(uuid.uuid4())
-
-        schematic = [
-            sexpdata.Symbol("kicad_sch"),
-            [sexpdata.Symbol("version"), KICAD_FILE_FORMAT_VERSION],
-            [sexpdata.Symbol("generator"), "kicad-mcp"],
-            [sexpdata.Symbol("generator_version"), "0.2.0"],
-            # UUID for the schematic
-            [sexpdata.Symbol("uuid"), sheet_uuid],
-            # Paper size
-            [sexpdata.Symbol("paper"), "A4"],
-            # Title block
-            [
-                sexpdata.Symbol("title_block"),
-                [sexpdata.Symbol("title"), circuit_name],
-                [sexpdata.Symbol("date"), ""],
-                [sexpdata.Symbol("rev"), ""],
-                [sexpdata.Symbol("company"), ""],
-            ],
-        ]
-
-        # Build symbol library table with unique symbol definitions
-        lib_symbols = [sexpdata.Symbol("lib_symbols")]
-
-        # Collect unique symbol libraries from components
-        unique_symbols = set()
-        for component in components:
-            symbol_library = component.get("symbol_library", "Device")
-            symbol_name = component.get("symbol_name", "R")
-            lib_id = f"{symbol_library}:{symbol_name}"
-            unique_symbols.add((symbol_library, symbol_name, lib_id))
-
-        # Add power symbols
-        for power_symbol in power_symbols:
-            power_type = power_symbol.get("power_type", "VCC")
-            lib_id = f"power:{power_type}"
-            unique_symbols.add(("power", power_type, lib_id))
-
-        # Add symbol definitions to lib_symbols
-        for library, symbol, _lib_id in unique_symbols:
-            symbol_def = self._build_symbol_definition(library, symbol)
-            lib_symbols.append(symbol_def)
-
-        schematic.append(lib_symbols)
-
-        # Add sheet instances (required for KiCad compatibility)
-        schematic.append(
-            [
-                sexpdata.Symbol("sheet_instances"),
-                [sexpdata.Symbol("path"), "/", [sexpdata.Symbol("page"), "1"]],
-            ]
-        )
-
-        # Add all symbols (components + power symbols)
-        all_symbols = components + power_symbols
-        for symbol in all_symbols:
-            symbol_expr = self._build_symbol_sexpr(symbol)
-            schematic.append(symbol_expr)
+        schematic = self._build_schematic_base(circuit_name, components, power_symbols)
 
         # Add intelligently routed wire connections
         for wire_expr in wire_sexprs:
