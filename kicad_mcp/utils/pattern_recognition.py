@@ -251,8 +251,6 @@ def identify_filters(components: dict[str, Any], nets: dict[str, Any]) -> list[d
     # Look for RC low-pass filters
     # These typically have a resistor followed by a capacitor to ground
     resistor_refs = [ref for ref in components if ref.startswith("R")]
-    [ref for ref in components if ref.startswith("C")]
-
     for r_ref in resistor_refs:
         r_nets = []
         # Find which nets this resistor is connected to

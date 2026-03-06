@@ -38,12 +38,12 @@ def register_bom_tools(mcp: FastMCP) -> None:
 
         if not os.path.exists(project_path):
             print(f"Project not found: {project_path}")
-            ctx.info(f"Project not found: {project_path}")
+            await ctx.info(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
 
         # Report progress
         await ctx.report_progress(10, 100)
-        ctx.info(f"Looking for BOM files related to {os.path.basename(project_path)}")
+        await ctx.info(f"Looking for BOM files related to {os.path.basename(project_path)}")
 
         # Get all project files
         files = get_project_files(project_path)
@@ -57,7 +57,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
 
         if not bom_files:
             print("No BOM files found for project")
-            ctx.info("No BOM files found for project")
+            await ctx.info("No BOM files found for project")
             return {
                 "success": False,
                 "error": "No BOM files found. Export a BOM from KiCad first.",
@@ -79,7 +79,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
 
         for file_type, file_path in bom_files.items():
             try:
-                ctx.info(f"Analyzing {os.path.basename(file_path)}")
+                await ctx.info(f"Analyzing {os.path.basename(file_path)}")
 
                 # Parse the BOM file
                 bom_data, format_info = parse_bom_file(file_path)
@@ -153,7 +153,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
                 results["component_summary"]["currency"] = currency
 
         await ctx.report_progress(100, 100)
-        ctx.info(f"BOM analysis complete: found {total_components} components")
+        await ctx.info(f"BOM analysis complete: found {total_components} components")
 
         return results
 
@@ -175,7 +175,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
 
         if not os.path.exists(project_path):
             print(f"Project not found: {project_path}")
-            ctx.info(f"Project not found: {project_path}")
+            await ctx.info(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
 
         # Get access to the app context
@@ -191,7 +191,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
         # We need the schematic file to generate a BOM
         if "schematic" not in files:
             print("Schematic file not found in project")
-            ctx.info("Schematic file not found in project")
+            await ctx.info("Schematic file not found in project")
             return {"success": False, "error": "Schematic file not found"}
 
         schematic_file = files["schematic"]
@@ -199,7 +199,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
         project_name = os.path.basename(project_path)[:-10]  # Remove .kicad_pro extension
 
         await ctx.report_progress(20, 100)
-        ctx.info(f"Found schematic file: {os.path.basename(schematic_file)}")
+        await ctx.info(f"Found schematic file: {os.path.basename(schematic_file)}")
 
         # Try to export BOM
         # This will depend on KiCad's command-line tools or Python modules
@@ -208,35 +208,35 @@ def register_bom_tools(mcp: FastMCP) -> None:
         if kicad_modules_available:
             try:
                 # Try to use KiCad Python modules
-                ctx.info("Attempting to export BOM using KiCad Python modules...")
+                await ctx.info("Attempting to export BOM using KiCad Python modules...")
                 export_result = await export_bom_with_python(
                     schematic_file, project_dir, project_name, ctx
                 )
             except Exception as e:
                 print(f"Error exporting BOM with Python modules: {str(e)}", exc_info=True)
-                ctx.info(f"Error using Python modules: {str(e)}")
+                await ctx.info(f"Error using Python modules: {str(e)}")
                 export_result = {"success": False, "error": str(e)}
 
         # If Python method failed, try command-line method
         if not export_result.get("success", False):
             try:
-                ctx.info("Attempting to export BOM using command-line tools...")
+                await ctx.info("Attempting to export BOM using command-line tools...")
                 export_result = await export_bom_with_cli(
                     schematic_file, project_dir, project_name, ctx
                 )
             except Exception as e:
                 print(f"Error exporting BOM with CLI: {str(e)}", exc_info=True)
-                ctx.info(f"Error using command-line tools: {str(e)}")
+                await ctx.info(f"Error using command-line tools: {str(e)}")
                 export_result = {"success": False, "error": str(e)}
 
         await ctx.report_progress(100, 100)
 
         if export_result.get("success", False):
-            ctx.info(
+            await ctx.info(
                 f"BOM exported successfully to {export_result.get('output_file', 'unknown location')}"
             )
         else:
-            ctx.info(f"Failed to export BOM: {export_result.get('error', 'Unknown error')}")
+            await ctx.info(f"Failed to export BOM: {export_result.get('error', 'Unknown error')}")
 
         return export_result
 
@@ -609,7 +609,7 @@ async def export_bom_with_python(
 
         # For now, return a message indicating this method is not implemented yet
         print("BOM export with Python modules not fully implemented")
-        ctx.info("BOM export with Python modules not fully implemented yet")
+        await ctx.info("BOM export with Python modules not fully implemented yet")
 
         return {
             "success": False,
