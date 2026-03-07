@@ -5,13 +5,14 @@ Provides screenshot and rendering capabilities for debugging and testing.
 
 import io
 import os
-import subprocess
 from typing import Any
 
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.types import Image
 
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.kicad_cli import KiCadCLIError, find_kicad_cli
+from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, get_subprocess_runner
 
 
 def register_visualization_tools(mcp: FastMCP) -> None:
@@ -204,23 +205,8 @@ async def export_schematic_to_svg(
         Dictionary with export results
     """
     try:
-        # Check if kicad-cli is available (try macOS path first)
-        kicad_cli_paths = [
-            "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli",
-            "kicad-cli",  # fallback to PATH
-        ]
-
-        kicad_cli = None
-        for cli_path in kicad_cli_paths:
-            try:
-                result = subprocess.run(
-                    [cli_path, "--version"], capture_output=True, text=True, timeout=10
-                )
-                if result.returncode == 0:
-                    kicad_cli = cli_path
-                    break
-            except FileNotFoundError:
-                continue
+        # Check if kicad-cli is available via centralized detection
+        kicad_cli = find_kicad_cli()
 
         if kicad_cli is None:
             # Fallback to mock renderer
@@ -229,9 +215,8 @@ async def export_schematic_to_svg(
 
         await ctx.report_progress(25, 100)
 
-        # Export schematic to SVG
-        cmd = [
-            kicad_cli,
+        # Export schematic to SVG via SecureSubprocessRunner
+        command_args = [
             "sch",
             "export",
             "svg",
@@ -242,9 +227,13 @@ async def export_schematic_to_svg(
             schematic_file,
         ]
 
-        await ctx.info(f"Running: {' '.join(cmd)}")
+        await ctx.info("Running schematic SVG export via SecureSubprocessRunner")
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        runner = get_subprocess_runner()
+        result = runner.run_kicad_command(
+            command_args=command_args,
+            input_files=[schematic_file],
+        )
 
         await ctx.report_progress(75, 100)
 
@@ -277,8 +266,8 @@ async def export_schematic_to_svg(
                 "command_error": result.stderr,
             }
 
-    except subprocess.TimeoutExpired:
-        return {"success": False, "error": "kicad-cli export timed out"}
+    except (SecureSubprocessError, KiCadCLIError) as e:
+        return {"success": False, "error": f"kicad-cli export failed: {e}"}
     except Exception as e:
         return {"success": False, "error": f"Unexpected error during SVG export: {str(e)}"}
 

@@ -640,69 +640,28 @@ async def export_bom_with_cli(
     Returns:
         Dictionary with export results
     """
-    import platform
-    import subprocess
+    from kicad_mcp.utils.kicad_cli import KiCadCLIError
+    from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, get_subprocess_runner
 
-    system = platform.system()
-    print(f"Exporting BOM using CLI tools on {system}")
+    print("Exporting BOM using CLI tools via SecureSubprocessRunner")
     await ctx.report_progress(40, 100)
 
     # Output file path
     output_file = os.path.join(output_dir, f"{project_name}_bom.csv")
 
-    # Define the command based on operating system
-    if system == "Darwin":  # macOS
-        from kicad_mcp.config import KICAD_APP_PATH
-
-        # Path to KiCad command-line tools on macOS
-        kicad_cli = os.path.join(KICAD_APP_PATH, "Contents/MacOS/kicad-cli")
-
-        if not os.path.exists(kicad_cli):
-            return {
-                "success": False,
-                "error": f"KiCad CLI tool not found at {kicad_cli}",
-                "schematic_file": schematic_file,
-            }
-
-        # Command to generate BOM
-        cmd = [kicad_cli, "sch", "export", "bom", "--output", output_file, schematic_file]
-
-    elif system == "Windows":
-        from kicad_mcp.config import KICAD_APP_PATH
-
-        # Path to KiCad command-line tools on Windows
-        kicad_cli = os.path.join(KICAD_APP_PATH, "bin", "kicad-cli.exe")
-
-        if not os.path.exists(kicad_cli):
-            return {
-                "success": False,
-                "error": f"KiCad CLI tool not found at {kicad_cli}",
-                "schematic_file": schematic_file,
-            }
-
-        # Command to generate BOM
-        cmd = [kicad_cli, "sch", "export", "bom", "--output", output_file, schematic_file]
-
-    elif system == "Linux":
-        # Assume kicad-cli is in the PATH
-        kicad_cli = "kicad-cli"
-
-        # Command to generate BOM
-        cmd = [kicad_cli, "sch", "export", "bom", "--output", output_file, schematic_file]
-
-    else:
-        return {
-            "success": False,
-            "error": f"Unsupported operating system: {system}",
-            "schematic_file": schematic_file,
-        }
+    # Command args (without kicad-cli executable - SecureSubprocessRunner resolves it)
+    command_args = ["sch", "export", "bom", "--output", output_file, schematic_file]
 
     try:
-        print(f"Running command: {' '.join(cmd)}")
+        print("Running BOM export command via SecureSubprocessRunner")
         await ctx.report_progress(60, 100)
 
-        # Run the command
-        process = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        runner = get_subprocess_runner()
+        process = runner.run_kicad_command(
+            command_args=command_args,
+            input_files=[schematic_file],
+            output_files=[output_file],
+        )
 
         # Check if the command was successful
         if process.returncode != 0:
@@ -713,7 +672,6 @@ async def export_bom_with_cli(
                 "success": False,
                 "error": f"BOM export command failed: {process.stderr}",
                 "schematic_file": schematic_file,
-                "command": " ".join(cmd),
             }
 
         # Check if the output file was created
@@ -747,11 +705,11 @@ async def export_bom_with_cli(
             "message": "BOM exported successfully",
         }
 
-    except subprocess.TimeoutExpired:
-        print("BOM export command timed out after 30 seconds")
+    except (SecureSubprocessError, KiCadCLIError) as e:
+        print(f"BOM export command failed: {e}")
         return {
             "success": False,
-            "error": "BOM export command timed out after 30 seconds",
+            "error": f"BOM export command failed: {e}",
             "schematic_file": schematic_file,
         }
 

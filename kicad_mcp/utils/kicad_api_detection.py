@@ -4,9 +4,9 @@ Utility functions for detecting and selecting available KiCad API approaches.
 
 import os
 import shutil
-import subprocess
 
 from kicad_mcp.config import system
+from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, get_subprocess_runner
 
 
 def check_for_cli_api() -> bool:
@@ -26,12 +26,17 @@ def check_for_cli_api() -> bool:
 
         if kicad_cli:
             # Verify it's a working kicad-cli
-            cmd = [kicad_cli, "--version"] if system == "Windows" else [kicad_cli, "--version"]
-
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            if result.returncode == 0:
-                print(f"Found working kicad-cli: {kicad_cli}")
-                return True
+            try:
+                runner = get_subprocess_runner()
+                result = runner.run_safe_command(
+                    [kicad_cli, "--version"],
+                    allowed_commands=[kicad_cli],
+                )
+                if result.returncode == 0:
+                    print(f"Found working kicad-cli: {kicad_cli}")
+                    return True
+            except SecureSubprocessError:
+                pass
 
         # Check common installation locations if not found in PATH
         if system == "Windows":
