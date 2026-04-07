@@ -3,12 +3,18 @@ KiCad schematic netlist extraction utilities.
 """
 
 from collections import defaultdict
+import logging
+import math
 import os
 import re
 from typing import Any
 import uuid
 
 import sexpdata
+
+from kicad_mcp.utils.connectivity import ConnectivityEngine
+
+logger = logging.getLogger(__name__)
 
 
 class SchematicParser:
@@ -38,6 +44,9 @@ class SchematicParser:
         # Component information
         self.component_info = {}  # component_ref -> component details
 
+        # Library symbol pin definitions: lib_id -> [{number, x, y}]
+        self.lib_symbol_pins: dict[str, list[dict]] = {}
+
         # Load the file
         self._load_schematic()
 
@@ -65,6 +74,9 @@ class SchematicParser:
 
         # Extract symbols (components)
         self._extract_components()
+
+        # Extract lib_symbol pin definitions
+        self._extract_lib_symbol_pins()
 
         # Extract wires
         self.wires = self._extract_wires(self.content)
@@ -265,15 +277,21 @@ class SchematicParser:
         global_labels = []
         hierarchical_labels = []
 
-        # Regex to find all types of labels
-        label_matches = re.finditer(
-            r"\(\s*(label|global_label|hierarchical_label)\s+((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)",
-            content,
-        )
-
-        for match in label_matches:
+        # Find label starts and extract full S-expressions by tracking paren depth
+        for match in re.finditer(r"\(\s*(label|global_label|hierarchical_label)\s", content):
             label_type = match.group(1)
-            label_data = match.group(2)
+            pos = match.start()
+            depth = 0
+            end = pos
+            while end < len(content):
+                if content[end] == "(":
+                    depth += 1
+                elif content[end] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        break
+                end += 1
+            label_data = content[pos : end + 1]
 
             # Extract text, which is the first quoted string
             text_match = re.search(r'"([^"]*)"', label_data)
@@ -282,15 +300,15 @@ class SchematicParser:
             # Extract position
             pos_match = re.search(r"\(at\s+([\d\.-]+)\s+([\d\.-]+)\s+([\d\.-]+)\)", label_data)
             if pos_match:
-                pos = {
+                label_pos = {
                     "x": float(pos_match.group(1)),
                     "y": float(pos_match.group(2)),
                     "angle": float(pos_match.group(3)),
                 }
             else:
-                pos = {"x": 0, "y": 0, "angle": 0}
+                label_pos = {"x": 0, "y": 0, "angle": 0}
 
-            label_info = {"text": text, "position": pos}
+            label_info = {"text": text, "position": label_pos}
 
             if label_type == "label":
                 labels.append(label_info)
@@ -344,38 +362,175 @@ class SchematicParser:
 
         print(f"Extracted {len(self.no_connects)} no-connects")
 
+    def _extract_lib_symbol_pins(self) -> None:
+        """Extract pin positions from the lib_symbols section of the schematic.
+
+        Populates self.lib_symbol_pins: {lib_id: [{number, x, y}]}
+        Pin positions are in the symbol's local coordinate system.
+        """
+        # Find the lib_symbols section
+        lib_match = re.search(r"\(lib_symbols\s*\n", self.content)
+        if not lib_match:
+            logger.debug("No lib_symbols section found")
+            return
+
+        # Extract the full lib_symbols block
+        start = lib_match.start()
+        depth = 0
+        pos = start
+        while pos < len(self.content):
+            if self.content[pos] == "(":
+                depth += 1
+            elif self.content[pos] == ")":
+                depth -= 1
+                if depth == 0:
+                    break
+            pos += 1
+        lib_section = self.content[start : pos + 1]
+
+        # Find each top-level symbol definition in lib_symbols
+        # Pattern: (symbol "Library:Name" ...)
+        symbol_pattern = re.compile(r'\(symbol\s+"([^"]+)"')
+        for sym_match in symbol_pattern.finditer(lib_section):
+            lib_id = sym_match.group(1)
+            # Skip sub-symbol names like "R_0_1" or "R_1_1" — they don't have ":"
+            if ":" not in lib_id:
+                continue
+
+            # Extract the full symbol block
+            sym_start = sym_match.start()
+            sym_depth = 0
+            sym_pos = sym_start
+            while sym_pos < len(lib_section):
+                if lib_section[sym_pos] == "(":
+                    sym_depth += 1
+                elif lib_section[sym_pos] == ")":
+                    sym_depth -= 1
+                    if sym_depth == 0:
+                        break
+                sym_pos += 1
+            sym_block = lib_section[sym_start : sym_pos + 1]
+
+            # Find all pin definitions within this symbol (including sub-symbols)
+            pins = []
+            pin_pattern = re.compile(
+                r"\(pin\s+\w+\s+\w+\s+"
+                r"\(at\s+([\d\.-]+)\s+([\d\.-]+)\s+([\d\.-]+)\)"
+                r"\s+\(length\s+([\d\.-]+)\)"
+                r".*?"
+                r'\(number\s+"([^"]+)"',
+                re.DOTALL,
+            )
+            for pin_match in pin_pattern.finditer(sym_block):
+                pins.append(
+                    {
+                        "number": pin_match.group(5),
+                        "x": float(pin_match.group(1)),
+                        "y": float(pin_match.group(2)),
+                        "angle": float(pin_match.group(3)),
+                        "length": float(pin_match.group(4)),
+                    }
+                )
+
+            if pins:
+                self.lib_symbol_pins[lib_id] = pins
+
+        logger.debug("Extracted lib_symbol pins for %d symbols", len(self.lib_symbol_pins))
+
+    def _resolve_pin_positions(self) -> list[dict[str, Any]]:
+        """Compute absolute pin connection points for all components.
+
+        Uses lib_symbol pin definitions and component position/rotation
+        to calculate where each pin's wire connection point is in schematic
+        coordinates.
+
+        Returns:
+            List of {component, pin, x, y} dicts
+        """
+        resolved = []
+
+        for component in self.components:
+            ref = component.get("reference", "Unknown")
+            lib_id = component.get("lib_id", "")
+            pos = component.get("position", {})
+            cx = pos.get("x", 0)
+            cy = pos.get("y", 0)
+            angle = pos.get("angle", 0)
+
+            # Get pin definitions from lib_symbols
+            lib_pins = self.lib_symbol_pins.get(lib_id)
+            if not lib_pins:
+                logger.debug(
+                    "No lib_symbol pins for %s (%s), skipping pin resolution",
+                    ref,
+                    lib_id,
+                )
+                continue
+
+            theta = math.radians(angle)
+            cos_t = math.cos(theta)
+            sin_t = math.sin(theta)
+
+            for pin_def in lib_pins:
+                px = pin_def["x"]
+                py = pin_def["y"]
+
+                # Transform from symbol-local coords to schematic coords
+                # lib_symbols use Y-up, schematics use Y-down
+                abs_x = cx + px * cos_t + py * sin_t
+                abs_y = cy - (-px * sin_t + py * cos_t)
+
+                resolved.append(
+                    {
+                        "component": ref,
+                        "pin": pin_def["number"],
+                        "x": abs_x,
+                        "y": abs_y,
+                    }
+                )
+
+        return resolved
+
     def _build_netlist(self) -> None:
-        """Build the netlist from extracted components and connections."""
-        print("Building netlist from schematic data")
+        """Build the netlist using wire connectivity tracing."""
+        logger.debug("Building netlist from schematic data")
 
-        # TODO: Implement netlist building algorithm
-        # This is a complex task that involves:
-        # 1. Tracking connections between components via wires
-        # 2. Handling labels (local, global, hierarchical)
-        # 3. Processing power symbols
-        # 4. Resolving junctions
+        engine = ConnectivityEngine()
 
-        # For now, we'll implement a basic version that creates a list of nets
-        # based on component references and pin numbers
+        # Add wires
+        engine.add_wires(self.wires)
 
-        # Process global labels as nets
-        for label in self.global_labels:
-            net_name = label["text"]
-            self.nets[net_name] = []  # Initialize empty list for this net
+        # Add junctions
+        engine.add_junctions(self.junctions)
 
-        # Process power symbols as nets
+        # Add labels
+        engine.add_labels(self.labels, label_type="local")
+        engine.add_labels(self.global_labels, label_type="global")
+        engine.add_labels(self.hierarchical_labels, label_type="hierarchical")
+
+        # Resolve and add pin positions
+        resolved_pins = self._resolve_pin_positions()
+        for pin in resolved_pins:
+            engine.add_pin(pin["component"], pin["pin"], pin["x"], pin["y"])
+
+        # Add power symbol pins (connect at power symbol position)
         for power in self.power_symbols:
-            net_name = power["type"]
-            if net_name not in self.nets:
-                self.nets[net_name] = []
+            engine.add_pin(
+                power["type"],
+                "1",
+                power["position"]["x"],
+                power["position"]["y"],
+            )
 
-        # In a full implementation, we would now trace connections between
-        # components, but that requires a more complex algorithm to follow wires
-        # and detect connected pins
+        # Build nets
+        self.nets = defaultdict(list, engine.build_nets())
 
-        # For demonstration, we'll add a placeholder note
-        print("Note: Full netlist building requires complex connectivity tracing")
-        print(f"Found {len(self.nets)} potential nets from labels and power symbols")
+        # Populate component_pins reverse lookup
+        for net_name, pins in self.nets.items():
+            for pin in pins:
+                self.component_pins[(pin["component"], pin["pin"])] = net_name
+
+        logger.debug("Netlist built: %d nets from wire connectivity tracing", len(self.nets))
 
 
 def extract_netlist(schematic_path: str) -> dict[str, Any]:
@@ -522,48 +677,105 @@ def parse_json_schematic(json_data: dict[str, Any]) -> dict[str, Any]:
                 }
             )
 
-    # Extract wires and create connections
-    wires = json_data.get("wire", [])
+    # Extract wires with start/end format
+    raw_wires = json_data.get("wire", json_data.get("wires", []))
+    parsed_wires = []
+    for i, wire in enumerate(raw_wires):
+        wire_uuid = wire.get("uuid", f"wire_{i}")
+        # Support both {start, end} and {pts} formats
+        if "start" in wire and "end" in wire:
+            parsed_wires.append(
+                {
+                    "uuid": wire_uuid,
+                    "start": wire["start"],
+                    "end": wire["end"],
+                }
+            )
+        else:
+            pts = wire.get("pts", [])
+            if len(pts) >= 2:
+                parsed_wires.append(
+                    {
+                        "uuid": wire_uuid,
+                        "start": {"x": pts[0][0], "y": pts[0][1]},
+                        "end": {"x": pts[-1][0], "y": pts[-1][1]},
+                    }
+                )
 
-    # Extract nets
+    # Extract labels from JSON
+    labels = [
+        {
+            "text": label.get("text", ""),
+            "position": label.get("position", {"x": 0, "y": 0, "angle": 0}),
+        }
+        for label in json_data.get("labels", [])
+    ]
+
+    # Extract junctions from JSON
+    junctions = [
+        {
+            "x": j.get("x", j.get("position", {}).get("x", 0)),
+            "y": j.get("y", j.get("position", {}).get("y", 0)),
+        }
+        for j in json_data.get("junctions", [])
+    ]
+
+    # Extract explicit nets from JSON
     for net in json_data.get("nets", []):
         nets[net["name"]] = net["connections"]
 
-    # Create a basic net for each wire (this is simplified)
-    for i, wire in enumerate(wires):
-        wire_uuid = wire.get("uuid", f"wire_{i}")
-        pts = wire.get("pts", [])
-        if len(pts) >= 2:
-            # Create a net for this wire connection
-            net_name = f"Net-{wire_uuid[:8]}"
-            nets[net_name] = []
+    # If no explicit nets provided but wires exist, use ConnectivityEngine
+    explicit_nets_with_connections = {k: v for k, v in nets.items() if v}
+    if not explicit_nets_with_connections and parsed_wires:
+        engine = ConnectivityEngine()
+        engine.add_wires(parsed_wires)
+        engine.add_junctions(junctions)
+        engine.add_labels(labels, label_type="local")
 
-            # In a real implementation, we would trace which component pins
-            # are connected by this wire, but that requires geometric analysis
+        # Add component pins at their positions (simplified — center of component)
+        for comp in components.values():
+            pos = comp.get("position", {})
+            engine.add_pin(comp["reference"], "1", pos.get("x", 0), pos.get("y", 0))
 
-    # Build result
+        # Add power symbol pins
+        for comp in components.values():
+            if comp["lib_id"].startswith("power:"):
+                pos = comp["position"]
+                power_type = comp["lib_id"].split(":", 1)[1]
+                engine.add_pin(power_type, "1", pos["x"], pos["y"])
+
+        nets = defaultdict(list, engine.build_nets())
+
+    power_symbols = [
+        {
+            "type": (
+                comp["lib_id"].split(":", 1)[1]
+                if comp["lib_id"].startswith("power:")
+                else comp["lib_id"]
+            ),
+            "position": comp["position"],
+        }
+        for comp in components.values()
+        if comp["lib_id"].startswith("power:")
+    ]
+
     result = {
         "components": components,
         "nets": dict(nets),
-        "labels": [],  # TODO: Extract from JSON
-        "wires": [{"uuid": w.get("uuid", "")} for w in wires],
-        "junctions": [],  # TODO: Extract from JSON
-        "power_symbols": [
-            {
-                "type": comp["lib_id"].split(":", 1)[1]
-                if comp["lib_id"].startswith("power:")
-                else comp["lib_id"],
-                "position": comp["position"],
-            }
-            for comp in components.values()
-            if comp["lib_id"].startswith("power:")
+        "labels": labels,
+        "wires": [
+            {"uuid": w.get("uuid", ""), "start": w["start"], "end": w["end"]} for w in parsed_wires
         ],
+        "junctions": junctions,
+        "power_symbols": power_symbols,
         "component_count": len(components),
         "net_count": len(nets),
     }
 
-    print(
-        f"JSON schematic parsing complete: found {len(components)} components and {len(nets)} nets"
+    logger.debug(
+        "JSON schematic parsing complete: found %d components and %d nets",
+        len(components),
+        len(nets),
     )
     return result
 
