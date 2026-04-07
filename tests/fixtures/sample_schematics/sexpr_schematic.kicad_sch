@@ -42,7 +42,7 @@
     (uuid "wire-uuid-5678")
   )
 
-  (label "TEST_SIGNAL" (at 66.04 93.98 0) (fields_autoplaced)
+  (label "TEST_SIGNAL" (at 63.5 93.98 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid "label-uuid-1234")
   )

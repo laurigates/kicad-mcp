@@ -374,3 +374,210 @@ class TestNetlistParser:
         assert "R1" in result["components"]
         assert result["components"]["R1"]["value"] == "10kΩ"
         assert "Résistance_SMD:R_0603" in result["components"]["R1"]["properties"]["footprint"]
+
+
+class TestBuildNetlist:
+    """Tests for wire connectivity tracing in _build_netlist()."""
+
+    @pytest.fixture
+    def real_sexpr_fixture(self):
+        """Path to the real S-expression fixture with lib_symbols and wires."""
+        import pathlib
+
+        return str(
+            pathlib.Path(__file__).parent.parent.parent
+            / "fixtures"
+            / "sample_schematics"
+            / "sexpr_schematic.kicad_sch"
+        )
+
+    def test_sexpr_netlist_wire_connectivity(self, real_sexpr_fixture):
+        """R1.pin2 and R2.pin1 should be in the same net via wire chain."""
+        result = extract_netlist(real_sexpr_fixture)
+
+        assert "error" not in result
+        nets = result["nets"]
+
+        # Find which net contains R1 pin 2
+        r1_pin2_net = None
+        r2_pin1_net = None
+        for net_name, connections in nets.items():
+            for conn in connections:
+                if conn["component"] == "R1" and conn["pin"] == "2":
+                    r1_pin2_net = net_name
+                if conn["component"] == "R2" and conn["pin"] == "1":
+                    r2_pin1_net = net_name
+
+        assert r1_pin2_net is not None, "R1.pin2 should be assigned to a net"
+        assert r2_pin1_net is not None, "R2.pin1 should be assigned to a net"
+        assert r1_pin2_net == r2_pin1_net, (
+            f"R1.pin2 ({r1_pin2_net}) and R2.pin1 ({r2_pin1_net}) should be in same net"
+        )
+
+    def test_pin_position_from_lib_symbols(self, real_sexpr_fixture):
+        """Verify pin positions are correctly resolved from lib_symbols section."""
+        from kicad_mcp.utils.netlist_parser import SchematicParser
+
+        parser = SchematicParser(real_sexpr_fixture)
+        parser._extract_components()
+        parser._extract_lib_symbol_pins()
+        resolved = parser._resolve_pin_positions()
+
+        # R1 at (63.5, 87.63) angle 0, lib_symbols pin 2 at local (0, -3.81)
+        # absolute: (63.5, 87.63 - (-3.81)) = (63.5, 91.44)
+        r1_pin2 = next((p for p in resolved if p["component"] == "R1" and p["pin"] == "2"), None)
+        assert r1_pin2 is not None
+        assert abs(r1_pin2["x"] - 63.5) < 0.01
+        assert abs(r1_pin2["y"] - 91.44) < 0.01
+
+        # R2 at (63.5, 100.33) angle 0, lib_symbols pin 1 at local (0, 3.81)
+        # absolute: (63.5, 100.33 - 3.81) = (63.5, 96.52)
+        r2_pin1 = next((p for p in resolved if p["component"] == "R2" and p["pin"] == "1"), None)
+        assert r2_pin1 is not None
+        assert abs(r2_pin1["x"] - 63.5) < 0.01
+        assert abs(r2_pin1["y"] - 96.52) < 0.01
+
+    @pytest.mark.parametrize(
+        "angle,expected_pin2_offset",
+        [
+            (0, (0.0, 3.81)),  # pin2 local (0, -3.81) -> offset (0, +3.81)
+            (90, (-3.81, 0.0)),  # 90 degree rotation
+            (180, (0.0, -3.81)),  # 180 degree rotation
+            (270, (3.81, 0.0)),  # 270 degree rotation
+        ],
+    )
+    def test_rotated_component_pin_positions(self, angle, expected_pin2_offset, tmp_path):
+        """Pin positions should rotate correctly with component angle."""
+        from kicad_mcp.utils.netlist_parser import SchematicParser
+
+        cx, cy = 100.0, 100.0
+        schematic = f"""(kicad_sch
+  (version 20230121)
+  (generator eeschema)
+  (uuid "test-uuid")
+  (paper "A4")
+  (lib_symbols
+    (symbol "Device:R"
+      (symbol "R_1_1"
+        (pin passive line (at 0 3.81 270) (length 1.27)
+          (name "~" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 0 -3.81 90) (length 1.27)
+          (name "~" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
+  )
+  (symbol (lib_id "Device:R") (at {cx} {cy} {angle}) (unit 1)
+    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
+    (uuid "comp-uuid")
+    (property "Reference" "R1" (at 0 0 0))
+    (property "Value" "10k" (at 0 0 0))
+    (pin "1" (uuid "pin1-uuid"))
+    (pin "2" (uuid "pin2-uuid"))
+  )
+  (sheet_instances (path "/" (page "1")))
+)"""
+        sch_file = tmp_path / "rotation_test.kicad_sch"
+        sch_file.write_text(schematic)
+
+        parser = SchematicParser(str(sch_file))
+        parser._extract_components()
+        parser._extract_lib_symbol_pins()
+        resolved = parser._resolve_pin_positions()
+
+        r1_pin2 = next((p for p in resolved if p["component"] == "R1" and p["pin"] == "2"), None)
+        assert r1_pin2 is not None
+        expected_x = cx + expected_pin2_offset[0]
+        expected_y = cy + expected_pin2_offset[1]
+        assert abs(r1_pin2["x"] - expected_x) < 0.02, (
+            f"angle={angle}: expected x={expected_x}, got {r1_pin2['x']}"
+        )
+        assert abs(r1_pin2["y"] - expected_y) < 0.02, (
+            f"angle={angle}: expected y={expected_y}, got {r1_pin2['y']}"
+        )
+
+    def test_backward_compatible_output_format(self, real_sexpr_fixture):
+        """Output format should preserve all existing keys."""
+        result = extract_netlist(real_sexpr_fixture)
+
+        assert "error" not in result
+        assert "components" in result
+        assert "nets" in result
+        assert "labels" in result
+        assert "wires" in result
+        assert "junctions" in result
+        assert "power_symbols" in result
+        assert "component_count" in result
+        assert "net_count" in result
+
+        # Components with lib_id should have expected fields
+        components_with_lib_id = [c for c in result["components"].values() if "lib_id" in c]
+        assert len(components_with_lib_id) >= 2  # R1 and R2
+        for comp in components_with_lib_id:
+            assert "reference" in comp
+            assert "position" in comp
+
+    def test_large_schematic_performance(self, tmp_path):
+        """Netlist building should handle 200+ components efficiently."""
+        import time
+
+        components = []
+        wires = []
+        for i in range(200):
+            y_pos = i * 10.0
+            components.append(
+                f'  (symbol (lib_id "Device:R") (at 100 {y_pos} 0) (unit 1)\n'
+                f"    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)\n"
+                f'    (uuid "comp-{i}")\n'
+                f'    (property "Reference" "R{i + 1}" (at 0 0 0))\n'
+                f'    (property "Value" "10k" (at 0 0 0))\n'
+                f'    (pin "1" (uuid "pin1-{i}"))\n'
+                f'    (pin "2" (uuid "pin2-{i}"))\n'
+                f"  )"
+            )
+            # Chain each component to the next via wire
+            if i < 199:
+                wire_y_start = y_pos + 3.81  # pin 2 of current
+                wire_y_end = (i + 1) * 10.0 - 3.81  # pin 1 of next
+                wires.append(
+                    f"  (wire (pts (xy 100 {wire_y_start}) (xy 100 {wire_y_end}))"
+                    f' (stroke (width 0) (type default)) (uuid "wire-{i}"))'
+                )
+
+        schematic = (
+            "(kicad_sch\n"
+            "  (version 20230121)\n"
+            "  (generator eeschema)\n"
+            '  (uuid "perf-test-uuid")\n'
+            '  (paper "A4")\n'
+            "  (lib_symbols\n"
+            '    (symbol "Device:R"\n'
+            '      (symbol "R_1_1"\n'
+            "        (pin passive line (at 0 3.81 270) (length 1.27)\n"
+            '          (name "~" (effects (font (size 1.27 1.27))))\n'
+            '          (number "1" (effects (font (size 1.27 1.27))))\n'
+            "        )\n"
+            "        (pin passive line (at 0 -3.81 90) (length 1.27)\n"
+            '          (name "~" (effects (font (size 1.27 1.27))))\n'
+            '          (number "2" (effects (font (size 1.27 1.27))))\n'
+            "        )\n"
+            "      )\n"
+            "    )\n"
+            "  )\n" + "\n".join(components) + "\n" + "\n".join(wires) + "\n"
+            '  (sheet_instances (path "/" (page "1")))\n'
+            ")"
+        )
+
+        sch_file = tmp_path / "large_perf_test.kicad_sch"
+        sch_file.write_text(schematic)
+
+        start = time.monotonic()
+        result = extract_netlist(str(sch_file))
+        elapsed = time.monotonic() - start
+
+        assert "error" not in result
+        assert result["component_count"] == 200
+        assert elapsed < 2.0, f"Netlist building took {elapsed:.2f}s (limit: 2s)"
