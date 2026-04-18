@@ -16,7 +16,7 @@ Accepted
 KiCad stores schematic files (`.kicad_sch`) and PCB layout files (`.kicad_pcb`) in an S-expression format derived from Lisp syntax. A minimal example:
 
 ```
-(kicad_sch (version 20230121) (generator eeschema)
+(kicad_sch (version 20241201) (generator eeschema)
   (symbol (lib_id "Device:R") (at 63.5 87.63 0)
     (property "Reference" "R1")
     (property "Value" "10k")

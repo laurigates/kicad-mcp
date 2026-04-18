@@ -452,7 +452,7 @@ class TestBuildNetlist:
 
         cx, cy = 100.0, 100.0
         schematic = f"""(kicad_sch
-  (version 20230121)
+  (version 20241201)
   (generator eeschema)
   (uuid "test-uuid")
   (paper "A4")
@@ -549,7 +549,7 @@ class TestBuildNetlist:
 
         schematic = (
             "(kicad_sch\n"
-            "  (version 20230121)\n"
+            "  (version 20241201)\n"
             "  (generator eeschema)\n"
             '  (uuid "perf-test-uuid")\n'
             '  (paper "A4")\n'

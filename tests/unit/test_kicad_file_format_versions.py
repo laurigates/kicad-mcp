@@ -9,8 +9,6 @@ from pathlib import Path
 import re
 from tempfile import TemporaryDirectory
 
-import pytest
-
 from kicad_mcp.tools.circuit_tools import create_new_project
 from kicad_mcp.utils.sexpr_handler import SExpressionHandler
 
@@ -232,9 +230,7 @@ class TestVersionUpgradeValidation:
                     # Skip files that can't be read
                     continue
 
-        file_list = "\n".join(
-            [f"  {file}: {version}" for file, version in files_with_old_versions]
-        )
+        file_list = "\n".join([f"  {file}: {version}" for file, version in files_with_old_versions])
         assert len(files_with_old_versions) == 0, (
             f"Found test files with outdated KiCad versions (Issue #2):\n{file_list}\n"
             f"These should be updated to use current versions (>= 20240101)"
@@ -259,9 +255,7 @@ class TestVersionUpgradeValidation:
             except Exception:
                 continue
 
-        file_list = "\n".join(
-            [f"  {file}: {version}" for file, version in docs_with_old_versions]
-        )
+        file_list = "\n".join([f"  {file}: {version}" for file, version in docs_with_old_versions])
         assert len(docs_with_old_versions) == 0, (
             f"Found documentation with outdated KiCad versions (Issue #2):\n{file_list}\n"
             f"These should be updated to use current versions (>= 20240101)"
