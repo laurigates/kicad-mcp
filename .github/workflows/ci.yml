@@ -95,8 +95,12 @@ jobs:
     - name: Install dependencies
       run: uv sync --group dev
 
-    - name: Run security scan
+    - name: Run security scan with bandit
       run: uv run bandit -c pyproject.toml -r kicad_mcp/
+
+    - name: Scan dependencies with pip-audit
+      continue-on-error: true
+      run: uv run --with pip-audit pip-audit
 
   build:
     runs-on: ubuntu-latest
