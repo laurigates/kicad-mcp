@@ -79,20 +79,35 @@ class TextToSchematicParser:
         self.circuits = []
 
     def parse_yaml_circuit(self, yaml_text: str) -> Circuit:
-        """Parse a YAML-format circuit description."""
+        """Parse a YAML-format circuit description.
+
+        Accepts two top-level shapes:
+        1. Circuit-wrapped: ``circuit "name": { components: [...], ... }``
+        2. Flat: ``{ components: [...], connections: [...], power: [...] }``
+        """
         try:
             data = yaml.safe_load(yaml_text)
+            if not isinstance(data, dict):
+                raise ValueError("YAML root must be a mapping")
 
-            # Extract circuit name
-            circuit_key = list(data.keys())[0]  # First key is circuit name
-            # Remove surrounding quotes if present
-            if circuit_key.startswith('circuit "') and circuit_key.endswith('"'):
-                circuit_name = circuit_key[9:-1]  # Remove 'circuit "' and closing '"'
-            elif circuit_key.startswith("circuit "):
-                circuit_name = circuit_key[8:]  # Remove 'circuit '
+            section_keys = {"components", "power", "connections"}
+            if section_keys & set(data.keys()):
+                circuit_name = "Untitled Circuit"
+                circuit_data = data
             else:
-                circuit_name = circuit_key
-            circuit_data = data[circuit_key]
+                circuit_key = list(data.keys())[0]  # First key is circuit name
+                if circuit_key.startswith('circuit "') and circuit_key.endswith('"'):
+                    circuit_name = circuit_key[9:-1]  # Remove 'circuit "' and closing '"'
+                elif circuit_key.startswith("circuit "):
+                    circuit_name = circuit_key[8:]  # Remove 'circuit '
+                else:
+                    circuit_name = circuit_key
+                circuit_data = data[circuit_key]
+                if not isinstance(circuit_data, dict):
+                    raise ValueError(
+                        f"circuit body for '{circuit_key}' must be a mapping, "
+                        f"got {type(circuit_data).__name__}"
+                    )
 
             # Parse components
             components = []
@@ -122,12 +137,18 @@ class TextToSchematicParser:
             if "power" in circuit_data:
                 for power_item in circuit_data["power"]:
                     if isinstance(power_item, dict):
-                        # YAML parses "VCC: +5V..." as {"VCC": "+5V..."}
-                        for ref, desc in power_item.items():
-                            power_desc = f"{ref}: {desc}"
-                            power_symbol = self._parse_power_symbol(power_desc)
+                        if "net" in power_item or "type" in power_item:
+                            # Structured: {net: "3V3", type: "VCC", position: [x, y]}
+                            power_symbol = self._parse_structured_power(power_item)
                             if power_symbol:
                                 power_symbols.append(power_symbol)
+                        else:
+                            # YAML parses "VCC: +5V..." as {"VCC": "+5V..."}
+                            for ref, desc in power_item.items():
+                                power_desc = f"{ref}: {desc}"
+                                power_symbol = self._parse_power_symbol(power_desc)
+                                if power_symbol:
+                                    power_symbols.append(power_symbol)
                     else:
                         # String format
                         power_symbol = self._parse_power_symbol(power_item)
@@ -153,7 +174,10 @@ class TextToSchematicParser:
             raise ValueError(f"Error parsing YAML circuit: {str(e)}") from e
 
     def parse_simple_text(self, text: str) -> Circuit:
-        """Parse a simple text format circuit description."""
+        """Parse a simple text format circuit description.
+
+        Tolerates optional ``- `` YAML-style bullet prefixes on entries.
+        """
         lines = text.strip().split("\n")
         circuit_name = "Untitled Circuit"
         components = []
@@ -162,14 +186,28 @@ class TextToSchematicParser:
 
         current_section = None
 
-        for line in lines:
-            line = line.strip()
+        for raw_line in lines:
+            line = raw_line.strip()
             if not line or line.startswith("#"):
                 continue
 
+            # Strip YAML-style bullet prefix so "- R1: resistor ..." parses
+            # the same as "R1: resistor ..."
+            if line.startswith("- "):
+                line = line[2:].lstrip()
+
             # Check for circuit name
             if line.startswith("circuit"):
-                circuit_name = line.split(":", 1)[1].strip().strip("\"'")
+                parts = line.split(":", 1)
+                if len(parts) == 2:
+                    # Extract from 'circuit "name":' — prefer quoted form
+                    header = parts[0]
+                    if '"' in header:
+                        circuit_name = header.split('"', 1)[1].rsplit('"', 1)[0]
+                    elif header.strip() == "circuit":
+                        circuit_name = parts[1].strip().strip("\"'") or circuit_name
+                    else:
+                        circuit_name = header[len("circuit") :].strip().strip("\"'")
                 continue
 
             # Check for section headers
@@ -284,8 +322,16 @@ class TextToSchematicParser:
             return None
 
     def _parse_component_simple(self, line: str) -> Component | None:
-        """Parse a component from simple text format."""
-        # Format: "R1 resistor 220Ω (10, 20)"
+        """Parse a component from simple text format.
+
+        Two accepted shapes:
+        - ``R1 resistor 220 (10, 20)`` — whitespace-separated
+        - ``R1: resistor 220 at (10, 20)`` — YAML-ish (delegates to _parse_component)
+        """
+        # YAML-ish shape: "R1: resistor 220 at (10, 20)"
+        if ":" in line and " at " in line:
+            return self._parse_component(line)
+
         try:
             parts = line.split()
             if len(parts) < 3:
@@ -348,9 +394,29 @@ class TextToSchematicParser:
         except Exception:
             return None
 
+    def _parse_structured_power(self, power_data: dict) -> PowerSymbol | None:
+        """Parse a power symbol from structured YAML: ``{net, type, position}``."""
+        try:
+            net = power_data.get("net", "")
+            power_type = power_data.get("type", net)
+            position_data = power_data.get("position", [0, 0])
+            if not net:
+                return None
+            if isinstance(position_data, list | tuple) and len(position_data) >= 2:
+                position = (float(position_data[0]), float(position_data[1]))
+            else:
+                position = (0.0, 0.0)
+            return PowerSymbol(reference=net, power_type=power_type, position=position)
+        except Exception:
+            return None
+
     def _parse_power_symbol_simple(self, line: str) -> PowerSymbol | None:
-        """Parse a power symbol from simple text format."""
-        # Format: "VCC +5V (10, 10)"
+        """Parse a power symbol from simple text format.
+
+        Accepts ``VCC +5V (10, 10)`` and ``VCC: +5V at (10, 10)``.
+        """
+        if ":" in line and " at " in line:
+            return self._parse_power_symbol(line)
         try:
             parts = line.split()
             if len(parts) < 2:
@@ -380,32 +446,37 @@ class TextToSchematicParser:
         except Exception:
             return None
 
-    def _parse_connection(self, conn_desc: str) -> Connection | None:
-        """Parse a connection description from YAML format."""
-        # Format: "VCC → R1.1" or "R1.2 → LED1.anode"
+    def _parse_connection(self, conn_desc: Any) -> Connection | None:
+        """Parse a connection description.
+
+        Accepts:
+        - Strings: "VCC -> R1.1", "R1.2 → LED1.anode", "R1.2 — GND"
+        - Two-element list/tuple: ["U1:GPIO2", "R1:1"] (YAML list-of-lists form)
+
+        Pin separator may be ``.`` or ``:``.
+        """
         try:
-            # Handle different arrow formats
-            if "→" in conn_desc:
-                start, end = conn_desc.split("→", 1)
-            elif "->" in conn_desc:
-                start, end = conn_desc.split("->", 1)
-            elif "—" in conn_desc:
-                start, end = conn_desc.split("—", 1)
+            if isinstance(conn_desc, list | tuple):
+                if len(conn_desc) != 2:
+                    return None
+                start, end = str(conn_desc[0]), str(conn_desc[1])
+            elif isinstance(conn_desc, str):
+                if "→" in conn_desc:
+                    start, end = conn_desc.split("→", 1)
+                elif "->" in conn_desc:
+                    start, end = conn_desc.split("->", 1)
+                elif "—" in conn_desc:
+                    start, end = conn_desc.split("—", 1)
+                else:
+                    return None
             else:
                 return None
 
             start = start.strip()
             end = end.strip()
 
-            # Parse start component and pin
-            start_parts = start.split(".")
-            start_component = start_parts[0]
-            start_pin = start_parts[1] if len(start_parts) > 1 else None
-
-            # Parse end component and pin
-            end_parts = end.split(".")
-            end_component = end_parts[0]
-            end_pin = end_parts[1] if len(end_parts) > 1 else None
+            start_component, start_pin = self._split_endpoint(start)
+            end_component, end_pin = self._split_endpoint(end)
 
             return Connection(
                 start_component=start_component,
@@ -416,6 +487,15 @@ class TextToSchematicParser:
 
         except Exception:
             return None
+
+    @staticmethod
+    def _split_endpoint(endpoint: str) -> tuple[str, str | None]:
+        """Split ``U1.GPIO2`` or ``U1:GPIO2`` into (component, pin)."""
+        for sep in (".", ":"):
+            if sep in endpoint:
+                component, pin = endpoint.split(sep, 1)
+                return component.strip(), pin.strip() or None
+        return endpoint, None
 
     def _parse_connection_simple(self, line: str) -> Connection | None:
         """Parse a connection from simple text format."""
