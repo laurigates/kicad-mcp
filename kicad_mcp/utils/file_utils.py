@@ -1,5 +1,6 @@
-"""
-File handling utilities for KiCad MCP Server.
+"""File handling utilities for KiCad MCP Server.
+
+Provides helpers for discovering project-related files and loading project JSON.
 """
 
 import json

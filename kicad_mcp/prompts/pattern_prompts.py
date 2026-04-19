@@ -1,5 +1,7 @@
-"""
-Prompt templates for circuit pattern analysis in KiCad.
+"""Prompt templates for circuit pattern analysis in KiCad.
+
+Provides prompts for identifying, analyzing, and comparing circuit patterns
+such as power supplies, amplifiers, sensors, and microcontroller connections.
 """
 
 from fastmcp import FastMCP

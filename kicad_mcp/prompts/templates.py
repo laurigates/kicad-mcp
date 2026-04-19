@@ -1,5 +1,7 @@
-"""
-Prompt templates for KiCad interactions.
+"""Prompt templates for KiCad interactions.
+
+Provides general-purpose prompts for component creation, PCB debugging,
+and manufacturing preparation.
 """
 
 from fastmcp import FastMCP

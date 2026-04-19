@@ -1,5 +1,7 @@
-"""
-Circuit creation tools for KiCad projects.
+"""Circuit creation tools for KiCad projects.
+
+Provides MCP tools and standalone functions for creating projects,
+adding components, wiring connections, and validating schematics.
 """
 
 import json
@@ -789,7 +791,11 @@ async def add_power_symbol(
 def _read_schematic_for_modification(schematic_file: str) -> dict[str, Any]:
     """Read a schematic file and determine if it can be modified by JSON operations.
 
-    Returns appropriate error if the file is in S-expression format.
+    Args:
+        schematic_file: Path to the schematic file.
+
+    Returns:
+        Dict with ``success`` bool and ``data`` (parsed JSON) or ``error`` message.
     """
     with open(schematic_file) as f:
         content = f.read().strip()
@@ -816,7 +822,13 @@ def _read_schematic_for_modification(schematic_file: str) -> dict[str, Any]:
 def _parse_sexpr_for_validation(content: str) -> dict[str, Any]:
     """Parse S-expression schematic content for validation purposes.
 
-    This is a simplified parser that extracts basic information needed for validation.
+    A simplified parser that extracts symbols and wires for validation.
+
+    Args:
+        content: Raw S-expression schematic content.
+
+    Returns:
+        Dict with ``symbol`` and ``wire`` lists.
     """
     result = {"symbol": [], "wire": []}
 
@@ -1025,8 +1037,11 @@ def get_kicad_cli_path() -> str | None:
 def register_circuit_tools(mcp: FastMCP) -> None:
     """Register circuit creation tools with the MCP server.
 
+    Registers ``create_new_project``, ``add_component``, ``create_wire_connection``,
+    ``add_power_symbol``, and ``validate_schematic`` tools.
+
     Args:
-        mcp: The FastMCP server instance
+        mcp: The FastMCP server instance.
     """
 
     @mcp.tool(name="create_new_project")

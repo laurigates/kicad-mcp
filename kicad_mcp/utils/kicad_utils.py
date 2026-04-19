@@ -1,5 +1,6 @@
-"""
-KiCad-specific utility functions.
+"""KiCad-specific utility functions.
+
+Provides project discovery, project-name extraction, and KiCad application launching.
 """
 
 import logging  # Import logging

@@ -1,5 +1,6 @@
-"""
-DRC prompt templates for KiCad PCB design.
+"""DRC prompt templates for KiCad PCB design.
+
+Provides prompts for fixing DRC violations and creating custom design rules.
 """
 
 from fastmcp import FastMCP

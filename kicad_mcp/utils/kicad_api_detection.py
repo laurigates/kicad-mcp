@@ -1,5 +1,6 @@
-"""
-Utility functions for detecting and selecting available KiCad API approaches.
+"""Utility functions for detecting and selecting available KiCad API approaches.
+
+Checks for a working ``kicad-cli`` binary in PATH or common install locations.
 """
 
 import os

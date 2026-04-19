@@ -111,8 +111,12 @@ class WireRouter:
     - Wire priority handling
     """
 
-    def __init__(self, bounds: SchematicBounds):
-        """Initialize the wire router."""
+    def __init__(self, bounds: SchematicBounds) -> None:
+        """Initialize the wire router.
+
+        Args:
+            bounds: Schematic boundary constraints for routing.
+        """
         self.bounds = bounds
         self.obstacles: list[RoutingObstacle] = []
         self.routes: list[WireRoute] = []
@@ -316,13 +320,20 @@ class WireRouter:
         return detour_segments
 
     def snap_to_grid(self, point: tuple[float, float]) -> tuple[float, float]:
-        """Snap a point to the routing grid."""
+        """Snap a point to the routing grid.
+
+        Args:
+            point: (x, y) coordinate tuple.
+
+        Returns:
+            Grid-aligned (x, y) tuple.
+        """
         x, y = point
         grid = self.grid_spacing
         return (round(x / grid) * grid, round(y / grid) * grid)
 
     def optimize_routes(self) -> None:
-        """Optimize all routes for better layout and shorter paths."""
+        """Optimize all routes by priority ordering and segment merging."""
         # Sort routes by priority (higher priority routes get better paths)
         self.routes.sort(key=lambda route: route.priority, reverse=True)
 

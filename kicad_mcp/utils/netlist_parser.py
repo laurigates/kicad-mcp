@@ -1,5 +1,7 @@
-"""
-KiCad schematic netlist extraction utilities.
+"""KiCad schematic netlist extraction utilities.
+
+Parses ``.kicad_sch`` and JSON schematic files to extract components,
+wires, labels, and net connectivity information.
 """
 
 from collections import defaultdict
@@ -51,7 +53,11 @@ class SchematicParser:
         self._load_schematic()
 
     def _load_schematic(self) -> None:
-        """Load the schematic file content."""
+        """Load the schematic file content into ``self.content``.
+
+        Raises:
+            FileNotFoundError: If the schematic file does not exist.
+        """
         if not os.path.exists(self.schematic_path):
             logger.error("Schematic file not found: %s", self.schematic_path)
             raise FileNotFoundError(f"Schematic file not found: {self.schematic_path}")
@@ -160,7 +166,7 @@ class SchematicParser:
         return matches
 
     def _extract_components(self) -> None:
-        """Extract component information from schematic."""
+        """Extract component information from schematic into ``self.components``."""
         logger.debug("Extracting components")
 
         # Extract all symbol expressions (components)
@@ -239,7 +245,14 @@ class SchematicParser:
             return {}
 
     def _extract_wires(self, content: str) -> list[dict[str, Any]]:
-        """Extract all wire expressions from the schematic content."""
+        """Extract all wire expressions from the schematic content.
+
+        Args:
+            content: Raw schematic file content.
+
+        Returns:
+            List of wire dicts with ``uuid``, ``start``, and ``end`` keys.
+        """
         wires = []
         # A more robust regex to capture wire data including nested structures
         wire_matches = re.finditer(r"\(\s*wire\s+((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)", content)
@@ -264,7 +277,14 @@ class SchematicParser:
         return wires
 
     def _extract_junctions(self, content: str) -> list[dict[str, Any]]:
-        """Extract all junction expressions from the schematic content."""
+        """Extract all junction expressions from the schematic content.
+
+        Args:
+            content: Raw schematic file content.
+
+        Returns:
+            List of junction dicts with ``x`` and ``y`` keys.
+        """
         junctions = []
         junction_matches = re.finditer(
             r"\(\s*junction\s+\(at\s+([\d\.-]+)\s+([\d\.-]+)\s*\)(?:.|\n)*?\)", content
@@ -276,7 +296,14 @@ class SchematicParser:
     def _extract_labels(
         self, content: str
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
-        """Extract all label expressions from the schematic content."""
+        """Extract all label expressions from the schematic content.
+
+        Args:
+            content: Raw schematic file content.
+
+        Returns:
+            Tuple of (local_labels, global_labels, hierarchical_labels).
+        """
         labels = []
         global_labels = []
         hierarchical_labels = []
@@ -324,7 +351,7 @@ class SchematicParser:
         return labels, global_labels, hierarchical_labels
 
     def _extract_power_symbols(self) -> None:
-        """Extract power symbol information from schematic."""
+        """Extract power symbol information from schematic into ``self.power_symbols``."""
         logger.debug("Extracting power symbols")
 
         # Extract all power symbol expressions
@@ -350,7 +377,7 @@ class SchematicParser:
         logger.debug("Extracted %d power symbols", len(self.power_symbols))
 
     def _extract_no_connects(self) -> None:
-        """Extract no-connect information from schematic."""
+        """Extract no-connect information from schematic into ``self.no_connects``."""
         logger.debug("Extracting no-connects")
 
         # Extract all no-connect expressions
@@ -496,7 +523,11 @@ class SchematicParser:
         return resolved
 
     def _build_netlist(self) -> None:
-        """Build the netlist using wire connectivity tracing."""
+        """Build the netlist using wire connectivity tracing.
+
+        Populates ``self.nets`` and ``self.component_pins`` from parsed
+        wires, labels, and resolved pin positions.
+        """
         logger.debug("Building netlist from schematic data")
 
         engine = ConnectivityEngine()

@@ -1,5 +1,7 @@
-"""
-Circuit pattern recognition functions for KiCad schematics.
+"""Circuit pattern recognition functions for KiCad schematics.
+
+Identifies common circuit blocks (power supplies, amplifiers, filters,
+oscillators, digital interfaces, sensors, microcontrollers) from netlist data.
 """
 
 import re

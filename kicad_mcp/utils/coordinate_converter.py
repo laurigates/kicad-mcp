@@ -13,8 +13,8 @@ KICAD_MILS_PER_MM = 39.37  # 1mm = 39.37 mils
 class CoordinateConverter:
     """Converts between ComponentLayoutManager coordinates and KiCad coordinates."""
 
-    def __init__(self):
-        """Initialize the coordinate converter."""
+    def __init__(self) -> None:
+        """Initialize the coordinate converter with A4 sheet dimensions."""
         # KiCad schematic coordinate origin (top-left in KiCad units)
         # A4 sheet dimensions in KiCad units
         self.sheet_width_kicad = 297.0 * KICAD_UNITS_PER_MM  # 29700 units

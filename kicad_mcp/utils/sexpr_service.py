@@ -19,8 +19,8 @@ class SExpressionService:
     using the production-ready SExpressionHandler implementation.
     """
 
-    def __init__(self):
-        """Initialize the S-expression service."""
+    def __init__(self) -> None:
+        """Initialize the S-expression service with a backing handler."""
         self.logger = logging.getLogger(__name__)
         self.handler = SExpressionHandler()
 
@@ -80,7 +80,7 @@ def get_sexpr_service() -> SExpressionService:
     return _service_instance
 
 
-def reset_sexpr_service():
+def reset_sexpr_service() -> None:
     """Reset the global service instance (mainly for testing)."""
     global _service_instance
     _service_instance = None

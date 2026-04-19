@@ -1,9 +1,6 @@
-"""
-Tool handlers for KiCad MCP Server.
+"""Tool handlers for KiCad MCP Server.
 
-This package includes:
-- Project management tools
-- Analysis tools
-- Export tools (BOM extraction, PCB thumbnail generation)
-- DRC tools
+Each sub-module registers MCP tools for a specific domain:
+project management, analysis, export, DRC, BOM, netlist,
+circuit creation, pattern recognition, and visualization.
 """

@@ -1,5 +1,6 @@
-"""
-Symbol library utility functions for KiCad circuit creation.
+"""Symbol library utility functions for KiCad circuit creation.
+
+Discovers, parses, and searches KiCad symbol libraries on the local filesystem.
 """
 
 import glob
@@ -12,9 +13,10 @@ from kicad_mcp.config import KICAD_APP_PATH, KICAD_USER_DIR, system
 class SymbolLibraryManager:
     """Manager class for KiCad symbol libraries and symbol operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the manager and discover library paths on the current platform."""
         self.library_paths = self._discover_library_paths()
-        self.symbol_cache = {}
+        self.symbol_cache: dict[str, Any] = {}
 
     def _discover_library_paths(self) -> list[str]:
         """Discover KiCad symbol library paths based on the operating system.

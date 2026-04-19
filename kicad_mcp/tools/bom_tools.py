@@ -1,5 +1,7 @@
-"""
-Bill of Materials (BOM) processing tools for KiCad projects.
+"""Bill of Materials (BOM) processing tools for KiCad projects.
+
+Registers MCP tools for analyzing and exporting BOMs, plus helper
+functions for parsing CSV/XML/JSON BOM files.
 """
 
 import csv

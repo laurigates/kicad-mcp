@@ -1,5 +1,6 @@
-"""
-Environment variable handling for KiCad MCP Server.
+"""Environment variable handling for KiCad MCP Server.
+
+Loads ``.env`` files and provides helpers for reading list-valued env vars.
 """
 
 import logging
@@ -108,7 +109,7 @@ def find_env_file(filename: str = ".env") -> str | None:
     return None
 
 
-def get_env_list(env_var: str, default: str = "") -> list:
+def get_env_list(env_var: str, default: str = "") -> list[str]:
     """Get a list from a comma-separated environment variable.
 
     Args:

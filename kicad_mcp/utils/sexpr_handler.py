@@ -27,8 +27,8 @@ class SExpressionHandler:
     using the native sexpdata library and following KiCad's format specification.
     """
 
-    def __init__(self):
-        """Initialize the S-expression handler."""
+    def __init__(self) -> None:
+        """Initialize the S-expression handler with layout, pin, and routing managers."""
         self.layout_manager = ComponentLayoutManager()
         self.pin_mapper = ComponentPinMapper()
         self.wire_router = WireRouter(self.layout_manager.bounds)
@@ -173,7 +173,17 @@ class SExpressionHandler:
         power_symbols: list[dict[str, Any]],
         connections: list[dict[str, Any]],
     ) -> list[Any]:
-        """Build the complete schematic S-expression structure."""
+        """Build the complete schematic S-expression structure.
+
+        Args:
+            circuit_name: Title for the schematic title block.
+            components: Validated component dicts with positions.
+            power_symbols: Validated power symbol dicts with positions.
+            connections: Wire connection dicts.
+
+        Returns:
+            Nested list representing the full ``kicad_sch`` S-expression.
+        """
 
         # Generate a unique UUID for the sheet
         sheet_uuid = str(uuid.uuid4())
@@ -250,7 +260,17 @@ class SExpressionHandler:
         power_symbols: list[dict[str, Any]],
         wire_sexprs: list[list[Any]],
     ) -> list[Any]:
-        """Build schematic S-expression with pre-generated wire S-expressions."""
+        """Build schematic S-expression with pre-generated wire S-expressions.
+
+        Args:
+            circuit_name: Title for the schematic title block.
+            components: Validated component dicts with positions.
+            power_symbols: Validated power symbol dicts with positions.
+            wire_sexprs: Pre-routed wire S-expression lists.
+
+        Returns:
+            Nested list representing the full ``kicad_sch`` S-expression.
+        """
 
         # Generate a unique UUID for the sheet
         sheet_uuid = str(uuid.uuid4())
@@ -320,7 +340,14 @@ class SExpressionHandler:
         return schematic
 
     def _build_symbol_sexpr(self, component: dict[str, Any]) -> list[Any]:
-        """Build S-expression for a symbol (component or power symbol)."""
+        """Build S-expression for a symbol (component or power symbol).
+
+        Args:
+            component: Component dict with reference, value, position, etc.
+
+        Returns:
+            Nested list representing a ``symbol`` S-expression.
+        """
 
         # Extract component information
         lib_id = component.get("lib_id")
@@ -457,7 +484,7 @@ class SExpressionHandler:
         return wire_sexprs
 
     def _setup_routing_obstacles(self, components: list[dict[str, Any]]) -> None:
-        """Setup routing obstacles from component placements."""
+        """Register component bounding boxes as routing obstacles."""
         for component in components:
             if "position" not in component:
                 continue
@@ -652,7 +679,14 @@ class SExpressionHandler:
         return wire_expr
 
     def _parse_sexpr_to_dict(self, sexpr: Any) -> dict[str, Any]:
-        """Convert parsed S-expression to dictionary format."""
+        """Convert parsed S-expression to dictionary format.
+
+        Args:
+            sexpr: Parsed S-expression (nested lists from ``sexpdata``).
+
+        Returns:
+            Dictionary representation with ``type``, ``symbols``, ``wires``, etc.
+        """
         if not isinstance(sexpr, list) or len(sexpr) < 2:
             return {}
 
@@ -681,7 +715,14 @@ class SExpressionHandler:
         return result
 
     def _parse_symbol_sexpr(self, symbol_expr: list[Any]) -> dict[str, Any]:
-        """Parse a symbol S-expression into a dictionary."""
+        """Parse a symbol S-expression into a dictionary.
+
+        Args:
+            symbol_expr: Nested list for one ``symbol`` S-expression.
+
+        Returns:
+            Dict with ``lib_id``, ``reference``, ``value``, ``position``, etc.
+        """
         symbol = {}
 
         for item in symbol_expr[1:]:
@@ -713,7 +754,14 @@ class SExpressionHandler:
         return symbol
 
     def _parse_wire_sexpr(self, wire_expr: list[Any]) -> dict[str, Any]:
-        """Parse a wire S-expression into a dictionary."""
+        """Parse a wire S-expression into a dictionary.
+
+        Args:
+            wire_expr: Nested list for one ``wire`` S-expression.
+
+        Returns:
+            Dict with ``start``, ``end``, and ``uuid`` keys.
+        """
         wire = {}
 
         for item in wire_expr[1:]:
@@ -735,7 +783,15 @@ class SExpressionHandler:
         return wire
 
     def _format_sexpr(self, sexpr: list[Any], pretty_print: bool = True) -> str:
-        """Format S-expression as string."""
+        """Format S-expression as string.
+
+        Args:
+            sexpr: Nested list S-expression.
+            pretty_print: Whether to add indentation and newlines.
+
+        Returns:
+            Formatted S-expression string.
+        """
         formatted = sexpdata.dumps(sexpr)
 
         if pretty_print:
@@ -745,7 +801,14 @@ class SExpressionHandler:
         return formatted
 
     def _pretty_format_sexpr(self, sexpr_str: str) -> str:
-        """Apply basic pretty formatting to S-expression string."""
+        """Apply basic pretty formatting to S-expression string.
+
+        Args:
+            sexpr_str: Raw S-expression string from ``sexpdata.dumps``.
+
+        Returns:
+            Indented, line-broken S-expression string.
+        """
         lines = []
         indent_level = 0
         i = 0
@@ -787,7 +850,14 @@ class SExpressionHandler:
     def _validate_component_positions(
         self, components: list[dict[str, Any]]
     ) -> list[dict[str, Any]]:
-        """Validate and fix component positions using the layout manager."""
+        """Validate and fix component positions using the layout manager.
+
+        Args:
+            components: Component dicts, optionally with ``position`` keys.
+
+        Returns:
+            New list of component dicts with validated ``position`` tuples.
+        """
         validated_components = []
 
         for component in components:
@@ -821,7 +891,14 @@ class SExpressionHandler:
     def _validate_power_positions(
         self, power_symbols: list[dict[str, Any]]
     ) -> list[dict[str, Any]]:
-        """Validate and fix power symbol positions using the layout manager."""
+        """Validate and fix power symbol positions using the layout manager.
+
+        Args:
+            power_symbols: Power symbol dicts, optionally with ``position`` keys.
+
+        Returns:
+            New list of power symbol dicts with validated ``position`` tuples.
+        """
         validated_power_symbols = []
 
         for power_symbol in power_symbols:
@@ -870,7 +947,7 @@ class SExpressionHandler:
 
     def _map_component_pins(
         self, components: list[dict[str, Any]], power_symbols: list[dict[str, Any]]
-    ):
+    ) -> None:
         """Map all components and power symbols to the pin mapper."""
         for component in components:
             component_type = self._get_component_type(component)

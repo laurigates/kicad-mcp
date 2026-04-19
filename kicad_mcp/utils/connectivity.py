@@ -14,6 +14,7 @@ class UnionFind:
     """Disjoint Set Union with path compression and union by rank."""
 
     def __init__(self) -> None:
+        """Initialize empty Union-Find structure."""
         self._parent: dict[int, int] = {}
         self._rank: dict[int, int] = {}
 
@@ -62,6 +63,11 @@ class ConnectivityEngine:
     """
 
     def __init__(self, tolerance: float = COORDINATE_TOLERANCE) -> None:
+        """Initialize the connectivity engine.
+
+        Args:
+            tolerance: Coordinate snapping tolerance in mm.
+        """
         self.tolerance = tolerance
         self._uf = UnionFind()
         self._point_to_id: dict[tuple[int, int], int] = {}
@@ -70,7 +76,15 @@ class ConnectivityEngine:
         self._label_points: list[tuple[str, str, int]] = []  # (text, label_type, point_id)
 
     def _get_point_id(self, x: float, y: float) -> int:
-        """Get or create a unique ID for a quantized point."""
+        """Get or create a unique ID for a quantized point.
+
+        Args:
+            x: X coordinate in mm.
+            y: Y coordinate in mm.
+
+        Returns:
+            Integer point ID for use in Union-Find.
+        """
         key = quantize_point(x, y, self.tolerance)
         if key not in self._point_to_id:
             pid = self._next_id
