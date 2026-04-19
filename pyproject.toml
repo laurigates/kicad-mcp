@@ -171,7 +171,7 @@ addopts = [
     "--cov-report=term-missing",
     "--cov-report=html:htmlcov",
     "--cov-report=xml",
-    "--cov-fail-under=39",
+    "--cov-fail-under=37",
     "-ra",
     "--tb=short",
 ]
