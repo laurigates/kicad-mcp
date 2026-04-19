@@ -24,8 +24,3 @@ _unused_pytest_fixtures = (
 # Public API re-exports from __init__ modules — may appear unused within the
 # package but are part of the external surface.
 _unused_public_api: tuple[str, ...] = ()
-
-# signal.signal() callback signature requires (signum, frame); frame is
-# always unused by our handlers but cannot be renamed with a leading
-# underscore without breaking the signal protocol.
-frame = None

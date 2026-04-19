@@ -20,6 +20,7 @@ help:
 	@echo "Code Quality:"
 	@echo "  lint        - Run linting checks"
 	@echo "  format      - Format code"
+	@echo "  dead-code   - Detect unused / unreachable code with vulture"
 	@echo ""
 	@echo "Development:"
 	@echo "  run         - Run the MCP server"
