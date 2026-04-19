@@ -95,6 +95,10 @@ jobs:
     - name: Run security scan
       run: uv run bandit -r kicad_mcp/
 
+    - name: Scan dependencies with pip-audit
+      continue-on-error: true
+      run: uv run --with pip-audit pip-audit
+
   build:
     runs-on: ubuntu-latest
     name: Build Package
