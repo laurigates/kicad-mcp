@@ -92,8 +92,8 @@ def test_shorthand_connections_round_trip_through_netlist(tmp_path: Path) -> Non
 
     assert "error" not in netlist, f"netlist extraction reported error: {netlist.get('error')}"
     assert netlist.get("component_count", 0) >= 2
-    assert netlist.get("net_count", 0) >= 1, (
-        f"expected at least one net from shorthand connections; got {netlist}"
+    assert netlist.get("net_count", 0) >= 2, (
+        f"expected at least two nets (VCC and GND rails) from shorthand connections; got {netlist}"
     )
 
 

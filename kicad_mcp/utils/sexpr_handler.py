@@ -612,16 +612,12 @@ class SExpressionHandler:
                 return None
 
             # Register the connection with the pin mapper
-            connection_added = self.pin_mapper.add_connection(
+            self.pin_mapper.add_connection(
                 start_component,
                 start_pin,
                 end_component,
                 end_pin,
             )
-
-            if not connection_added:
-                # Log warning but continue with wire generation
-                pass
 
             start_x, start_y = start_pos
             end_x, end_y = end_pos
