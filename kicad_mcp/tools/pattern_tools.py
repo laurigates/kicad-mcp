@@ -47,34 +47,34 @@ def register_pattern_tools(mcp: FastMCP) -> None:
             Dictionary with identified circuit patterns
         """
         if not os.path.exists(schematic_path):
-            ctx.info(f"Schematic file not found: {schematic_path}")
+            await ctx.info(f"Schematic file not found: {schematic_path}")
             return {"success": False, "error": f"Schematic file not found: {schematic_path}"}
 
         # Report progress
         await ctx.report_progress(10, 100)
-        ctx.info(f"Loading schematic file: {os.path.basename(schematic_path)}")
+        await ctx.info(f"Loading schematic file: {os.path.basename(schematic_path)}")
 
         try:
             # Extract netlist information
             await ctx.report_progress(20, 100)
-            ctx.info("Parsing schematic structure...")
+            await ctx.info("Parsing schematic structure...")
 
             netlist_data = extract_netlist(schematic_path)
 
             if "error" in netlist_data:
-                ctx.info(f"Error extracting netlist: {netlist_data['error']}")
+                await ctx.info(f"Error extracting netlist: {netlist_data['error']}")
                 return {"success": False, "error": netlist_data["error"]}
 
             # Analyze components and nets
             await ctx.report_progress(30, 100)
-            ctx.info("Analyzing components and connections...")
+            await ctx.info("Analyzing components and connections...")
 
             components = netlist_data.get("components", {})
             nets = netlist_data.get("nets", {})
 
             # Start pattern recognition
             await ctx.report_progress(50, 100)
-            ctx.info("Identifying circuit patterns...")
+            await ctx.info("Identifying circuit patterns...")
 
             identified_patterns = {
                 "power_supply_circuits": [],
@@ -133,12 +133,14 @@ def register_pattern_tools(mcp: FastMCP) -> None:
 
             # Complete progress
             await ctx.report_progress(100, 100)
-            ctx.info(f"Pattern recognition complete. Found {total_patterns} circuit patterns.")
+            await ctx.info(
+                f"Pattern recognition complete. Found {total_patterns} circuit patterns."
+            )
 
             return result
 
         except Exception as e:
-            ctx.info(f"Error identifying circuit patterns: {str(e)}")
+            await ctx.info(f"Error identifying circuit patterns: {str(e)}")
             return {"success": False, "error": str(e)}
 
     @mcp.tool()
@@ -153,7 +155,7 @@ def register_pattern_tools(mcp: FastMCP) -> None:
             Dictionary with identified circuit patterns
         """
         if not os.path.exists(project_path):
-            ctx.info(f"Project not found: {project_path}")
+            await ctx.info(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
 
         # Report progress
@@ -164,11 +166,11 @@ def register_pattern_tools(mcp: FastMCP) -> None:
             files = get_project_files(project_path)
 
             if "schematic" not in files:
-                ctx.info("Schematic file not found in project")
+                await ctx.info("Schematic file not found in project")
                 return {"success": False, "error": "Schematic file not found in project"}
 
             schematic_path = files["schematic"]
-            ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
+            await ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
 
             # Identify patterns in the schematic
             result = await identify_circuit_patterns(schematic_path, ctx)
@@ -180,5 +182,5 @@ def register_pattern_tools(mcp: FastMCP) -> None:
             return result
 
         except Exception as e:
-            ctx.info(f"Error analyzing project circuit patterns: {str(e)}")
+            await ctx.info(f"Error analyzing project circuit patterns: {str(e)}")
             return {"success": False, "error": str(e)}
