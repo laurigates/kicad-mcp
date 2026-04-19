@@ -119,12 +119,12 @@ def register_signal_handlers(server: FastMCP) -> None:
         server: The FastMCP server instance
     """
 
-    def handle_exit_signal(signum: int, frame) -> None:
+    def handle_exit_signal(signum: int, _frame) -> None:
         """Handle system exit signals for graceful shutdown.
 
         Args:
             signum: Signal number received
-            frame: Current stack frame (unused)
+            _frame: Current stack frame (unused — required by signal protocol)
 
         Note:
             Calls run_cleanup_handlers(), shutdown_server(), then os._exit(0)
@@ -273,12 +273,12 @@ def setup_signal_handlers() -> None:
         Uses the module logger instead of logging directly.
     """
 
-    def signal_handler(signum: int, frame) -> None:
+    def signal_handler(signum: int, _frame) -> None:
         """Handle shutdown signals for test compatibility.
 
         Args:
             signum: Signal number received
-            frame: Current stack frame (unused)
+            _frame: Current stack frame (unused — required by signal protocol)
 
         Note:
             Calls cleanup_handler() then sys.exit(0)

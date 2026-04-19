@@ -1,7 +1,7 @@
 # KiCad MCP Makefile
 # Provides common development tasks using uv
 
-.PHONY: help install test test-unit test-integration coverage lint format clean dev run
+.PHONY: help install test test-unit test-integration coverage lint format clean dev run dead-code
 
 # Default target
 help:
@@ -57,6 +57,10 @@ lint:
 	uv run ruff check .
 	# Temporarily disabled mypy due to 200+ type errors - will fix separately
 	# uv run mypy kicad_mcp/
+
+# Detect unreachable / unused code
+dead-code:
+	uv run vulture
 
 # Format code
 format:
