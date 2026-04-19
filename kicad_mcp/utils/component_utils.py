@@ -11,6 +11,47 @@ component types from their reference designators.
 import re
 from typing import Any
 
+# Substring prefixes used to classify a symbol name as a microcontroller / IC.
+# These are tested with ``prefix in symbol_name.lower()`` so ordering does not
+# matter. ``pic`` is intentionally excluded from this tuple because it is a
+# common substring of unrelated words (e.g. ``"pickup"``, ``"picture"``); it is
+# matched separately via :data:`_PIC_MCU_PATTERN` which anchors on a word
+# boundary followed by a digit (e.g. ``"PIC18F4550"``).
+_MCU_FAMILY_PREFIXES: tuple[str, ...] = (
+    "ic",
+    "mcu",
+    "esp32",
+    "atmega",
+    "attiny",
+    "stm32",
+)
+
+# Matches Microchip PIC part numbers like ``PIC16F``, ``PIC18F4550`` — a word
+# boundary, literal ``pic``, then a digit. Case-insensitive by convention
+# (callers lowercase the input before matching).
+_PIC_MCU_PATTERN = re.compile(r"\bpic\d")
+
+# Reference-designator prefix → component type. Built once at import rather
+# than per call (see :func:`get_component_type`).
+_REFERENCE_PREFIX_TO_TYPE: dict[str, str] = {
+    "R": "resistor",
+    "C": "capacitor",
+    "L": "inductor",
+    "LED": "led",
+    "D": "diode",
+    "Q": "transistor",
+    "U": "ic",
+    "IC": "ic",
+    "J": "connector",
+    "P": "connector",
+    "CN": "connector",
+    "SW": "switch",
+    "S": "switch",
+    "PS": "power",
+    "VR": "power",
+    "REG": "power",
+}
+
 
 def extract_voltage_from_regulator(value: str) -> str:
     """Extracts the output voltage from a voltage regulator's part number.
@@ -430,28 +471,10 @@ def get_component_type(lib_id: str, reference: str | None = None) -> str:
     # ---- reference-designator fallback -------------------------------------
     if reference:
         ref_prefix = get_component_type_from_reference(reference).upper()
-        _REF_TO_TYPE: dict[str, str] = {
-            "R": "resistor",
-            "C": "capacitor",
-            "L": "inductor",
-            "LED": "led",
-            "D": "diode",
-            "Q": "transistor",
-            "U": "ic",
-            "IC": "ic",
-            "J": "connector",
-            "P": "connector",
-            "CN": "connector",
-            "SW": "switch",
-            "S": "switch",
-            "PS": "power",
-            "VR": "power",
-            "REG": "power",
-        }
         # Try exact match then prefix match
-        if ref_prefix in _REF_TO_TYPE:
-            return _REF_TO_TYPE[ref_prefix]
-        for key, ctype in _REF_TO_TYPE.items():
+        if ref_prefix in _REFERENCE_PREFIX_TO_TYPE:
+            return _REFERENCE_PREFIX_TO_TYPE[ref_prefix]
+        for key, ctype in _REFERENCE_PREFIX_TO_TYPE.items():
             if ref_prefix.startswith(key):
                 return ctype
 
@@ -496,7 +519,9 @@ def get_component_type_from_symbol(symbol_library: str, symbol_name: str) -> str
         return _NAME_TO_TYPE[name_lower]
     if "transistor" in name_lower or "npn" in name_lower or "pnp" in name_lower:
         return "transistor"
-    if "ic" in name_lower or "mcu" in name_lower or "esp32" in name_lower:
+    if any(prefix in name_lower for prefix in _MCU_FAMILY_PREFIXES):
+        return "ic"
+    if _PIC_MCU_PATTERN.search(name_lower):
         return "ic"
 
     lib_lower = symbol_library.lower()
