@@ -73,6 +73,7 @@ dev = [
     "ty>=0.0.1a6,<0.1",
     "pre-commit>=3.0.0",
     "bandit>=1.7.0",  # Security linting for pre-commit hooks
+    "vulture>=2.11",  # Dead-code detection
 ]
 docs = [
     "sphinx>=7.0.0",
@@ -207,3 +208,20 @@ skips = ["B101", "B601", "B404", "B603", "B110", "B112"]  # Skip low-severity su
 
 [tool.bandit.assert_used]
 skips = ["*_test.py", "*/test_*.py"]
+
+[tool.vulture]
+# Dead-code detection. Run with `uv run vulture` or `make dead-code`.
+paths = ["kicad_mcp", "vulture_allowlist.py"]
+exclude = ["tests/", ".venv/", "build/", "dist/"]
+# 80% confidence threshold avoids most false positives while still flagging
+# genuinely unreachable code. Raise to reduce noise; lower for strict audits.
+min_confidence = 80
+sort_by_size = true
+ignore_decorators = [
+    "@mcp.tool",
+    "@mcp.resource",
+    "@mcp.prompt",
+    "@dataclass",
+    "@pytest.fixture",
+    "@pytest.mark.*",
+]

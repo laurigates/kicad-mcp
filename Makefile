@@ -1,7 +1,7 @@
 # KiCad MCP Makefile
 # Provides common development tasks using uv
 
-.PHONY: help install test test-unit test-integration coverage lint format clean dev run
+.PHONY: help install test test-unit test-integration coverage lint format clean dev run dead-code
 
 # Default target
 help:
@@ -20,6 +20,7 @@ help:
 	@echo "Code Quality:"
 	@echo "  lint        - Run linting checks"
 	@echo "  format      - Format code"
+	@echo "  dead-code   - Detect unused / unreachable code with vulture"
 	@echo ""
 	@echo "Development:"
 	@echo "  run         - Run the MCP server"
@@ -56,6 +57,10 @@ coverage:
 lint:
 	uv run ruff check .
 	uv run ty check kicad_mcp/ || true  # baseline: 123 errors to be fixed in follow-up
+
+# Detect unreachable / unused code
+dead-code:
+	uv run vulture
 
 # Format code
 format:
