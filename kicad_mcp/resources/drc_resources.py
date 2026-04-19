@@ -141,7 +141,7 @@ def register_drc_resources(mcp: FastMCP) -> None:
         return report
 
     @mcp.resource("kicad://drc/{project_path}")
-    def get_drc_report(project_path: str) -> str:
+    async def get_drc_report(project_path: str) -> str:
         """Get a formatted DRC report for a KiCad project.
 
         Args:
@@ -164,7 +164,7 @@ def register_drc_resources(mcp: FastMCP) -> None:
         print(f"Found PCB file: {pcb_file}")
 
         # Try to run DRC via command line
-        drc_results = run_drc_via_cli(pcb_file)
+        drc_results = await run_drc_via_cli(pcb_file)
 
         if not drc_results["success"]:
             error_message = drc_results.get("error", "Unknown error")

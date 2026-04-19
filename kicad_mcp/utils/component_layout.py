@@ -25,8 +25,6 @@ from dataclasses import dataclass
 from enum import Enum
 import math
 
-from kicad_mcp.config import CIRCUIT_DEFAULTS
-
 
 class LayoutStrategy(Enum):
     """Layout strategies for automatic component placement.
@@ -155,9 +153,9 @@ class SchematicBounds:
         (10, 70)
     """
 
-    width: float = CIRCUIT_DEFAULTS["schematic_page_width"]  # A4 width in mm
-    height: float = CIRCUIT_DEFAULTS["schematic_page_height"]  # A4 height in mm
-    margin: float = CIRCUIT_DEFAULTS["schematic_margin"]  # Margin from edges in mm
+    width: float = 297.0  # A4 width in mm (from CIRCUIT_DEFAULTS)
+    height: float = 210.0  # A4 height in mm (from CIRCUIT_DEFAULTS)
+    margin: float = 30.0  # Margin from edges in mm (from CIRCUIT_DEFAULTS)
 
     @property
     def usable_width(self) -> float:
@@ -228,8 +226,8 @@ class ComponentLayoutManager:
             placed_components: List to store placed components.
         """
         self.bounds = bounds or SchematicBounds()
-        self.grid_spacing = CIRCUIT_DEFAULTS["grid_spacing"]
-        self.component_spacing = CIRCUIT_DEFAULTS["component_spacing"]
+        self.grid_spacing: float = 1.0  # from CIRCUIT_DEFAULTS["grid_spacing"]
+        self.component_spacing: float = 10.16  # from CIRCUIT_DEFAULTS["component_spacing"]
         self.placed_components: list[ComponentBounds] = []
 
     def validate_position(self, x: float, y: float, component_type: str = "default") -> bool:

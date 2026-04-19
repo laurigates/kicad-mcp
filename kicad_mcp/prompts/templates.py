@@ -49,3 +49,18 @@ def register_prompts(mcp: FastMCP) -> None:
     @mcp.prompt()
     def pcb_manufacturing_checklist() -> str:
         """Prompt for PCB manufacturing preparation checklist."""
+        prompt = """
+        I need to prepare my KiCad PCB design for manufacturing. Please help me verify:
+
+        1. Design rule check (DRC) passes with no errors
+        2. Correct Gerber file generation settings
+        3. Drill file configuration
+        4. Board outline and dimensions
+        5. Copper pour and ground plane integrity
+        6. Silkscreen legibility and placement
+        7. Solder mask and paste layer correctness
+
+        Please provide a checklist for manufacturing preparation.
+        """
+
+        return prompt

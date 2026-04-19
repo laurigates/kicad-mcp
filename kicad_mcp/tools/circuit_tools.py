@@ -33,7 +33,7 @@ def _get_component_type_from_symbol(symbol_library: str, symbol_name: str) -> st
 
 
 async def create_new_project(
-    project_name: str, project_path: str, description: str = "", ctx: Context = None
+    project_name: str, project_path: str, description: str = "", ctx: Context | None = None
 ) -> dict[str, Any]:
     """Create a new KiCad project with basic files.
 
@@ -254,7 +254,9 @@ async def create_new_project(
 
             # Generate visual feedback for the created schematic
             try:
-                from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
+                from kicad_mcp.tools.visualization_tools import (
+                    capture_schematic_screenshot,  # ty: ignore[unresolved-import]
+                )
 
                 screenshot_result = await capture_schematic_screenshot(project_path, ctx)
                 if screenshot_result:
@@ -298,7 +300,7 @@ async def add_component(
     symbol_name: str,
     x_position: float,
     y_position: float,
-    ctx: Context = None,
+    ctx: Context | None = None,
 ) -> dict[str, Any]:
     """Add a component to a KiCad schematic.
 
@@ -438,7 +440,9 @@ async def add_component(
 
             # Generate visual feedback after adding component
             try:
-                from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
+                from kicad_mcp.tools.visualization_tools import (
+                    capture_schematic_screenshot,  # ty: ignore[unresolved-import]
+                )
 
                 screenshot_result = await capture_schematic_screenshot(project_path, ctx)
                 if screenshot_result:
@@ -488,7 +492,7 @@ async def create_wire_connection(
     start_y: float,
     end_x: float,
     end_y: float,
-    ctx: Context = None,
+    ctx: Context | None = None,
 ) -> dict[str, Any]:
     """Create a wire connection between two points in a schematic.
 
@@ -601,7 +605,9 @@ async def create_wire_connection(
 
             # Generate visual feedback after adding wire
             try:
-                from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
+                from kicad_mcp.tools.visualization_tools import (
+                    capture_schematic_screenshot,  # ty: ignore[unresolved-import]
+                )
 
                 screenshot_result = await capture_schematic_screenshot(project_path, ctx)
                 if screenshot_result:
@@ -632,7 +638,11 @@ async def create_wire_connection(
 
 
 async def add_power_symbol(
-    project_path: str, power_type: str, x_position: float, y_position: float, ctx: Context = None
+    project_path: str,
+    power_type: str,
+    x_position: float,
+    y_position: float,
+    ctx: Context | None = None,
 ) -> dict[str, Any]:
     """Add a power symbol (VCC, GND, etc.) to the schematic.
 
@@ -753,7 +763,9 @@ async def add_power_symbol(
 
             # Generate visual feedback after adding power symbol
             try:
-                from kicad_mcp.tools.visualization_tools import capture_schematic_screenshot
+                from kicad_mcp.tools.visualization_tools import (
+                    capture_schematic_screenshot,  # ty: ignore[unresolved-import]
+                )
 
                 screenshot_result = await capture_schematic_screenshot(project_path, ctx)
                 if screenshot_result:
@@ -867,7 +879,7 @@ def _parse_sexpr_for_validation(content: str) -> dict[str, Any]:
     return result
 
 
-async def validate_schematic(project_path: str, ctx: Context = None) -> dict[str, Any]:
+async def validate_schematic(project_path: str, ctx: Context | None = None) -> dict[str, Any]:
     """Validate a KiCad schematic for common issues.
 
     Args:
@@ -976,7 +988,7 @@ connect_components = create_wire_connection
 
 
 async def add_power_symbols(
-    project_path: str, power_symbols: list[dict[str, Any]], ctx: Context = None
+    project_path: str, power_symbols: list[dict[str, Any]], ctx: Context | None = None
 ) -> dict[str, Any]:
     """Add multiple power symbols to the schematic.
 
@@ -1046,7 +1058,7 @@ def register_circuit_tools(mcp: FastMCP) -> None:
 
     @mcp.tool(name="create_new_project")
     async def create_new_project_tool(
-        project_name: str, project_path: str, description: str = "", ctx: Context = None
+        project_name: str, project_path: str, description: str = "", ctx: Context | None = None
     ) -> dict[str, Any]:
         """Create a new KiCad project with basic files."""
         return await create_new_project(project_name, project_path, description, ctx)
@@ -1060,7 +1072,7 @@ def register_circuit_tools(mcp: FastMCP) -> None:
         symbol_name: str,
         x_position: float,
         y_position: float,
-        ctx: Context = None,
+        ctx: Context | None = None,
     ) -> dict[str, Any]:
         """Add a component to a KiCad schematic."""
         return await add_component(
@@ -1081,7 +1093,7 @@ def register_circuit_tools(mcp: FastMCP) -> None:
         start_y: float,
         end_x: float,
         end_y: float,
-        ctx: Context = None,
+        ctx: Context | None = None,
     ) -> dict[str, Any]:
         """Create a wire connection between two points in a schematic."""
         return await create_wire_connection(project_path, start_x, start_y, end_x, end_y, ctx)
@@ -1092,12 +1104,14 @@ def register_circuit_tools(mcp: FastMCP) -> None:
         power_type: str,
         x_position: float,
         y_position: float,
-        ctx: Context = None,
+        ctx: Context | None = None,
     ) -> dict[str, Any]:
         """Add a power symbol (VCC, GND, etc.) to the schematic."""
         return await add_power_symbol(project_path, power_type, x_position, y_position, ctx)
 
     @mcp.tool(name="validate_schematic")
-    async def validate_schematic_tool(project_path: str, ctx: Context = None) -> dict[str, Any]:
+    async def validate_schematic_tool(
+        project_path: str, ctx: Context | None = None
+    ) -> dict[str, Any]:
         """Validate a KiCad schematic for common issues."""
         return await validate_schematic(project_path, ctx)

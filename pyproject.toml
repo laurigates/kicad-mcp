@@ -141,7 +141,6 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.ty]
-# Minimal baseline config — type errors will be addressed in a follow-up issue
 
 [tool.pytest.ini_options]
 minversion = "7.0"

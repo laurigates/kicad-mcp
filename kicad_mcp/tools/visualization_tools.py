@@ -119,13 +119,13 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             await ctx.info(f"Capturing schematic screenshot: {project_path}")
 
             # First export to SVG
-            svg_result = await export_schematic_svg(project_path, ctx)
+            svg_result = await export_schematic_svg(project_path, ctx)  # ty: ignore[call-non-callable]
             if not svg_result["success"]:
                 await ctx.info(f"SVG export failed: {svg_result['error']}")
                 return None
 
             # Then convert to PNG
-            png_result = await convert_svg_to_png(svg_result["svg_file"], ctx)
+            png_result = await convert_svg_to_png(svg_result["svg_file"], ctx)  # ty: ignore[call-non-callable]
             if not png_result["success"]:
                 await ctx.info(f"PNG conversion failed: {png_result['error']}")
                 return None
@@ -165,8 +165,8 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             await ctx.info(f"Creating visual comparison: {before_project} vs {after_project}")
 
             # Capture screenshots of both projects
-            before_image = await capture_schematic_screenshot(before_project, ctx)
-            after_image = await capture_schematic_screenshot(after_project, ctx)
+            before_image = await capture_schematic_screenshot(before_project, ctx)  # ty: ignore[call-non-callable]
+            after_image = await capture_schematic_screenshot(after_project, ctx)  # ty: ignore[call-non-callable]
 
             if not before_image or not after_image:
                 return {"success": False, "error": "Failed to capture one or both screenshots"}
@@ -286,7 +286,7 @@ async def convert_svg_to_png_file(svg_path: str, png_path: str, ctx: Context) ->
     try:
         # Try to import cairosvg
         try:
-            import cairosvg
+            import cairosvg  # ty: ignore[unresolved-import]
         except ImportError:
             return {
                 "success": False,
@@ -336,8 +336,8 @@ async def create_side_by_side_comparison(
     try:
         # Try to import PIL
         try:
-            from PIL import Image as PILImage
-            from PIL import ImageDraw, ImageFont
+            from PIL import Image as PILImage  # ty: ignore[unresolved-import]
+            from PIL import ImageDraw, ImageFont  # ty: ignore[unresolved-import]
         except ImportError:
             return {
                 "success": False,
@@ -347,8 +347,8 @@ async def create_side_by_side_comparison(
         await ctx.report_progress(25, 100)
 
         # Load images from bytes
-        before_pil = PILImage.open(io.BytesIO(before_image.data))
-        after_pil = PILImage.open(io.BytesIO(after_image.data))
+        before_pil = PILImage.open(io.BytesIO(before_image.data))  # ty: ignore[invalid-argument-type]
+        after_pil = PILImage.open(io.BytesIO(after_image.data))  # ty: ignore[invalid-argument-type]
 
         # Resize images to same height
         max_height = max(before_pil.height, after_pil.height)

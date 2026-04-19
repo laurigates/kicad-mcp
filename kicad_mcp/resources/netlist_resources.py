@@ -151,7 +151,7 @@ def register_netlist_resources(mcp: FastMCP) -> None:
             print(f"Found schematic file: {schematic_path}")
 
             # Get the netlist resource for this schematic
-            return get_netlist_resource(schematic_path)
+            return get_netlist_resource(schematic_path)  # ty: ignore[call-non-callable]
 
         except Exception as e:
             return f"# Netlist Extraction Error\n\nError: {str(e)}"

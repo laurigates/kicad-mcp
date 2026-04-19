@@ -343,7 +343,7 @@ def create_mock_schematic_screenshot(schematic_file: str, output_dir: str) -> st
 
     # Try to convert to PNG if cairosvg is available
     try:
-        import cairosvg
+        import cairosvg  # ty: ignore[unresolved-import]
 
         png_file = svg_file.replace(".svg", ".png")
 

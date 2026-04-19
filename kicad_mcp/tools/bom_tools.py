@@ -247,7 +247,11 @@ def parse_bom_file(file_path: str) -> tuple[list[dict[str, Any]], dict[str, Any]
     ext = ext.lower()
 
     # Dictionary to store format detection info
-    format_info = {"file_type": ext, "detected_format": "unknown", "header_fields": []}
+    format_info: dict[str, Any] = {
+        "file_type": ext,
+        "detected_format": "unknown",
+        "header_fields": [],
+    }
 
     # Empty list to store component data
     components = []
@@ -372,7 +376,7 @@ def analyze_bom_data(
     logger.debug("Analyzing %d components", len(components))
 
     # Initialize results
-    results = {
+    results: dict[str, Any] = {
         "unique_component_count": 0,
         "total_component_count": 0,
         "categories": {},

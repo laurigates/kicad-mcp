@@ -28,7 +28,7 @@ def register_project_tools(mcp: FastMCP) -> None:
     """
 
     @mcp.tool()
-    def list_projects(search_directories: list[str] = None) -> list[dict[str, Any]]:
+    def list_projects(search_directories: list[str] | None = None) -> list[dict[str, Any]]:
         """Find and list all KiCad projects on this system.
 
         Args:

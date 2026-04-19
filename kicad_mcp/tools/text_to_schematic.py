@@ -96,7 +96,7 @@ class TextToSchematicParser:
                 circuit_name = "Untitled Circuit"
                 circuit_data = data
             else:
-                circuit_key = list(data.keys())[0]  # First key is circuit name
+                circuit_key = str(list(data.keys())[0])  # First key is circuit name
                 if circuit_key.startswith('circuit "') and circuit_key.endswith('"'):
                     circuit_name = circuit_key[9:-1]  # Remove 'circuit "' and closing '"'
                 elif circuit_key.startswith("circuit "):
@@ -520,7 +520,10 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def create_circuit_from_text(
-        project_path: str, circuit_description: str, format_type: str = "yaml", ctx: Context = None
+        project_path: str,
+        circuit_description: str,
+        format_type: str = "yaml",
+        ctx: Context | None = None,
     ) -> dict[str, Any]:
         """Create a KiCad schematic from text description.
 
@@ -649,7 +652,7 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def validate_circuit_description(
-        circuit_description: str, format_type: str = "yaml", ctx: Context = None
+        circuit_description: str, format_type: str = "yaml", ctx: Context | None = None
     ) -> dict[str, Any]:
         """Validate a text-based circuit description without creating the schematic.
 
@@ -715,7 +718,7 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def get_circuit_template(
-        template_name: str = "led_blinker", ctx: Context = None
+        template_name: str = "led_blinker", ctx: Context | None = None
     ) -> dict[str, Any]:
         """Get a template circuit description for common circuits.
 
@@ -901,7 +904,7 @@ circuit "I2C Sensor Interface":
         circuit_description: str,
         format_type: str = "yaml",
         output_format: str = "sexpr",
-        ctx: Context = None,
+        ctx: Context | None = None,
     ) -> dict[str, Any]:
         """Create a native KiCad schematic file from text description.
 
@@ -1065,7 +1068,7 @@ circuit "I2C Sensor Interface":
 
             else:
                 # Use existing JSON-based approach
-                result = await create_circuit_from_text(
+                result = await create_circuit_from_text(  # ty: ignore[call-non-callable]
                     project_path=project_path,
                     circuit_description=circuit_description,
                     format_type=format_type,

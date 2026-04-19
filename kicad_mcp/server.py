@@ -376,7 +376,7 @@ async def main() -> None:
         _server_instance = server
 
         # Start the server
-        await server.run()
+        await server.run()  # ty: ignore[invalid-await]
 
     except KeyboardInterrupt:
         logger.info("Received keyboard interrupt, graceful shutdown initiated")

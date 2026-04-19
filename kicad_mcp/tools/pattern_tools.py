@@ -175,7 +175,7 @@ def register_pattern_tools(mcp: FastMCP) -> None:
             await ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
 
             # Identify patterns in the schematic
-            result = await identify_circuit_patterns(schematic_path, ctx)
+            result = await identify_circuit_patterns(schematic_path, ctx)  # ty: ignore[call-non-callable]
 
             # Add project path to result
             if "success" in result and result["success"]:
