@@ -20,36 +20,14 @@ from kicad_mcp.utils.version import KICAD_FILE_FORMAT_VERSION
 
 
 def _get_component_type_from_symbol(symbol_library: str, symbol_name: str) -> str:
-    """Determine component type from symbol library and name."""
-    library = symbol_library.lower()
-    name = symbol_name.lower()
+    """Determine component type from symbol library and name.
 
-    # Map symbol names to component types
-    if name in ["r", "resistor"]:
-        return "resistor"
-    elif name in ["c", "capacitor"]:
-        return "capacitor"
-    elif name in ["l", "inductor"]:
-        return "inductor"
-    elif name in ["led"]:
-        return "led"
-    elif name in ["d", "diode"]:
-        return "diode"
-    elif "transistor" in name or "npn" in name or "pnp" in name:
-        return "transistor"
-    elif library == "switch":
-        return "switch"
-    elif library == "connector":
-        return "connector"
-    elif (
-        "ic" in name
-        or "mcu" in name
-        or "esp32" in name
-        or library in ["mcu", "microcontroller", "mcu_espressif"]
-    ):
-        return "ic"
-    else:
-        return "default"
+    Thin wrapper around the canonical
+    :func:`kicad_mcp.utils.component_utils.get_component_type_from_symbol`.
+    """
+    from kicad_mcp.utils.component_utils import get_component_type_from_symbol
+
+    return get_component_type_from_symbol(symbol_library, symbol_name)
 
 
 async def create_new_project(

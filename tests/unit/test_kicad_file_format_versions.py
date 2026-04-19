@@ -9,8 +9,6 @@ from pathlib import Path
 import re
 from tempfile import TemporaryDirectory
 
-import pytest
-
 from kicad_mcp.tools.circuit_tools import create_new_project
 from kicad_mcp.utils.sexpr_handler import SExpressionHandler
 
@@ -49,8 +47,8 @@ class TestKiCadFileFormatVersions:
         month = int(version_date[4:6])
         day = int(version_date[6:8])
 
-        # Validate date ranges
-        assert 2024 <= year <= 2025, f"Year should be 2024-2025 for current KiCad, got: {year}"
+        # Validate date ranges (>= 2024 to remain valid for future KiCad versions)
+        assert year >= 2024, f"Year should be >= 2024 for current KiCad, got: {year}"
         assert 1 <= month <= 12, f"Month should be 1-12, got: {month}"
         assert 1 <= day <= 31, f"Day should be 1-31, got: {day}"
 
@@ -213,13 +211,16 @@ class TestVersionUpgradeValidation:
         """Test to identify test fixtures using outdated versions."""
         # This test helps identify files that need updating for Issue #2
         test_files_dir = Path(__file__).parent.parent.parent / "tests"
-        outdated_versions = ["20230121", "20220101", "20210101"]
+        # These version strings appear as string literals in this file for checking purposes,
+        # so we exclude the current file from the scan to avoid false positives.
+        current_file = Path(__file__).resolve()
+        outdated_versions = ["2023" + "0121", "2022" + "0101", "2021" + "0101"]
 
         files_with_old_versions = []
 
-        # Scan test files for outdated versions
+        # Scan test files for outdated versions, excluding self
         for test_file in test_files_dir.rglob("*.py"):
-            if test_file.name.startswith("test_"):
+            if test_file.name.startswith("test_") and test_file.resolve() != current_file:
                 try:
                     content = test_file.read_text()
                     for old_version in outdated_versions:
@@ -229,23 +230,20 @@ class TestVersionUpgradeValidation:
                     # Skip files that can't be read
                     continue
 
-        # This is informational - shows what needs to be updated
-        if files_with_old_versions:
-            file_list = "\n".join(
-                [f"  {file}: {version}" for file, version in files_with_old_versions]
-            )
-            pytest.skip(
-                f"Found test files with outdated versions (Issue #2):\n{file_list}\n"
-                f"These should be updated to use current versions (>= 20240101)"
-            )
+        file_list = "\n".join([f"  {file}: {version}" for file, version in files_with_old_versions])
+        assert len(files_with_old_versions) == 0, (
+            f"Found test files with outdated KiCad versions (Issue #2):\n{file_list}\n"
+            f"These should be updated to use current versions (>= 20240101)"
+        )
 
     def test_documentation_version_references(self):
         """Test to identify documentation with outdated version references."""
         docs_dir = Path(__file__).parent.parent.parent / "docs"
         if not docs_dir.exists():
-            pytest.skip("No docs directory found")
+            # No docs directory — nothing to check, test passes
+            return
 
-        outdated_versions = ["20230121", "20220101", "20210101"]
+        outdated_versions = ["2023" + "0121", "2022" + "0101", "2021" + "0101"]
         docs_with_old_versions = []
 
         for doc_file in docs_dir.rglob("*.md"):
@@ -257,11 +255,8 @@ class TestVersionUpgradeValidation:
             except Exception:
                 continue
 
-        if docs_with_old_versions:
-            file_list = "\n".join(
-                [f"  {file}: {version}" for file, version in docs_with_old_versions]
-            )
-            pytest.skip(
-                f"Found documentation with outdated versions (Issue #2):\n{file_list}\n"
-                f"These should be updated to use current versions (>= 20240101)"
-            )
+        file_list = "\n".join([f"  {file}: {version}" for file, version in docs_with_old_versions])
+        assert len(docs_with_old_versions) == 0, (
+            f"Found documentation with outdated KiCad versions (Issue #2):\n{file_list}\n"
+            f"These should be updated to use current versions (>= 20240101)"
+        )
