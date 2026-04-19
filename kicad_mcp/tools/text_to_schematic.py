@@ -75,8 +75,9 @@ class TextToSchematicParser:
         "connector": ("Connector", "Conn_01x02"),
     }
 
-    def __init__(self):
-        self.circuits = []
+    def __init__(self) -> None:
+        """Initialize the parser."""
+        self.circuits: list[Circuit] = []
 
     def parse_yaml_circuit(self, yaml_text: str) -> Circuit:
         """Parse a YAML-format circuit description.
@@ -511,7 +512,11 @@ class TextToSchematicParser:
 
 
 def register_text_to_schematic_tools(mcp: FastMCP) -> None:
-    """Register text-to-schematic tools with the MCP server."""
+    """Register text-to-schematic tools with the MCP server.
+
+    Args:
+        mcp: The FastMCP server instance.
+    """
 
     @mcp.tool()
     async def create_circuit_from_text(

@@ -184,8 +184,8 @@ class ComponentPinMapper:
         ],
     }
 
-    def __init__(self):
-        """Initialize the pin mapper."""
+    def __init__(self) -> None:
+        """Initialize the pin mapper with empty component and connection maps."""
         self.component_pins: dict[str, list[ComponentPin]] = {}
         self.pin_connections: dict[str, set[str]] = {}  # Track which pins are connected
 
@@ -230,11 +230,26 @@ class ComponentPinMapper:
         return component_pins
 
     def get_component_pins(self, component_ref: str) -> list[ComponentPin]:
-        """Get all pins for a component."""
+        """Get all pins for a component.
+
+        Args:
+            component_ref: Component reference designator.
+
+        Returns:
+            List of ComponentPin objects, empty if component not found.
+        """
         return self.component_pins.get(component_ref, [])
 
     def get_pin(self, component_ref: str, pin_number: str) -> ComponentPin | None:
-        """Get a specific pin from a component."""
+        """Get a specific pin from a component.
+
+        Args:
+            component_ref: Component reference designator.
+            pin_number: Pin number string.
+
+        Returns:
+            Matching ComponentPin or None if not found.
+        """
         pins = self.get_component_pins(component_ref)
         for pin in pins:
             if pin.pin_info.number == pin_number:
@@ -244,12 +259,28 @@ class ComponentPinMapper:
     def get_pin_connection_point(
         self, component_ref: str, pin_number: str
     ) -> tuple[float, float] | None:
-        """Get the connection point for a specific pin."""
+        """Get the wire connection point for a specific pin.
+
+        Args:
+            component_ref: Component reference designator.
+            pin_number: Pin number string.
+
+        Returns:
+            (x, y) tuple or None if pin not found.
+        """
         pin = self.get_pin(component_ref, pin_number)
         return pin.connection_point if pin else None
 
     def can_connect_pins(self, pin1: ComponentPin, pin2: ComponentPin) -> bool:
-        """Check if two pins can be electrically connected."""
+        """Check if two pins can be electrically connected.
+
+        Args:
+            pin1: First pin.
+            pin2: Second pin.
+
+        Returns:
+            True if a valid electrical connection is possible.
+        """
         # Power pins should connect to compatible pins
         if pin1.pin_info.pin_type == PinType.POWER:
             return pin2.pin_info.direction in [PinDirection.POWER_IN, PinDirection.PASSIVE]
@@ -322,7 +353,15 @@ class ComponentPinMapper:
         return True
 
     def get_connected_pins(self, component_ref: str, pin_number: str) -> list[str]:
-        """Get all pins connected to the specified pin."""
+        """Get all pins connected to the specified pin.
+
+        Args:
+            component_ref: Component reference designator.
+            pin_number: Pin number string.
+
+        Returns:
+            List of connected pin IDs in ``component.pin`` format.
+        """
         pin_id = f"{component_ref}.{pin_number}"
         return list(self.pin_connections.get(pin_id, set()))
 
@@ -453,7 +492,11 @@ class ComponentPinMapper:
         return routes
 
     def get_component_statistics(self) -> dict[str, int]:
-        """Get statistics about mapped components and pins."""
+        """Get statistics about mapped components and pins.
+
+        Returns:
+            Dict with ``total_components``, ``total_pins``, ``total_connections``.
+        """
         total_components = len(self.component_pins)
         total_pins = sum(len(pins) for pins in self.component_pins.values())
         total_connections = len(self.pin_connections)
@@ -464,7 +507,7 @@ class ComponentPinMapper:
             "total_connections": total_connections,
         }
 
-    def clear_mappings(self):
+    def clear_mappings(self) -> None:
         """Clear all component and pin mappings."""
         self.component_pins.clear()
         self.pin_connections.clear()
@@ -512,7 +555,7 @@ class ComponentPinMapper:
         return connections
 
     def _is_valid_connection_spec(self, conn: dict[str, Any]) -> bool:
-        """Validate a connection specification."""
+        """Validate a connection specification has required ``from`` and ``to`` fields."""
         required_fields = ["from", "to"]
         if not all(field in conn for field in required_fields):
             return False
@@ -532,7 +575,7 @@ class ComponentPinMapper:
     def _detect_power_connections(
         self, circuit_description: dict[str, Any]
     ) -> list[dict[str, str]]:
-        """Auto-detect power and ground connections."""
+        """Auto-detect power and ground connections from component types."""
         connections = []
 
         if "components" not in circuit_description:
@@ -600,7 +643,15 @@ class ComponentPinMapper:
         return connections
 
     def _get_power_pin(self, component_type: str, pin_type: str) -> str:
-        """Get the appropriate power pin for a component type."""
+        """Get the appropriate power pin number for a component type.
+
+        Args:
+            component_type: Component category (e.g., "ic", "battery").
+            pin_type: Pin role (e.g., "vcc", "gnd", "positive").
+
+        Returns:
+            Pin number string, or empty string if no mapping exists.
+        """
         power_pin_mappings = {
             "battery": {"positive": "1", "negative": "2"},
             "power_supply": {"positive": "1", "negative": "2"},
@@ -616,7 +667,10 @@ class ComponentPinMapper:
     def _detect_signal_connections(
         self, circuit_description: dict[str, Any]
     ) -> list[dict[str, str]]:
-        """Auto-detect signal chain connections based on component arrangement."""
+        """Auto-detect signal chain connections based on component arrangement.
+
+        Recognizes LED circuits and amplifier input/output chains.
+        """
         connections = []
 
         if "components" not in circuit_description:

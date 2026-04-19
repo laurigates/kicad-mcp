@@ -1,5 +1,6 @@
-"""
-Design Rule Check (DRC) tools for KiCad PCB files.
+"""Design Rule Check (DRC) tools for KiCad PCB files.
+
+Registers MCP tools for running DRC checks and viewing DRC history.
 """
 
 import os

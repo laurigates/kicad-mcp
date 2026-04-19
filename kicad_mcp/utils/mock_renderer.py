@@ -11,8 +11,8 @@ from typing import Any
 class MockSchematicRenderer:
     """Simple SVG renderer for KiCad schematics when CLI is not available."""
 
-    def __init__(self):
-        """Initialize the mock renderer."""
+    def __init__(self) -> None:
+        """Initialize the mock renderer with default canvas dimensions."""
         self.canvas_width = 800
         self.canvas_height = 600
         self.grid_size = 20
@@ -79,7 +79,15 @@ class MockSchematicRenderer:
         }
 
     def _get_component_type(self, lib_id: str, reference: str) -> str:
-        """Determine component type from library ID and reference."""
+        """Determine component type from library ID and reference.
+
+        Args:
+            lib_id: KiCad library identifier.
+            reference: Component reference designator.
+
+        Returns:
+            Component type string (e.g., "resistor", "capacitor").
+        """
         lib_id_lower = lib_id.lower()
         reference.lower()
 
@@ -183,7 +191,14 @@ class MockSchematicRenderer:
     def _render_component(
         self, svg_content: str, component: dict[str, Any], x: float, y: float
     ) -> None:
-        """Add component to SVG content."""
+        """Add component shape and labels to SVG content.
+
+        Args:
+            svg_content: SVG string being built (mutated in place via concatenation).
+            component: Parsed component dictionary.
+            x: Transformed X coordinate.
+            y: Transformed Y coordinate.
+        """
         comp_type = component["type"]
         reference = component["reference"]
         value = component["value"]
@@ -243,7 +258,14 @@ class MockSchematicRenderer:
     def _render_power_symbol(
         self, svg_content: str, power: dict[str, Any], x: float, y: float
     ) -> None:
-        """Add power symbol to SVG content."""
+        """Add power symbol shape to SVG content.
+
+        Args:
+            svg_content: SVG string being built.
+            power: Parsed power symbol dictionary.
+            x: Transformed X coordinate.
+            y: Transformed Y coordinate.
+        """
         value = power["value"]
         power["reference"]
 
@@ -299,7 +321,7 @@ class MockSchematicRenderer:
             return False
 
 
-def create_mock_schematic_screenshot(schematic_file: str, output_dir: str) -> str:
+def create_mock_schematic_screenshot(schematic_file: str, output_dir: str) -> str | None:
     """Create a mock screenshot of a schematic using the mock renderer.
 
     Args:

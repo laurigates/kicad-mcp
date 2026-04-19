@@ -1,14 +1,6 @@
-"""
-Analysis and validation tools for KiCad projects.
+"""Analysis and validation tools for KiCad projects.
 
-This module provides utility functions that can be registered with the FastMCP
-server to analyze and validate the structure and contents of KiCad projects.
-
-Functions:
-    - register_analysis_tools: Registers analysis functions like project validation.
-
-Usage:
-    This module is intended to be used by the MCP server via tool registration.
+Registers MCP tools for validating project structure and file integrity.
 """
 
 import os
@@ -51,11 +43,6 @@ def register_analysis_tools(mcp: FastMCP) -> None:
                 - issues (list[str] | None): List of issues found, or None if valid.
                 - files_found (list[str]): Keys of detected project files.
 
-        Raises:
-            This function handles exceptions internally and does not raise errors.
-
-        Time Complexity:
-            O(n) where n is the number of files in the project directory.
         """
         if not os.path.exists(project_path):
             return {"valid": False, "error": f"Project not found: {project_path}"}

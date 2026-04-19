@@ -12,11 +12,11 @@ from typing import Any
 class VisualTestUtils:
     """Utilities for visual testing and screenshot management."""
 
-    def __init__(self, output_dir: str = "tests/visual_output"):
+    def __init__(self, output_dir: str = "tests/visual_output") -> None:
         """Initialize visual test utilities.
 
         Args:
-            output_dir: Directory to store visual test outputs
+            output_dir: Directory to store visual test outputs.
         """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)

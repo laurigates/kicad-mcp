@@ -1,5 +1,6 @@
-"""
-Design Rule Check (DRC) implementation using KiCad command-line interface.
+"""Design Rule Check (DRC) implementation using KiCad command-line interface.
+
+Runs ``kicad-cli pcb drc`` and parses the JSON report.
 """
 
 import json

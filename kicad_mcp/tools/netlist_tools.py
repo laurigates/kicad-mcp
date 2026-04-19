@@ -1,5 +1,7 @@
-"""
-Netlist extraction and analysis tools for KiCad schematics.
+"""Netlist extraction and analysis tools for KiCad schematics.
+
+Registers MCP tools for extracting netlists, analyzing connections, and
+finding component connectivity.
 """
 
 import logging

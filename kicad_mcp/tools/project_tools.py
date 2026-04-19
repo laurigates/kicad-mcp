@@ -1,5 +1,6 @@
-"""
-Project management tools for KiCad.
+"""Project management tools for KiCad.
+
+Registers MCP tools for listing, inspecting, and opening KiCad projects.
 """
 
 import logging

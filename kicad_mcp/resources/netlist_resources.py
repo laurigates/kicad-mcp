@@ -1,5 +1,7 @@
-"""
-Netlist resources for KiCad schematics.
+"""Netlist resources for KiCad schematics.
+
+Registers ``kicad://netlist/`` and ``kicad://component/`` resources for
+netlist reports and individual component connection details.
 """
 
 import os

@@ -1,5 +1,6 @@
-"""
-BOM-related prompt templates for KiCad.
+"""BOM-related prompt templates for KiCad.
+
+Provides prompts for component analysis, cost estimation, BOM export, and sourcing.
 """
 
 from fastmcp import FastMCP

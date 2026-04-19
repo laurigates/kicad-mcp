@@ -1,5 +1,7 @@
-"""
-Prompt templates for circuit creation in KiCad.
+"""Prompt templates for circuit creation in KiCad.
+
+Provides guided prompts for LED circuits, power supplies, microcontrollers,
+amplifiers, filters, sensor interfaces, and troubleshooting.
 """
 
 from fastmcp import FastMCP

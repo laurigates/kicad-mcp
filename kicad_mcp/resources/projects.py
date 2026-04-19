@@ -1,5 +1,6 @@
-"""
-Project listing and information resources.
+"""Project listing and information resources.
+
+Registers ``kicad://project/`` resources for project details and file listings.
 """
 
 import os

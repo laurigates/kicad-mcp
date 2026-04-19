@@ -1,5 +1,6 @@
-"""
-Bill of Materials (BOM) resources for KiCad projects.
+"""Bill of Materials (BOM) resources for KiCad projects.
+
+Registers ``kicad://bom/`` resources that return Markdown, CSV, and JSON BOM reports.
 """
 
 import json

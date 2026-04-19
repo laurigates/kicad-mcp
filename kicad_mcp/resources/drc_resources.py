@@ -1,5 +1,6 @@
-"""
-Design Rule Check (DRC) resources for KiCad PCB files.
+"""Design Rule Check (DRC) resources for KiCad PCB files.
+
+Registers ``kicad://drc/`` resources for DRC reports and history.
 """
 
 import os

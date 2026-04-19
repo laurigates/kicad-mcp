@@ -1,5 +1,7 @@
-"""
-Circuit pattern recognition resources for KiCad schematics.
+"""Circuit pattern recognition resources for KiCad schematics.
+
+Registers ``kicad://patterns/`` resources that return Markdown reports
+of identified circuit blocks.
 """
 
 import os

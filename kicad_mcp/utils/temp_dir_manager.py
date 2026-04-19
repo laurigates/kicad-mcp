@@ -1,5 +1,6 @@
-"""
-Utility for managing temporary directories.
+"""Utility for managing temporary directories.
+
+Tracks temporary directories created during MCP operations for cleanup on shutdown.
 """
 
 # List of temporary directories to clean up

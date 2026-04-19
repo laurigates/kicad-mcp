@@ -1,5 +1,7 @@
-"""
-Circuit pattern recognition tools for KiCad schematics.
+"""Circuit pattern recognition tools for KiCad schematics.
+
+Registers MCP tools that identify common circuit blocks (power supplies,
+amplifiers, filters, etc.) in schematics.
 """
 
 import os

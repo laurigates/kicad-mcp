@@ -1,5 +1,6 @@
-"""
-File content resources for KiCad files.
+"""File content resources for KiCad files.
+
+Registers ``kicad://schematic/`` resources that return schematic component summaries.
 """
 
 import os

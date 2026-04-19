@@ -1,5 +1,6 @@
-"""
-Export tools for KiCad projects.
+"""Export tools for KiCad projects.
+
+Registers MCP tools for generating PCB thumbnails via ``kicad-cli pcb export svg``.
 """
 
 import asyncio
