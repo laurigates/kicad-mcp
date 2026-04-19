@@ -1,6 +1,6 @@
 (kicad_sch
-  (version 20230121)
-  (generator eeschema)
+  (version 20241201)
+  (generator "kicad-mcp")
   (uuid "12345678-1234-1234-1234-123456789abc")
   (paper "A4")
 

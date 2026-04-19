@@ -27,11 +27,8 @@ class ValidationConfig(BaseModel):
     format: str = Field(None, description="Expected file format")
 
 
-class TestConfig(BaseModel):
+class ConfigHelper(BaseModel):
     """Complete test configuration."""
-
-    # Prevent pytest from collecting this Pydantic model as a test class
-    __test__ = False
 
     test_name: str = Field(..., description="Unique name for the test")
     description: str = Field(..., description="Human-readable test description")
@@ -45,17 +42,14 @@ class TestConfig(BaseModel):
     skip_cleanup: bool = Field(default=False, description="Skip cleanup for debugging")
 
 
-class TestConfigLoader:
+class ConfigLoaderHelper:
     """Loads and validates test configurations from JSON files."""
-
-    # Prevent pytest from collecting this helper class as a test class
-    __test__ = False
 
     def __init__(self):
         """Initialize test config loader."""
-        self.loaded_configs: dict[str, TestConfig] = {}
+        self.loaded_configs: dict[str, ConfigHelper] = {}
 
-    def load_config_file(self, config_path: str | Path) -> TestConfig:
+    def load_config_file(self, config_path: str | Path) -> ConfigHelper:
         """Load test configuration from JSON file.
 
         Args:
@@ -83,13 +77,13 @@ class TestConfigLoader:
             ) from e
 
         try:
-            config = TestConfig(**config_data)
+            config = ConfigHelper(**config_data)
             self.loaded_configs[config.test_name] = config
             return config
         except ValidationError as e:
             raise ValidationError(f"Invalid configuration in {config_path}: {e}") from e
 
-    def load_config_directory(self, config_dir: str | Path) -> dict[str, TestConfig]:
+    def load_config_directory(self, config_dir: str | Path) -> dict[str, ConfigHelper]:
         """Load all test configurations from a directory.
 
         Args:
@@ -116,7 +110,7 @@ class TestConfigLoader:
 
         return configs
 
-    def validate_config(self, config: TestConfig) -> list[str]:
+    def validate_config(self, config: ConfigHelper) -> list[str]:
         """Validate a test configuration for common issues.
 
         Args:
@@ -151,7 +145,7 @@ class TestConfigLoader:
 
         return issues
 
-    def get_config(self, test_name: str) -> TestConfig | None:
+    def get_config(self, test_name: str) -> ConfigHelper | None:
         """Get a loaded configuration by name.
 
         Args:
