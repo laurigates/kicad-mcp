@@ -53,15 +53,15 @@ class SchematicParser:
     def _load_schematic(self) -> None:
         """Load the schematic file content."""
         if not os.path.exists(self.schematic_path):
-            print(f"Schematic file not found: {self.schematic_path}")
+            logger.error("Schematic file not found: %s", self.schematic_path)
             raise FileNotFoundError(f"Schematic file not found: {self.schematic_path}")
 
         try:
             with open(self.schematic_path) as f:
                 self.content = f.read()
-                print(f"Successfully loaded schematic: {self.schematic_path}")
+                logger.debug("Successfully loaded schematic: %s", self.schematic_path)
         except Exception as e:
-            print(f"Error reading schematic file: {str(e)}")
+            logger.error("Error reading schematic file: %s", e)
             raise
 
     def parse(self) -> dict[str, Any]:
@@ -70,7 +70,7 @@ class SchematicParser:
         Returns:
             Dictionary with parsed netlist information
         """
-        print("Starting schematic parsing")
+        logger.info("Starting schematic parsing")
 
         # Extract symbols (components)
         self._extract_components()
@@ -110,8 +110,10 @@ class SchematicParser:
             "net_count": len(self.nets),
         }
 
-        print(
-            f"Schematic parsing complete: found {len(self.component_info)} components and {len(self.nets)} nets"
+        logger.info(
+            "Schematic parsing complete: found %d components and %d nets",
+            len(self.component_info),
+            len(self.nets),
         )
         return result
 
@@ -159,7 +161,7 @@ class SchematicParser:
 
     def _extract_components(self) -> None:
         """Extract component information from schematic."""
-        print("Extracting components")
+        logger.debug("Extracting components")
 
         # Extract all symbol expressions (components)
         symbols = self._extract_s_expressions(r"\(symbol\s+")
@@ -176,7 +178,7 @@ class SchematicParser:
                 ref = component.get("reference", "Unknown")
                 self.component_info[ref] = component
 
-        print(f"Extracted {len(self.components)} components")
+        logger.debug("Extracted %d components", len(self.components))
 
     def _parse_component(self, symbol_expr: str) -> dict[str, Any]:
         """Parse a component from a symbol S-expression.
@@ -231,7 +233,9 @@ class SchematicParser:
 
             return component
         except Exception as e:
-            print(f"Failed to parse component expression: {e}\nExpression:\n{symbol_expr}")
+            logger.warning(
+                "Failed to parse component expression: %s\nExpression:\n%s", e, symbol_expr
+            )
             return {}
 
     def _extract_wires(self, content: str) -> list[dict[str, Any]]:
@@ -321,7 +325,7 @@ class SchematicParser:
 
     def _extract_power_symbols(self) -> None:
         """Extract power symbol information from schematic."""
-        print("Extracting power symbols")
+        logger.debug("Extracting power symbols")
 
         # Extract all power symbol expressions
         power_symbols = self._extract_s_expressions(r'\(symbol\s+\(lib_id\s+"power:')
@@ -343,11 +347,11 @@ class SchematicParser:
                     }
                 )
 
-        print(f"Extracted {len(self.power_symbols)} power symbols")
+        logger.debug("Extracted %d power symbols", len(self.power_symbols))
 
     def _extract_no_connects(self) -> None:
         """Extract no-connect information from schematic."""
-        print("Extracting no-connects")
+        logger.debug("Extracting no-connects")
 
         # Extract all no-connect expressions
         no_connects = self._extract_s_expressions(r"\(no_connect\s+")
@@ -360,7 +364,7 @@ class SchematicParser:
                     {"x": float(xy_match.group(1)), "y": float(xy_match.group(2))}
                 )
 
-        print(f"Extracted {len(self.no_connects)} no-connects")
+        logger.debug("Extracted %d no-connects", len(self.no_connects))
 
     def _extract_lib_symbol_pins(self) -> None:
         """Extract pin positions from the lib_symbols section of the schematic.
@@ -575,7 +579,7 @@ def extract_netlist(schematic_path: str) -> dict[str, Any]:
                 or "symbol" in json_data
                 or ("version" in json_data and not content.startswith("("))
             ):
-                print(f"Detected JSON format schematic: {schematic_path}")
+                logger.debug("Detected JSON format schematic: %s", schematic_path)
                 return parse_json_schematic(json_data)
         except json.JSONDecodeError:
             # If it's not JSON, it should be an S-expression
@@ -589,11 +593,11 @@ def extract_netlist(schematic_path: str) -> dict[str, Any]:
                 }
 
         # Fall back to S-expression parser
-        print(f"Using S-expression parser for: {schematic_path}")
+        logger.info("Using S-expression parser for: %s", schematic_path)
         parser = SchematicParser(schematic_path)
         return parser.parse()
     except Exception as e:
-        print(f"Error extracting netlist: {str(e)}")
+        logger.error("Error extracting netlist: %s", e)
         return {"error": str(e), "components": {}, "nets": {}, "component_count": 0, "net_count": 0}
 
 
