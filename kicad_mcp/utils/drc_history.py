@@ -6,10 +6,13 @@ This will allow users to compare DRC results over time.
 
 from datetime import datetime
 import json
+import logging
 import os
 import platform
 import time
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # Directory for storing DRC history
 if platform.system() == "Windows":
@@ -72,7 +75,7 @@ def save_drc_result(project_path: str, drc_result: dict[str, Any]) -> None:
             with open(history_path) as f:
                 history = json.load(f)
         except (OSError, json.JSONDecodeError) as e:
-            print(f"Error loading DRC history: {str(e)}")
+            logger.error("Error loading DRC history: %s", e)
 
     # Add new entry and save
     history["entries"].append(history_entry)
@@ -86,9 +89,9 @@ def save_drc_result(project_path: str, drc_result: dict[str, Any]) -> None:
     try:
         with open(history_path, "w") as f:
             json.dump(history, f, indent=2)
-        print(f"Saved DRC history entry to {history_path}")
+        logger.info("Saved DRC history entry to %s", history_path)
     except OSError as e:
-        print(f"Error saving DRC history: {str(e)}")
+        logger.error("Error saving DRC history: %s", e)
 
 
 def get_drc_history(project_path: str) -> list[dict[str, Any]]:
@@ -103,7 +106,7 @@ def get_drc_history(project_path: str) -> list[dict[str, Any]]:
     history_path = get_project_history_path(project_path)
 
     if not os.path.exists(history_path):
-        print(f"No DRC history found for {project_path}")
+        logger.debug("No DRC history found for %s", project_path)
         return []
 
     try:
@@ -117,7 +120,7 @@ def get_drc_history(project_path: str) -> list[dict[str, Any]]:
 
         return entries
     except (OSError, json.JSONDecodeError) as e:
-        print(f"Error reading DRC history: {str(e)}")
+        logger.error("Error reading DRC history: %s", e)
         return []
 
 

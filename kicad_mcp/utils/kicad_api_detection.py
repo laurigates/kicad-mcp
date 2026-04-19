@@ -3,11 +3,14 @@
 Checks for a working ``kicad-cli`` binary in PATH or common install locations.
 """
 
+import logging
 import os
 import shutil
 
 from kicad_mcp.config import system
 from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, get_subprocess_runner
+
+logger = logging.getLogger(__name__)
 
 
 def check_for_cli_api() -> bool:
@@ -34,7 +37,7 @@ def check_for_cli_api() -> bool:
                     allowed_commands=[kicad_cli],
                 )
                 if result.returncode == 0:
-                    print(f"Found working kicad-cli: {kicad_cli}")
+                    logger.info("Found working kicad-cli: %s", kicad_cli)
                     return True
             except SecureSubprocessError:
                 pass
@@ -63,12 +66,12 @@ def check_for_cli_api() -> bool:
         # Check each potential path
         for path in potential_paths:
             if os.path.exists(path) and os.access(path, os.X_OK):
-                print(f"Found kicad-cli at common location: {path}")
+                logger.info("Found kicad-cli at common location: %s", path)
                 return True
 
-        print("KiCad CLI API is not available")
+        logger.info("KiCad CLI API is not available")
         return False
 
     except Exception as e:
-        print(f"Error checking for KiCad CLI API: {str(e)}")
+        logger.error("Error checking for KiCad CLI API: %s", e)
         return False

@@ -3,9 +3,12 @@ Mock schematic renderer for development and testing when KiCad CLI is not availa
 Creates simple SVG representations of schematics for visualization testing.
 """
 
+import logging
 import os
 import re
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class MockSchematicRenderer:
@@ -317,7 +320,7 @@ class MockSchematicRenderer:
             return True
 
         except Exception as e:
-            print(f"Error rendering schematic: {e}")
+            logger.error("Error rendering schematic: %s", e)
             return False
 
 
@@ -368,13 +371,13 @@ if __name__ == "__main__":
     output_dir = "tests/visual_output"
 
     if os.path.exists(schematic_file):
-        print(f"🔧 Testing mock renderer with: {schematic_file}")
+        logger.info("Testing mock renderer with: %s", schematic_file)
 
         screenshot = create_mock_schematic_screenshot(schematic_file, output_dir)
         if screenshot:
-            print(f"✅ Mock screenshot created: {screenshot}")
+            logger.info("Mock screenshot created: %s", screenshot)
         else:
-            print("❌ Mock screenshot failed")
+            logger.error("Mock screenshot failed")
     else:
-        print(f"⚠️  Test schematic not found: {schematic_file}")
-        print("Run test_visualization_standalone.py first to create it")
+        logger.warning("Test schematic not found: %s", schematic_file)
+        logger.info("Run test_visualization_standalone.py first to create it")

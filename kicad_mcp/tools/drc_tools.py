@@ -3,6 +3,7 @@
 Registers MCP tools for running DRC checks and viewing DRC history.
 """
 
+import logging
 import os
 from typing import Any
 
@@ -12,6 +13,8 @@ from fastmcp import Context, FastMCP
 from kicad_mcp.tools.drc_impl.cli_drc import run_drc_via_cli
 from kicad_mcp.utils.drc_history import compare_with_previous, get_drc_history, save_drc_result
 from kicad_mcp.utils.file_utils import get_project_files
+
+logger = logging.getLogger(__name__)
 
 
 def register_drc_tools(mcp: FastMCP) -> None:
@@ -31,10 +34,10 @@ def register_drc_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with DRC history entries
         """
-        print(f"Getting DRC history for project: {project_path}")
+        logger.info("Getting DRC history for project: %s", project_path)
 
         if not os.path.exists(project_path):
-            print(f"Project not found: {project_path}")
+            logger.warning("Project not found: %s", project_path)
             return {"success": False, "error": f"Project not found: {project_path}"}
 
         # Get history entries
@@ -75,20 +78,20 @@ def register_drc_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with DRC results and statistics
         """
-        print(f"Running DRC check for project: {project_path}")
+        logger.info("Running DRC check for project: %s", project_path)
 
         if not os.path.exists(project_path):
-            print(f"Project not found: {project_path}")
+            logger.warning("Project not found: %s", project_path)
             return {"success": False, "error": f"Project not found: {project_path}"}
 
         # Get PCB file from project
         files = get_project_files(project_path)
         if "pcb" not in files:
-            print("PCB file not found in project")
+            logger.warning("PCB file not found in project")
             return {"success": False, "error": "PCB file not found in project"}
 
         pcb_file = files["pcb"]
-        print(f"Found PCB file: {pcb_file}")
+        logger.debug("Found PCB file: %s", pcb_file)
 
         # Report progress to user
         await ctx.report_progress(10, 100)
@@ -97,7 +100,7 @@ def register_drc_tools(mcp: FastMCP) -> None:
         # Run DRC using the appropriate approach
         drc_results = None
 
-        print("Using kicad-cli for DRC")
+        logger.debug("Using kicad-cli for DRC")
         await ctx.info("Using KiCad CLI for DRC check...")
         drc_results = await run_drc_via_cli(pcb_file, ctx)
 
