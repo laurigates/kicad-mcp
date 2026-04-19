@@ -89,7 +89,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             return result
 
         except Exception as e:
-            logger.error("Error extracting netlist: %s", e)
+            logger.error("Error extracting netlist: %s", e, exc_info=True)
             await ctx.info(f"Error extracting netlist: {str(e)}")
             return {"success": False, "error": str(e)}
 
@@ -143,7 +143,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             return result
 
         except Exception as e:
-            logger.error("Error extracting project netlist: %s", e)
+            logger.error("Error extracting project netlist: %s", e, exc_info=True)
             await ctx.info(f"Error extracting project netlist: {str(e)}")
             return {"success": False, "error": str(e)}
 
@@ -253,7 +253,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             return result
 
         except Exception as e:
-            logger.error("Error analyzing connections: %s", e)
+            logger.error("Error analyzing connections: %s", e, exc_info=True)
             await ctx.info(f"Error analyzing connections: {str(e)}")
             return {"success": False, "error": str(e)}
 

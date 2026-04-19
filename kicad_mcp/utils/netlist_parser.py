@@ -61,7 +61,7 @@ class SchematicParser:
                 self.content = f.read()
                 logger.debug("Successfully loaded schematic: %s", self.schematic_path)
         except Exception as e:
-            logger.error("Error reading schematic file: %s", e)
+            logger.error("Error reading schematic file: %s", e, exc_info=True)
             raise
 
     def parse(self) -> dict[str, Any]:
@@ -597,7 +597,7 @@ def extract_netlist(schematic_path: str) -> dict[str, Any]:
         parser = SchematicParser(schematic_path)
         return parser.parse()
     except Exception as e:
-        logger.error("Error extracting netlist: %s", e)
+        logger.error("Error extracting netlist: %s", e, exc_info=True)
         return {"error": str(e), "components": {}, "nets": {}, "component_count": 0, "net_count": 0}
 
 

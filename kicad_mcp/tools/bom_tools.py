@@ -258,7 +258,7 @@ def parse_bom_file(file_path: str) -> tuple[list[dict[str, Any]], dict[str, Any]
             - List of component dictionaries
             - Dictionary with format information
     """
-    logger.info("Parsing BOM file: %s", file_path)
+    logger.debug("Parsing BOM file: %s", file_path)
 
     # Check file extension
     _, ext = os.path.splitext(file_path)
@@ -366,7 +366,7 @@ def parse_bom_file(file_path: str) -> tuple[list[dict[str, Any]], dict[str, Any]
     if not components:
         logger.warning("No components found in BOM file: %s", file_path)
     else:
-        logger.info("Successfully parsed %d components from %s", len(components), file_path)
+        logger.debug("Successfully parsed %d components from %s", len(components), file_path)
 
         # Add a sample of the fields found
         if components:
