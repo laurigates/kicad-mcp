@@ -340,6 +340,178 @@ def normalize_component_value(value: str, component_type: str) -> str:
     return value
 
 
+def get_component_type(lib_id: str, reference: str | None = None) -> str:
+    """Determine the component type from a KiCad library ID and optional reference.
+
+    This is the canonical entry point for component-type detection.  It inspects
+    the ``lib_id`` (e.g. ``"Device:R"``, ``"power:GND"``, ``"Connector:Conn_01x02"``)
+    and falls back to the reference designator prefix when the lib_id alone is
+    insufficient.
+
+    Returned values are stable, lower-case strings from the set:
+    ``"resistor"``, ``"capacitor"``, ``"inductor"``, ``"led"``, ``"diode"``,
+    ``"transistor"``, ``"ic"``, ``"connector"``, ``"switch"``, ``"power"``,
+    ``"unknown"``.
+
+    Args:
+        lib_id:
+            The KiCad library identifier string (e.g. ``"Device:R"``,
+            ``"power:VCC"``).  May be empty.
+        reference:
+            Optional reference designator (e.g. ``"R1"``, ``"U3"``).  Used as a
+            secondary signal when the lib_id doesn't clearly indicate a type.
+
+    Returns:
+        A lower-case component-type string, or ``"unknown"`` when the type
+        cannot be determined.
+
+    Examples:
+        >>> get_component_type("Device:R")
+        'resistor'
+        >>> get_component_type("Device:C")
+        'capacitor'
+        >>> get_component_type("power:GND")
+        'power'
+        >>> get_component_type("", "R1")
+        'resistor'
+    """
+    lib_id_lower = lib_id.lower()
+
+    # ---- lib_id-based detection (most reliable) ----------------------------
+    # Connector check first – "C" in connector would otherwise match capacitor
+    if "connector" in lib_id_lower:
+        return "connector"
+
+    if "led" in lib_id_lower:
+        return "led"
+
+    # Resistor: ends with ":r", contains ":r_", or spells "resistor"
+    if "resistor" in lib_id_lower or lib_id_lower.endswith(":r") or ":r_" in lib_id_lower:
+        return "resistor"
+
+    # Capacitor: ends with ":c", contains ":c_", or spells "capacitor"
+    # Guard against ":c" matching "connector" (already handled above)
+    if (
+        "capacitor" in lib_id_lower
+        or (lib_id_lower.endswith(":c") and "connector" not in lib_id_lower)
+        or (":c_" in lib_id_lower and "connector" not in lib_id_lower)
+    ):
+        return "capacitor"
+
+    # Inductor: ends with ":l", contains ":l_", or spells "inductor"
+    # Guard against ":l" matching "led" (already handled above)
+    if (
+        "inductor" in lib_id_lower
+        or (lib_id_lower.endswith(":l") and "led" not in lib_id_lower)
+        or (":l_" in lib_id_lower and "led" not in lib_id_lower)
+    ):
+        return "inductor"
+
+    # Diode
+    if "diode" in lib_id_lower or lib_id_lower.endswith(":d") or ":d_" in lib_id_lower:
+        return "diode"
+
+    # Transistor
+    if "transistor" in lib_id_lower or "npn" in lib_id_lower or "pnp" in lib_id_lower:
+        return "transistor"
+
+    # Power symbols
+    if "power:" in lib_id_lower:
+        return "power"
+
+    # Switches
+    if "switch" in lib_id_lower:
+        return "switch"
+
+    # ICs / MCUs
+    if "mcu" in lib_id_lower or "ic" in lib_id_lower or ":u" in lib_id_lower:
+        return "ic"
+
+    # ---- reference-designator fallback -------------------------------------
+    if reference:
+        ref_prefix = get_component_type_from_reference(reference).upper()
+        _REF_TO_TYPE: dict[str, str] = {
+            "R": "resistor",
+            "C": "capacitor",
+            "L": "inductor",
+            "LED": "led",
+            "D": "diode",
+            "Q": "transistor",
+            "U": "ic",
+            "IC": "ic",
+            "J": "connector",
+            "P": "connector",
+            "CN": "connector",
+            "SW": "switch",
+            "S": "switch",
+            "PS": "power",
+            "VR": "power",
+            "REG": "power",
+        }
+        # Try exact match then prefix match
+        if ref_prefix in _REF_TO_TYPE:
+            return _REF_TO_TYPE[ref_prefix]
+        for key, ctype in _REF_TO_TYPE.items():
+            if ref_prefix.startswith(key):
+                return ctype
+
+    return "unknown"
+
+
+def get_component_type_from_symbol(symbol_library: str, symbol_name: str) -> str:
+    """Determine component type from a symbol library name and symbol name.
+
+    This is a convenience wrapper around :func:`get_component_type` for callers
+    that have a split ``library:name`` pair rather than a combined ``lib_id``.
+
+    Args:
+        symbol_library: The library part (e.g. ``"Device"``, ``"Switch"``).
+        symbol_name:    The symbol name within that library (e.g. ``"R"``, ``"LED"``).
+
+    Returns:
+        A lower-case component-type string (see :func:`get_component_type`).
+
+    Examples:
+        >>> get_component_type_from_symbol("Device", "R")
+        'resistor'
+        >>> get_component_type_from_symbol("Switch", "SW_Push")
+        'switch'
+    """
+    lib_id = f"{symbol_library}:{symbol_name}"
+    # Additionally check raw symbol_name for common single-letter names that
+    # won't be caught by lib_id alone (e.g. library="Custom", name="R").
+    name_lower = symbol_name.lower()
+    _NAME_TO_TYPE: dict[str, str] = {
+        "r": "resistor",
+        "resistor": "resistor",
+        "c": "capacitor",
+        "capacitor": "capacitor",
+        "l": "inductor",
+        "inductor": "inductor",
+        "led": "led",
+        "d": "diode",
+        "diode": "diode",
+    }
+    if name_lower in _NAME_TO_TYPE:
+        return _NAME_TO_TYPE[name_lower]
+    if "transistor" in name_lower or "npn" in name_lower or "pnp" in name_lower:
+        return "transistor"
+    if "ic" in name_lower or "mcu" in name_lower or "esp32" in name_lower:
+        return "ic"
+
+    lib_lower = symbol_library.lower()
+    if lib_lower == "switch":
+        return "switch"
+    if lib_lower == "connector":
+        return "connector"
+    if lib_lower in ("mcu", "microcontroller", "mcu_espressif"):
+        return "ic"
+
+    # Fall through to the general lib_id-based detector
+    result = get_component_type(lib_id)
+    return result if result != "unknown" else "default"
+
+
 def get_component_type_from_reference(reference: str) -> str:
     """Determines the component type letter(s) from its reference designator.
 

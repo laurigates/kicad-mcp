@@ -12,6 +12,7 @@ from typing import Any
 from fastmcp import Context, FastMCP
 
 from kicad_mcp.utils.boundary_validator import BoundaryValidator
+from kicad_mcp.utils.component_utils import get_component_type
 from kicad_mcp.utils.file_utils import get_project_files
 
 
@@ -250,39 +251,14 @@ def _extract_components_from_json(schematic_data: dict[str, Any]) -> list[dict[s
 
 
 def _get_component_type_from_lib_id(lib_id: str) -> str:
-    """Determine component type from library ID."""
-    lib_id_lower = lib_id.lower()
+    """Determine component type from library ID.
 
-    if "connector" in lib_id_lower:
-        return "connector"
-    elif "led" in lib_id_lower:
-        return "led"
-    elif "resistor" in lib_id_lower or lib_id_lower.endswith(":r") or ":r_" in lib_id_lower:
-        return "resistor"
-    elif (
-        "capacitor" in lib_id_lower
-        or (lib_id_lower.endswith(":c") and "connector" not in lib_id_lower)
-        or (":c_" in lib_id_lower and "connector" not in lib_id_lower)
-    ):
-        return "capacitor"
-    elif (
-        "inductor" in lib_id_lower
-        or (lib_id_lower.endswith(":l") and "led" not in lib_id_lower)
-        or (":l_" in lib_id_lower and "led" not in lib_id_lower)
-    ):
-        return "inductor"
-    elif "diode" in lib_id_lower or lib_id_lower.endswith(":d") or ":d_" in lib_id_lower:
-        return "diode"
-    elif "transistor" in lib_id_lower or "npn" in lib_id_lower or "pnp" in lib_id_lower:
-        return "transistor"
-    elif "power:" in lib_id_lower:
-        return "power"
-    elif "switch" in lib_id_lower:
-        return "switch"
-    elif "mcu" in lib_id_lower or "ic" in lib_id_lower or ":u" in lib_id_lower:
-        return "ic"
-    else:
-        return "default"
+    Thin wrapper around the canonical :func:`~kicad_mcp.utils.component_utils.get_component_type`
+    that maps the ``"unknown"`` sentinel back to ``"default"`` to preserve the
+    original return-value contract expected by callers in this module.
+    """
+    result = get_component_type(lib_id)
+    return result if result != "unknown" else "default"
 
 
 def register_validation_tools(mcp: FastMCP) -> None:
