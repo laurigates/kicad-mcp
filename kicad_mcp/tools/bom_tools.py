@@ -109,7 +109,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
 
                 logger.info("Successfully analyzed BOM file: %s", file_path)
 
-            except Exception as e:
+            except (OSError, ValueError, KeyError) as e:
                 logger.error("Error analyzing BOM file %s: %s", file_path, e, exc_info=True)
                 results["bom_files"][file_type] = {"path": file_path, "error": str(e)}
 
@@ -209,7 +209,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
             export_result = await export_bom_with_cli(
                 schematic_file, project_dir, project_name, ctx
             )
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.error("Error exporting BOM with CLI: %s", e, exc_info=True)
             await ctx.info(f"Error using command-line tools: {str(e)}")
             export_result = {"success": False, "error": str(e)}
@@ -340,11 +340,11 @@ def parse_bom_file(file_path: str) -> tuple[list[dict[str, Any]], dict[str, Any]
 
                     for row in reader:
                         components.append(dict(row))
-            except Exception:
+            except (OSError, csv.Error, UnicodeDecodeError):
                 logger.warning("Failed to parse unknown file format: %s", file_path)
                 return [], {"detected_format": "unsupported"}
 
-    except Exception as e:
+    except (OSError, ValueError, csv.Error, json.JSONDecodeError) as e:
         logger.error("Error parsing BOM file: %s", e, exc_info=True)
         return [], {"error": str(e)}
 
@@ -555,7 +555,7 @@ def analyze_bom_data(
 
                     if "currency" not in results:
                         results["currency"] = "USD"  # Default
-            except Exception:
+            except (ValueError, TypeError, KeyError):
                 logger.warning("Failed to parse cost data")
 
         # Add extra insights
@@ -565,7 +565,7 @@ def analyze_bom_data(
             most_common = value_counts.head(5).to_dict()
             results["most_common_values"] = {str(k): int(v) for k, v in most_common.items()}
 
-    except Exception as e:
+    except (ValueError, TypeError, KeyError) as e:
         logger.error("Error analyzing BOM data: %s", e, exc_info=True)
         # Fallback to basic analysis
         results["unique_component_count"] = len(components)
@@ -661,7 +661,7 @@ async def export_bom_with_cli(
             "schematic_file": schematic_file,
         }
 
-    except Exception as e:
+    except OSError as e:
         logger.error("Error exporting BOM: %s", e, exc_info=True)
         return {
             "success": False,

@@ -125,7 +125,7 @@ def register_netlist_resources(mcp: FastMCP) -> None:
 
             return report
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             return f"# Netlist Extraction Error\n\nError: {str(e)}"
 
     @mcp.resource("kicad://project_netlist/{project_path}")
@@ -156,7 +156,7 @@ def register_netlist_resources(mcp: FastMCP) -> None:
             # Get the netlist resource for this schematic
             return get_netlist_resource(schematic_path)  # ty: ignore[call-non-callable]
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             return f"# Netlist Extraction Error\n\nError: {str(e)}"
 
     @mcp.resource("kicad://component/{schematic_path}/{component_ref}")
@@ -265,5 +265,5 @@ def register_netlist_resources(mcp: FastMCP) -> None:
 
             return report
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             return f"# Component Analysis Error\n\nError: {str(e)}"

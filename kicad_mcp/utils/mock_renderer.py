@@ -319,7 +319,7 @@ class MockSchematicRenderer:
 
             return True
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.error("Error rendering schematic: %s", e)
             return False
 

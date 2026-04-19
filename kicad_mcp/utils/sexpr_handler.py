@@ -48,7 +48,14 @@ class SExpressionHandler:
         try:
             parsed = sexpdata.loads(content)
             return self._parse_sexpr_to_dict(parsed)
-        except Exception as e:
+        except (
+            ValueError,
+            TypeError,
+            IndexError,
+            sexpdata.ExpectClosingBracket,
+            sexpdata.ExpectNothing,
+            sexpdata.ExpectSExp,
+        ) as e:
             raise ValueError(f"Failed to parse S-expression content: {e}") from e
 
     def generate_schematic(

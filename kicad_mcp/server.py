@@ -87,7 +87,7 @@ def run_cleanup_handlers() -> None:
         try:
             handler()
             logging.info(f"Cleanup handler {handler.__name__} completed successfully")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — cleanup handlers must not propagate
             logging.error(f"Error in cleanup handler {handler.__name__}: {str(e)}", exc_info=True)
 
 
@@ -108,7 +108,7 @@ def shutdown_server() -> None:
             logging.info("Shutting down KiCad MCP server")
             _server_instance = None
             logging.info("KiCad MCP server shutdown complete")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — shutdown must not propagate
             logging.error(f"Error shutting down server: {str(e)}", exc_info=True)
 
 
@@ -236,7 +236,7 @@ def create_server() -> FastMCP:
                 if os.path.exists(temp_dir):
                     shutil.rmtree(temp_dir, ignore_errors=True)
                     logging.info(f"Removed temporary directory: {temp_dir}")
-            except Exception as e:
+            except OSError as e:
                 logging.error(f"Error cleaning up temporary directory {temp_dir}: {str(e)}")
 
     add_cleanup_handler(cleanup_temp_dirs)
@@ -307,7 +307,7 @@ def cleanup_handler() -> None:
     try:
         cleanup_temp_dirs()
         run_cleanup_handlers()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — cleanup must not propagate
         logger.error(f"Error during cleanup: {e}")
 
 
@@ -338,7 +338,7 @@ def cleanup_temp_dirs() -> None:
                 if os.path.exists(temp_dir):
                     shutil.rmtree(temp_dir, ignore_errors=True)
                     logger.info(f"Removed temporary directory: {temp_dir}")
-            except Exception as e:
+            except OSError as e:
                 logger.error(f"Error cleaning up temporary directory {temp_dir}: {str(e)}")
     except ImportError:
         # temp_dir_manager may not be available in all contexts
@@ -381,6 +381,6 @@ async def main() -> None:
     except KeyboardInterrupt:
         logger.info("Received keyboard interrupt, graceful shutdown initiated")
         cleanup_handler()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 — top-level entry point ensures cleanup
         logger.error(f"Server startup error: {e}")
         cleanup_handler()

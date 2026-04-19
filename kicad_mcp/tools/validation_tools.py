@@ -110,7 +110,7 @@ async def validate_project_boundaries(
 
         return result
 
-    except Exception as e:
+    except (OSError, ValueError, KeyError) as e:
         error_msg = f"Error validating project boundaries: {str(e)}"
         if ctx:
             await ctx.info(error_msg)
@@ -173,7 +173,7 @@ async def generate_validation_report(
 
         return {"success": True, "report_path": output_path, "summary": report_data["summary"]}
 
-    except Exception as e:
+    except (OSError, ValueError, KeyError) as e:
         error_msg = f"Error generating validation report: {str(e)}"
         if ctx:
             await ctx.info(error_msg)

@@ -76,7 +76,7 @@ class VisualTestUtils:
 
             return png_file
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.error("Error capturing screenshot: %s", e)
             return None
 
@@ -107,7 +107,7 @@ class VisualTestUtils:
                 try:
                     file_path.unlink()
                     cleaned_count += 1
-                except Exception as e:
+                except OSError as e:
                     logger.warning("Error cleaning up %s: %s", file_path, e)
 
         # Also clean up empty directories
@@ -115,7 +115,7 @@ class VisualTestUtils:
             if dir_path.is_dir() and not any(dir_path.iterdir()):
                 try:
                     dir_path.rmdir()
-                except Exception as e:
+                except OSError as e:
                     logger.warning("Error removing empty directory %s: %s", dir_path, e)
 
         return cleaned_count

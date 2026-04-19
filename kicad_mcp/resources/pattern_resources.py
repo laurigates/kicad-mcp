@@ -270,7 +270,7 @@ def register_pattern_resources(mcp: FastMCP) -> None:
 
             return report
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             return f"# Circuit Pattern Analysis Error\n\nError: {str(e)}"
 
     @mcp.resource("kicad://patterns/project/{project_path}")
@@ -298,5 +298,5 @@ def register_pattern_resources(mcp: FastMCP) -> None:
             # Use the existing resource handler to generate the report
             return get_circuit_patterns_resource(schematic_path)  # ty: ignore[call-non-callable]
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             return f"# Circuit Pattern Analysis Error\n\nError: {str(e)}"

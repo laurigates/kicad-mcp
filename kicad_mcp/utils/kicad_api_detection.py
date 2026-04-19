@@ -72,6 +72,6 @@ def check_for_cli_api() -> bool:
         logger.info("KiCad CLI API is not available")
         return False
 
-    except Exception as e:
+    except OSError as e:
         logger.error("Error checking for KiCad CLI API: %s", e)
         return False

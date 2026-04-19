@@ -66,7 +66,7 @@ class SchematicParser:
             with open(self.schematic_path) as f:
                 self.content = f.read()
                 logger.debug("Successfully loaded schematic: %s", self.schematic_path)
-        except Exception as e:
+        except OSError as e:
             logger.error("Error reading schematic file: %s", e, exc_info=True)
             raise
 
@@ -238,7 +238,7 @@ class SchematicParser:
                         component["pins"].append({"num": pin_num, "uuid": pin_uuid_item[1]})
 
             return component
-        except Exception as e:
+        except (ValueError, TypeError, IndexError, AttributeError) as e:
             logger.warning(
                 "Failed to parse component expression: %s\nExpression:\n%s", e, symbol_expr
             )
@@ -627,7 +627,7 @@ def extract_netlist(schematic_path: str) -> dict[str, Any]:
         logger.info("Using S-expression parser for: %s", schematic_path)
         parser = SchematicParser(schematic_path)
         return parser.parse()
-    except Exception as e:
+    except (OSError, ValueError, KeyError) as e:
         logger.error("Error extracting netlist: %s", e, exc_info=True)
         return {"error": str(e), "components": {}, "nets": {}, "component_count": 0, "net_count": 0}
 

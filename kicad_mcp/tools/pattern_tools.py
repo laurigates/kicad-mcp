@@ -141,7 +141,7 @@ def register_pattern_tools(mcp: FastMCP) -> None:
 
             return result
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             await ctx.info(f"Error identifying circuit patterns: {str(e)}")
             return {"success": False, "error": str(e)}
 
@@ -183,6 +183,6 @@ def register_pattern_tools(mcp: FastMCP) -> None:
 
             return result
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             await ctx.info(f"Error analyzing project circuit patterns: {str(e)}")
             return {"success": False, "error": str(e)}

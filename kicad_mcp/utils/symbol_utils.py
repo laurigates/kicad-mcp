@@ -77,7 +77,7 @@ class SymbolLibraryManager:
                 try:
                     symbol_count = self._count_symbols_in_library(symbol_file)
                     lib_info["symbol_count"] = symbol_count
-                except Exception:
+                except OSError:
                     lib_info["symbol_count"] = "unknown"
 
                 libraries.append(lib_info)
@@ -98,7 +98,7 @@ class SymbolLibraryManager:
                 content = f.read()
                 # Count symbol definitions (simplified)
                 return content.count('(symbol "')
-        except Exception:
+        except OSError:
             return 0
 
     def search_symbols(
@@ -127,7 +127,7 @@ class SymbolLibraryManager:
                         symbol["library"] = library["name"]
                         symbol["library_path"] = library["path"]
                         results.append(symbol)
-            except Exception:
+            except (OSError, ValueError):
                 # Skip libraries that can't be parsed
                 continue
 
@@ -168,7 +168,7 @@ class SymbolLibraryManager:
 
                 symbols.append(symbol_info)
 
-        except Exception:
+        except (OSError, ValueError):
             # Return empty list if parsing fails
             pass
 
@@ -203,7 +203,7 @@ class SymbolLibraryManager:
                 }
                 pins.append(pin_info)
 
-        except Exception:
+        except (ValueError, AttributeError):
             pass
 
         return pins
@@ -230,7 +230,7 @@ class SymbolLibraryManager:
                 prop_value = match.group(2)
                 properties[prop_name] = prop_value
 
-        except Exception:
+        except (ValueError, AttributeError):
             pass
 
         return properties
@@ -265,7 +265,7 @@ class SymbolLibraryManager:
                     symbol["library"] = library_name
                     symbol["library_path"] = target_library["path"]
                     return symbol
-        except Exception:
+        except (OSError, ValueError):
             pass
 
         return None
@@ -459,7 +459,7 @@ def validate_symbol_library_reference(library_name: str, symbol_name: str) -> bo
         manager = SymbolLibraryManager()
         symbol_info = manager.get_symbol_info(library_name, symbol_name)
         return symbol_info is not None
-    except Exception:
+    except (OSError, ValueError):
         return False
 
 
@@ -479,7 +479,7 @@ def get_symbol_pin_count(library_name: str, symbol_name: str) -> int:
 
         if symbol_info and "pins" in symbol_info:
             return len(symbol_info["pins"])
-    except Exception:
+    except (OSError, ValueError):
         pass
 
     return 0

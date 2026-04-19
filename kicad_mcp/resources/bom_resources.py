@@ -162,7 +162,7 @@ def register_bom_resources(mcp: FastMCP) -> None:
 
                 report += "\n---\n\n"
 
-            except Exception as e:
+            except (OSError, ValueError, KeyError) as e:
                 logger.error("Error processing BOM file %s: %s", file_path, e)
                 report += f"## {file_type}\n\nError processing BOM file: {str(e)}\n\n"
 
@@ -226,7 +226,7 @@ def register_bom_resources(mcp: FastMCP) -> None:
             df = pd.DataFrame(bom_data)
             return df.to_csv(index=False)
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             logger.error("Error generating CSV from BOM file: %s", e)
             return f"Error generating CSV from BOM file: {str(e)}"
 
@@ -270,7 +270,7 @@ def register_bom_resources(mcp: FastMCP) -> None:
                         try:
                             result["bom_files"][file_type] = json.load(f)
                             continue
-                        except Exception:
+                        except (json.JSONDecodeError, ValueError):
                             # If JSON parsing fails, fall back to regular parsing
                             pass
 
@@ -288,6 +288,6 @@ def register_bom_resources(mcp: FastMCP) -> None:
 
             return json.dumps(result, indent=2, default=str)
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             logger.error("Error generating JSON from BOM file: %s", e)
             return json.dumps({"error": str(e)}, indent=2)

@@ -49,5 +49,5 @@ def register_project_resources(mcp: FastMCP) -> None:
 
             return result
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             return f"Error reading project file: {str(e)}"

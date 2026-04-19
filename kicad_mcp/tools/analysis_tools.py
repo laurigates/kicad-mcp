@@ -65,7 +65,7 @@ def register_analysis_tools(mcp: FastMCP) -> None:
                 json.load(f)
         except json.JSONDecodeError:
             issues.append("Invalid project file format (JSON parsing error)")
-        except Exception as e:
+        except OSError as e:
             issues.append(f"Error reading project file: {str(e)}")
 
         return {
