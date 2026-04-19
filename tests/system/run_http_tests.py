@@ -15,7 +15,7 @@ import uvicorn
 from kicad_mcp.server import create_server
 from tests.system.http_client import HTTPClientError, create_http_client, mcp_tool_call
 from tests.system.temp_manager import TempDirectoryManager
-from tests.system.test_config import TestConfig, TestConfigLoader
+from tests.system.test_config import ConfigHelper, ConfigLoaderHelper
 from tests.system.validators import ValidationRunner
 
 
@@ -75,7 +75,7 @@ class HTTPTestRunner:
         self.http_backend = http_backend
         self.verbose = verbose
 
-        self.config_loader = TestConfigLoader()
+        self.config_loader = ConfigLoaderHelper()
         self.validation_runner = ValidationRunner()
         self.temp_manager = TempDirectoryManager()
 
@@ -126,7 +126,7 @@ class HTTPTestRunner:
 
         return False
 
-    def run_single_test(self, config: TestConfig) -> TestResult:
+    def run_single_test(self, config: ConfigHelper) -> TestResult:
         """Run a single test configuration.
 
         Args:
