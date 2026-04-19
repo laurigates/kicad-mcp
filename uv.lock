@@ -811,7 +811,7 @@ dev = [
     { name = "pytest-mock", specifier = ">=3.10.0" },
     { name = "pytest-xdist", specifier = ">=3.0.0" },
     { name = "ruff", specifier = ">=0.1.0" },
-    { name = "ty", specifier = ">=0.0.1a6" },
+    { name = "ty", specifier = ">=0.0.1a6,<0.1" },
 ]
 docs = [
     { name = "myst-parser", specifier = ">=2.0.0" },

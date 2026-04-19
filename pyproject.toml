@@ -70,7 +70,7 @@ dev = [
     "pytest-cov>=4.0.0",
     "pytest-xdist>=3.0.0",
     "ruff>=0.1.0",
-    "ty>=0.0.1a6",
+    "ty>=0.0.1a6,<0.1",
     "pre-commit>=3.0.0",
     "bandit>=1.7.0",  # Security linting for pre-commit hooks
 ]
