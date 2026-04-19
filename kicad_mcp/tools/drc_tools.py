@@ -91,13 +91,13 @@ def register_drc_tools(mcp: FastMCP) -> None:
 
         # Report progress to user
         await ctx.report_progress(10, 100)
-        ctx.info(f"Starting DRC check on {os.path.basename(pcb_file)}")
+        await ctx.info(f"Starting DRC check on {os.path.basename(pcb_file)}")
 
         # Run DRC using the appropriate approach
         drc_results = None
 
         print("Using kicad-cli for DRC")
-        ctx.info("Using KiCad CLI for DRC check...")
+        await ctx.info("Using KiCad CLI for DRC check...")
         drc_results = await run_drc_via_cli(pcb_file, ctx)
 
         # Process and save results if successful
@@ -111,15 +111,17 @@ def register_drc_tools(mcp: FastMCP) -> None:
                 drc_results["comparison"] = comparison
 
                 if comparison["change"] < 0:
-                    ctx.info(
+                    await ctx.info(
                         f"Great progress! You've fixed {abs(comparison['change'])} DRC violations since the last check."
                     )
                 elif comparison["change"] > 0:
-                    ctx.info(
+                    await ctx.info(
                         f"Found {comparison['change']} new DRC violations since the last check."
                     )
                 else:
-                    ctx.info("No change in the number of DRC violations since the last check.")
+                    await ctx.info(
+                        "No change in the number of DRC violations since the last check."
+                    )
         elif drc_results:
             pass
         else:

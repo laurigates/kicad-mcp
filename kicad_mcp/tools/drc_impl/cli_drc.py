@@ -42,7 +42,7 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
 
             # Report progress
             await ctx.report_progress(50, 100)
-            ctx.info("Running DRC using KiCad CLI...")
+            await ctx.info("Running DRC using KiCad CLI...")
 
             # Build the DRC command args (without kicad-cli executable)
             command_args = ["pcb", "drc", "--format", "json", "--output", output_file, pcb_file]
@@ -87,7 +87,7 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
             violation_count = len(violations)
             print(f"DRC completed with {violation_count} violations")
             await ctx.report_progress(70, 100)
-            ctx.info(f"DRC completed with {violation_count} violations")
+            await ctx.info(f"DRC completed with {violation_count} violations")
 
             # Categorize violations by type
             error_types = {}
