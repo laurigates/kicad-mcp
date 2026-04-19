@@ -5,6 +5,7 @@ This module provides a native Python implementation for generating KiCad S-expre
 without external dependencies, following KiCad's official schematic file format.
 """
 
+import logging
 from typing import Any
 import uuid
 
@@ -14,6 +15,8 @@ from kicad_mcp.utils.component_layout import ComponentLayoutManager
 from kicad_mcp.utils.pin_mapper import ComponentPinMapper
 from kicad_mcp.utils.version import KICAD_FILE_FORMAT_VERSION
 from kicad_mcp.utils.wire_router import RouteStrategy, RoutingObstacle, WireRouter
+
+logger = logging.getLogger(__name__)
 
 
 class SExpressionHandler:
@@ -586,28 +589,35 @@ class SExpressionHandler:
             key in connection
             for key in ["start_component", "start_pin", "end_component", "end_pin"]
         ):
-            # Pin-to-pin connection
-            start_pos = self.pin_mapper.get_pin_connection_point(
-                connection["start_component"], connection["start_pin"]
-            )
-            end_pos = self.pin_mapper.get_pin_connection_point(
-                connection["end_component"], connection["end_pin"]
-            )
+            # Pin-to-pin connection. Parsers (e.g. shorthand like "VCC -> R1.1")
+            # emit pin=None for references without an explicit pin number. Power
+            # symbols register a single pin "1", and "1" is a reasonable default
+            # for any single-pin reference, so fall back to "1" before lookup.
+            start_component = connection["start_component"]
+            end_component = connection["end_component"]
+            start_pin = connection["start_pin"] if connection["start_pin"] is not None else "1"
+            end_pin = connection["end_pin"] if connection["end_pin"] is not None else "1"
+
+            start_pos = self.pin_mapper.get_pin_connection_point(start_component, start_pin)
+            end_pos = self.pin_mapper.get_pin_connection_point(end_component, end_pin)
 
             if not start_pos or not end_pos:
+                logger.warning(
+                    "No pin position for %s.%s -> %s.%s — wire skipped",
+                    start_component,
+                    start_pin,
+                    end_component,
+                    end_pin,
+                )
                 return None
 
             # Register the connection with the pin mapper
-            connection_added = self.pin_mapper.add_connection(
-                connection["start_component"],
-                connection["start_pin"],
-                connection["end_component"],
-                connection["end_pin"],
+            self.pin_mapper.add_connection(
+                start_component,
+                start_pin,
+                end_component,
+                end_pin,
             )
-
-            if not connection_added:
-                # Log warning but continue with wire generation
-                pass
 
             start_x, start_y = start_pos
             end_x, end_y = end_pos
