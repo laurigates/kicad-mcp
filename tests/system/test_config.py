@@ -30,6 +30,9 @@ class ValidationConfig(BaseModel):
 class TestConfig(BaseModel):
     """Complete test configuration."""
 
+    # Prevent pytest from collecting this Pydantic model as a test class
+    __test__ = False
+
     test_name: str = Field(..., description="Unique name for the test")
     description: str = Field(..., description="Human-readable test description")
     mcp_calls: list[MCPCallConfig] = Field(
@@ -44,6 +47,9 @@ class TestConfig(BaseModel):
 
 class TestConfigLoader:
     """Loads and validates test configurations from JSON files."""
+
+    # Prevent pytest from collecting this helper class as a test class
+    __test__ = False
 
     def __init__(self):
         """Initialize test config loader."""
