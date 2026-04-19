@@ -843,33 +843,20 @@ class SExpressionHandler:
         return validated_power_symbols
 
     def _get_component_type(self, component: dict[str, Any]) -> str:
-        """Determine component type from component dictionary."""
+        """Determine component type from component dictionary.
+
+        Thin wrapper around the canonical
+        :func:`kicad_mcp.utils.component_utils.get_component_type_from_symbol`.
+        """
         if "component_type" in component:
             return component["component_type"]
 
-        symbol_name = component.get("symbol_name", "").lower()
-        symbol_library = component.get("symbol_library", "").lower()
+        from kicad_mcp.utils.component_utils import get_component_type_from_symbol
 
-        if symbol_name in ["r", "resistor"]:
-            return "resistor"
-        elif symbol_name in ["c", "capacitor"]:
-            return "capacitor"
-        elif symbol_name in ["l", "inductor"]:
-            return "inductor"
-        elif symbol_name in ["led"]:
-            return "led"
-        elif symbol_name in ["d", "diode"]:
-            return "diode"
-        elif "transistor" in symbol_name:
-            return "transistor"
-        elif symbol_library == "switch":
-            return "switch"
-        elif symbol_library == "connector":
-            return "connector"
-        elif "ic" in symbol_name or "mcu" in symbol_name or "atmega" in symbol_name:
-            return "ic"
-        else:
-            return "default"
+        return get_component_type_from_symbol(
+            component.get("symbol_library", ""),
+            component.get("symbol_name", ""),
+        )
 
     def _map_component_pins(
         self, components: list[dict[str, Any]], power_symbols: list[dict[str, Any]]
