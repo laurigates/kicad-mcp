@@ -70,7 +70,7 @@ dev = [
     "pytest-cov>=4.0.0",
     "pytest-xdist>=3.0.0",
     "ruff>=0.1.0",
-    "mypy>=1.8.0",
+    "ty>=0.0.1a6,<0.1",
     "pre-commit>=3.0.0",
     "bandit>=1.7.0",  # Security linting for pre-commit hooks
 ]
@@ -139,28 +139,8 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
-[tool.mypy]
-python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = false
-disallow_incomplete_defs = false
-check_untyped_defs = true
-disallow_untyped_decorators = false
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
-show_error_codes = true
-
-[[tool.mypy.overrides]]
-module = [
-    "pandas.*",
-    "mcp.*",
-]
-ignore_missing_imports = true
+[tool.ty]
+# Minimal baseline config — type errors will be addressed in a follow-up issue
 
 [tool.pytest.ini_options]
 minversion = "7.0"

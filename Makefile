@@ -55,8 +55,7 @@ coverage:
 # Run linting
 lint:
 	uv run ruff check .
-	# Temporarily disabled mypy due to 200+ type errors - will fix separately
-	# uv run mypy kicad_mcp/
+	uv run ty check kicad_mcp/ || true  # baseline: 123 errors to be fixed in follow-up
 
 # Format code
 format:
