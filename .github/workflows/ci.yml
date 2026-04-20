@@ -66,7 +66,7 @@ jobs:
       run: uv sync --group dev
 
     - name: Run tests
-      run: uv run pytest tests/ -v --cov=kicad_mcp --cov-report=xml --cov-fail-under=37
+      run: uv run pytest tests/ -v --cov=kicad_mcp --cov-report=xml --cov-fail-under=45
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4

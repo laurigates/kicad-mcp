@@ -39,7 +39,7 @@ dev:
 
 # Run all tests (matches CI command)
 test:
-	uv run pytest tests/ -v --cov=kicad_mcp --cov-report=xml --cov-fail-under=37
+	uv run pytest tests/ -v --cov=kicad_mcp --cov-report=xml --cov-fail-under=45
 
 # Run unit tests only
 test-unit:
