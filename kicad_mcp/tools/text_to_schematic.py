@@ -95,7 +95,12 @@ class TextToSchematicParser:
                 raise ValueError("YAML root must be a mapping")
 
             section_keys = {"components", "power", "connections"}
-            if section_keys & set(data.keys()):
+            matched = section_keys & set(data.keys())
+            # Require >=2 section keys, or 1 key whose value is a list/None
+            is_flat = len(matched) >= 2 or (
+                len(matched) == 1 and isinstance(data[next(iter(matched))], list | type(None))
+            )
+            if is_flat:
                 circuit_name = "Untitled Circuit"
                 circuit_data = data
             else:
@@ -202,16 +207,18 @@ class TextToSchematicParser:
 
             # Check for circuit name
             if line.startswith("circuit"):
-                parts = line.split(":", 1)
-                if len(parts) == 2:
-                    # Extract from 'circuit "name":' — prefer quoted form
-                    header = parts[0]
-                    if '"' in header:
-                        circuit_name = header.split('"', 1)[1].rsplit('"', 1)[0]
-                    elif header.strip() == "circuit":
-                        circuit_name = parts[1].strip().strip("\"'") or circuit_name
-                    else:
-                        circuit_name = header[len("circuit") :].strip().strip("\"'")
+                # Try quoted name first — handles colons inside the name
+                quoted_match = re.match(r'circuit\s+"([^"]+)"', line)
+                if quoted_match:
+                    circuit_name = quoted_match.group(1)
+                else:
+                    parts = line.split(":", 1)
+                    if len(parts) == 2:
+                        header = parts[0]
+                        if header.strip() == "circuit":
+                            circuit_name = parts[1].strip().strip("\"'") or circuit_name
+                        else:
+                            circuit_name = header[len("circuit") :].strip().strip("\"'")
                 continue
 
             # Check for section headers
@@ -462,6 +469,11 @@ class TextToSchematicParser:
         try:
             if isinstance(conn_desc, list | tuple):
                 if len(conn_desc) != 2:
+                    logger.warning(
+                        "Ignoring connection with %d elements (expected 2): %s",
+                        len(conn_desc),
+                        conn_desc,
+                    )
                     return None
                 start, end = str(conn_desc[0]), str(conn_desc[1])
             elif isinstance(conn_desc, str):
@@ -494,10 +506,17 @@ class TextToSchematicParser:
 
     @staticmethod
     def _split_endpoint(endpoint: str) -> tuple[str, str | None]:
-        """Split ``U1.GPIO2`` or ``U1:GPIO2`` into (component, pin)."""
+        """Split ``U1.GPIO2`` or ``U1:GPIO2`` into (component, pin).
+
+        Guards against splitting voltage-like tokens such as ``3.3V``
+        where the part before the separator is purely numeric.
+        """
         for sep in (".", ":"):
             if sep in endpoint:
                 component, pin = endpoint.split(sep, 1)
+                # Don't split if left side is purely numeric (e.g. "3" in "3.3V")
+                if component.strip().replace("-", "").replace("+", "").isdigit():
+                    continue
                 return component.strip(), pin.strip() or None
         return endpoint, None
 
