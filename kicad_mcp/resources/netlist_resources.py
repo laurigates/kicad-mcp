@@ -4,12 +4,15 @@ Registers ``kicad://netlist/`` and ``kicad://component/`` resources for
 netlist reports and individual component connection details.
 """
 
+import logging
 import os
 
 from fastmcp import FastMCP
 
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.netlist_parser import analyze_netlist, extract_netlist
+
+logger = logging.getLogger(__name__)
 
 
 def register_netlist_resources(mcp: FastMCP) -> None:
@@ -29,7 +32,7 @@ def register_netlist_resources(mcp: FastMCP) -> None:
         Returns:
             Markdown-formatted netlist report
         """
-        print(f"Generating netlist report for schematic: {schematic_path}")
+        logger.info("Generating netlist report for schematic: %s", schematic_path)
 
         if not os.path.exists(schematic_path):
             return f"Schematic file not found: {schematic_path}"
@@ -135,7 +138,7 @@ def register_netlist_resources(mcp: FastMCP) -> None:
         Returns:
             Markdown-formatted netlist report
         """
-        print(f"Generating netlist report for project: {project_path}")
+        logger.info("Generating netlist report for project: %s", project_path)
 
         if not os.path.exists(project_path):
             return f"Project not found: {project_path}"
@@ -148,7 +151,7 @@ def register_netlist_resources(mcp: FastMCP) -> None:
                 return "Schematic file not found in project"
 
             schematic_path = files["schematic"]
-            print(f"Found schematic file: {schematic_path}")
+            logger.debug("Found schematic file: %s", schematic_path)
 
             # Get the netlist resource for this schematic
             return get_netlist_resource(schematic_path)  # ty: ignore[call-non-callable]
@@ -167,7 +170,9 @@ def register_netlist_resources(mcp: FastMCP) -> None:
         Returns:
             Markdown-formatted component report
         """
-        print(f"Generating component report for {component_ref} in schematic: {schematic_path}")
+        logger.info(
+            "Generating component report for %s in schematic: %s", component_ref, schematic_path
+        )
 
         if not os.path.exists(schematic_path):
             return f"Schematic file not found: {schematic_path}"

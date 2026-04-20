@@ -4,6 +4,7 @@ Runs ``kicad-cli pcb drc`` and parses the JSON report.
 """
 
 import json
+import logging
 import os
 import tempfile
 from typing import Any
@@ -12,6 +13,8 @@ from fastmcp import Context
 
 from kicad_mcp.utils.kicad_cli import KiCadCLIError, find_kicad_cli
 from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, get_subprocess_runner
+
+logger = logging.getLogger(__name__)
 
 
 async def run_drc_via_cli(pcb_file: str, ctx: Context | None = None) -> dict[str, Any]:
@@ -35,7 +38,7 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context | None = None) -> dict[str
             # Find kicad-cli executable
             kicad_cli = find_kicad_cli()
             if not kicad_cli:
-                print("kicad-cli not found in PATH or common installation locations")
+                logger.warning("kicad-cli not found in PATH or common installation locations")
                 results["error"] = (
                     "kicad-cli not found. Please ensure KiCad 9.0+ is installed and kicad-cli is available."
                 )
@@ -49,7 +52,7 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context | None = None) -> dict[str
             # Build the DRC command args (without kicad-cli executable)
             command_args = ["pcb", "drc", "--format", "json", "--output", output_file, pcb_file]
 
-            print("Running DRC command via SecureSubprocessRunner")
+            logger.debug("Running DRC command via SecureSubprocessRunner")
             try:
                 runner = get_subprocess_runner()
                 process = runner.run_kicad_command(
@@ -58,20 +61,20 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context | None = None) -> dict[str
                     output_files=[output_file],
                 )
             except (SecureSubprocessError, KiCadCLIError) as e:
-                print(f"DRC command failed: {e}")
+                logger.error("DRC command failed: %s", e)
                 results["error"] = f"DRC command failed: {e}"
                 return results
 
             # Check if the command was successful
             if process.returncode != 0:
-                print(f"DRC command failed with code {process.returncode}")
-                print(f"Error output: {process.stderr}")
+                logger.error("DRC command failed with code %d", process.returncode)
+                logger.error("Error output: %s", process.stderr)
                 results["error"] = f"DRC command failed: {process.stderr}"
                 return results
 
             # Check if the output file was created
             if not os.path.exists(output_file):
-                print("DRC report file not created")
+                logger.error("DRC report file not created")
                 results["error"] = "DRC report file not created"
                 return results
 
@@ -80,14 +83,14 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context | None = None) -> dict[str
                 try:
                     drc_report = json.load(f)
                 except json.JSONDecodeError:
-                    print("Failed to parse DRC report JSON")
+                    logger.error("Failed to parse DRC report JSON")
                     results["error"] = "Failed to parse DRC report JSON"
                     return results
 
             # Process the DRC report
             violations = drc_report.get("violations", [])
             violation_count = len(violations)
-            print(f"DRC completed with {violation_count} violations")
+            logger.info("DRC completed with %d violations", violation_count)
             if ctx:
                 await ctx.report_progress(70, 100)
                 await ctx.info(f"DRC completed with {violation_count} violations")
@@ -115,6 +118,6 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context | None = None) -> dict[str
             return results
 
     except Exception as e:
-        print(f"Error in CLI DRC: {e!s}")
+        logger.error("Error in CLI DRC: %s", e, exc_info=True)
         results["error"] = f"Error in CLI DRC: {str(e)}"
         return results

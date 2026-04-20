@@ -5,6 +5,7 @@ Provides MermaidJS-like syntax for describing circuits that get converted to KiC
 """
 
 from dataclasses import dataclass
+import logging
 import os
 import re
 from typing import Any
@@ -15,6 +16,8 @@ import yaml
 from kicad_mcp.utils.boundary_validator import BoundaryValidator
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.sexpr_service import get_sexpr_service
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -283,7 +286,7 @@ class TextToSchematicParser:
             )
 
         except Exception as e:
-            print(f"Error parsing component '{comp_desc}': {e}")
+            logger.error("Error parsing component '%s': %s", comp_desc, e)
             return None
 
     def _parse_structured_component(self, comp_data: dict) -> Component | None:
@@ -319,7 +322,7 @@ class TextToSchematicParser:
             )
 
         except Exception as e:
-            print(f"Error parsing structured component {comp_data}: {e}")
+            logger.error("Error parsing structured component %s: %s", comp_data, e)
             return None
 
     def _parse_component_simple(self, line: str) -> Component | None:
