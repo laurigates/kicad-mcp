@@ -89,7 +89,7 @@ def register_export_tools(mcp: FastMCP) -> None:
                     logger.warning("generate_thumbnail_with_cli returned None")
                     await ctx.info("Failed to generate thumbnail using kicad-cli.")
                     return None
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 logger.error("Error calling generate_thumbnail_with_cli: %s", e, exc_info=True)
                 await ctx.info(f"Error generating thumbnail with kicad-cli: {str(e)}")
                 return None
@@ -97,7 +97,7 @@ def register_export_tools(mcp: FastMCP) -> None:
         except asyncio.CancelledError:
             logger.info("Thumbnail generation cancelled")
             raise  # Re-raise to let MCP know the task was cancelled
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.error("Unexpected error in thumbnail generation: %s", e)
             await ctx.info(f"Error: {str(e)}")
             return None
@@ -214,7 +214,7 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context):
             logger.error("Secure subprocess error: %s", e)
             await ctx.info(f"KiCad CLI command failed: {e}")
             return None
-        except Exception as e:
+        except OSError as e:
             logger.error("Error running CLI command: %s", e, exc_info=True)
             await ctx.info(f"Error running KiCad CLI: {str(e)}")
             return None
@@ -222,7 +222,7 @@ async def generate_thumbnail_with_cli(pcb_file: str, ctx: Context):
     except asyncio.CancelledError:
         logger.info("CLI thumbnail generation cancelled")
         raise
-    except Exception as e:
+    except (OSError, ValueError) as e:
         logger.error("Unexpected error in CLI thumbnail generation: %s", e)
         await ctx.info(f"Unexpected error: {str(e)}")
         return None

@@ -68,5 +68,5 @@ def load_project_json(project_path: str) -> dict[str, Any] | None:
     try:
         with open(project_path) as f:
             return json.load(f)
-    except Exception:
+    except (OSError, json.JSONDecodeError):
         return None

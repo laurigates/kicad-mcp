@@ -117,7 +117,7 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context | None = None) -> dict[str
                 await ctx.report_progress(90, 100)
             return results
 
-    except Exception as e:
+    except (OSError, json.JSONDecodeError, KeyError, SecureSubprocessError, KiCadCLIError) as e:
         logger.error("Error in CLI DRC: %s", e, exc_info=True)
         results["error"] = f"Error in CLI DRC: {str(e)}"
         return results

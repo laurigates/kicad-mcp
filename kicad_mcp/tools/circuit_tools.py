@@ -269,7 +269,7 @@ async def create_new_project(
                 await ctx.info(
                     "⚠ Visualization tools not available - proceeding without visual feedback"
                 )
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
 
             await ctx.report_progress(100, 100)
@@ -284,7 +284,7 @@ async def create_new_project(
             "project_name": project_name,
         }
 
-    except Exception as e:
+    except (OSError, ValueError, KeyError) as e:
         error_msg = f"Error creating project '{project_name}' at '{project_path}': {str(e)}"
         if ctx:
             await ctx.info(error_msg)
@@ -453,7 +453,7 @@ async def add_component(
                     )
             except ImportError:
                 await ctx.info("⚠ Visualization tools not available")
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
 
             await ctx.report_progress(100, 100)
@@ -471,7 +471,7 @@ async def add_component(
             },
         }
 
-    except Exception as e:
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as e:
         error_msg = f"Error adding component '{component_reference}' ({symbol_library}:{symbol_name}) to '{project_path}': {str(e)}"
         if ctx:
             await ctx.info(error_msg)
@@ -618,7 +618,7 @@ async def create_wire_connection(
                     )
             except ImportError:
                 await ctx.info("⚠ Visualization tools not available")
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
 
             await ctx.report_progress(100, 100)
@@ -631,7 +631,7 @@ async def create_wire_connection(
             "wire_uuid": wire_entry["uuid"],
         }
 
-    except Exception as e:
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as e:
         if ctx:
             await ctx.info(f"Error creating wire: {str(e)}")
         return {"success": False, "error": str(e)}
@@ -776,7 +776,7 @@ async def add_power_symbol(
                     )
             except ImportError:
                 await ctx.info("⚠ Visualization tools not available")
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 await ctx.info(f"⚠ Screenshot capture failed: {str(e)}")
 
             await ctx.report_progress(100, 100)
@@ -794,7 +794,7 @@ async def add_power_symbol(
 
         return result
 
-    except Exception as e:
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as e:
         if ctx:
             await ctx.info(f"Error adding power symbol: {str(e)}")
         return {"success": False, "error": str(e)}
@@ -975,7 +975,7 @@ async def validate_schematic(project_path: str, ctx: Context | None = None) -> d
 
         return validation_results
 
-    except Exception as e:
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as e:
         if ctx:
             await ctx.info(f"Error validating schematic: {str(e)}")
         return {"success": False, "error": str(e)}

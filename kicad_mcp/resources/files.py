@@ -45,5 +45,5 @@ def register_file_resources(mcp: FastMCP) -> None:
 
             return result
 
-        except Exception as e:
+        except OSError as e:
             return f"Error reading schematic file: {str(e)}"

@@ -88,7 +88,7 @@ async def kicad_lifespan(
             try:
                 logging.info(f"Removing temporary directory: {temp_dir}")
                 shutil.rmtree(temp_dir, ignore_errors=True)
-            except Exception as e:
+            except OSError as e:
                 logging.error(f"Error cleaning up temporary directory {temp_dir}: {str(e)}")
 
         logging.info("KiCad MCP server shutdown complete")

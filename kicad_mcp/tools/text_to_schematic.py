@@ -174,7 +174,7 @@ class TextToSchematicParser:
                 connections=connections,
             )
 
-        except Exception as e:
+        except (yaml.YAMLError, ValueError, KeyError, TypeError) as e:
             raise ValueError(f"Error parsing YAML circuit: {str(e)}") from e
 
     def parse_simple_text(self, text: str) -> Circuit:
@@ -285,7 +285,7 @@ class TextToSchematicParser:
                 symbol_name=symbol_name,
             )
 
-        except Exception as e:
+        except (ValueError, IndexError) as e:
             logger.error("Error parsing component '%s': %s", comp_desc, e)
             return None
 
@@ -321,7 +321,7 @@ class TextToSchematicParser:
                 symbol_name=symbol_name,
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, KeyError) as e:
             logger.error("Error parsing structured component %s: %s", comp_data, e)
             return None
 
@@ -376,7 +376,7 @@ class TextToSchematicParser:
                 symbol_name=symbol_name,
             )
 
-        except Exception:
+        except (ValueError, IndexError):
             return None
 
     def _parse_power_symbol(self, power_desc: str) -> PowerSymbol | None:
@@ -395,7 +395,7 @@ class TextToSchematicParser:
 
             return PowerSymbol(reference=ref, power_type=power_type, position=position)
 
-        except Exception:
+        except (ValueError, IndexError):
             return None
 
     def _parse_structured_power(self, power_data: dict) -> PowerSymbol | None:
@@ -411,7 +411,7 @@ class TextToSchematicParser:
             else:
                 position = (0.0, 0.0)
             return PowerSymbol(reference=net, power_type=power_type, position=position)
-        except Exception:
+        except (ValueError, TypeError, KeyError):
             return None
 
     def _parse_power_symbol_simple(self, line: str) -> PowerSymbol | None:
@@ -447,7 +447,7 @@ class TextToSchematicParser:
 
             return PowerSymbol(reference=ref, power_type=power_type, position=position)
 
-        except Exception:
+        except (ValueError, IndexError):
             return None
 
     def _parse_connection(self, conn_desc: Any) -> Connection | None:
@@ -489,7 +489,7 @@ class TextToSchematicParser:
                 end_pin=end_pin,
             )
 
-        except Exception:
+        except (ValueError, IndexError, TypeError):
             return None
 
     @staticmethod
@@ -593,7 +593,7 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
                             f"Failed to add {component.reference}: {result.get('error', 'Unknown error')}"
                         )
 
-                except Exception as e:
+                except (OSError, ValueError, KeyError) as e:
                     results["errors"].append(
                         f"Error adding component {component.reference}: {str(e)}"
                     )
@@ -620,7 +620,7 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
                             f"Failed to add power symbol {power_symbol.power_type}: {result.get('error', 'Unknown error')}"
                         )
 
-                except Exception as e:
+                except (OSError, ValueError, KeyError) as e:
                     results["errors"].append(
                         f"Error adding power symbol {power_symbol.power_type}: {str(e)}"
                     )
@@ -637,7 +637,7 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
                     results["connections_created"].append(
                         f"{connection.start_component} -> {connection.end_component}"
                     )
-                except Exception as e:
+                except (ValueError, AttributeError) as e:
                     results["errors"].append(f"Error creating connection: {str(e)}")
 
             if ctx:
@@ -648,7 +648,7 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
 
             return results
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError, yaml.YAMLError) as e:
             if ctx:
                 await ctx.info(f"Error creating circuit: {str(e)}")
             return {"success": False, "error": str(e)}
@@ -714,7 +714,7 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
 
             return validation_results
 
-        except Exception as e:
+        except (ValueError, yaml.YAMLError) as e:
             if ctx:
                 await ctx.info(f"Validation error: {str(e)}")
             return {"success": False, "error": str(e)}
@@ -1080,7 +1080,7 @@ circuit "I2C Sensor Interface":
                 result["output_format"] = "JSON"
                 return result
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError, yaml.YAMLError) as e:
             if ctx:
                 await ctx.info(f"Error creating native KiCad schematic: {str(e)}")
             return {"success": False, "error": str(e)}

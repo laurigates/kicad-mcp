@@ -211,5 +211,5 @@ def open_kicad_project(project_path: str) -> dict[str, Any]:
         return {"success": False, "error": f"Invalid project path: {e}"}
     except SecureSubprocessError as e:
         return {"success": False, "error": f"Failed to open project: {e}"}
-    except Exception as e:
+    except OSError as e:
         return {"success": False, "error": f"Unexpected error: {e}"}

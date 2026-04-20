@@ -65,7 +65,7 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             else:
                 return {"success": False, "error": svg_result["error"]}
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             error_msg = f"Error exporting schematic to SVG: {str(e)}"
             await ctx.info(error_msg)
             return {"success": False, "error": error_msg}
@@ -99,7 +99,7 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             else:
                 return {"success": False, "error": conversion_result["error"]}
 
-        except Exception as e:
+        except (OSError, ValueError, ImportError) as e:
             error_msg = f"Error converting SVG to PNG: {str(e)}"
             await ctx.info(error_msg)
             return {"success": False, "error": error_msg}
@@ -142,7 +142,7 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 await ctx.info("PNG file not found after conversion")
                 return None
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             error_msg = f"Error capturing schematic screenshot: {str(e)}"
             await ctx.info(error_msg)
             return None
@@ -182,7 +182,7 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             else:
                 return {"success": False, "error": comparison_result["error"]}
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             error_msg = f"Error creating visual comparison: {str(e)}"
             await ctx.info(error_msg)
             return {"success": False, "error": error_msg}
@@ -268,7 +268,7 @@ async def export_schematic_to_svg(
 
     except (SecureSubprocessError, KiCadCLIError) as e:
         return {"success": False, "error": f"kicad-cli export failed: {e}"}
-    except Exception as e:
+    except (OSError, ValueError) as e:
         return {"success": False, "error": f"Unexpected error during SVG export: {str(e)}"}
 
 
@@ -314,7 +314,7 @@ async def convert_svg_to_png_file(svg_path: str, png_path: str, ctx: Context) ->
         else:
             return {"success": False, "error": "PNG file not created"}
 
-    except Exception as e:
+    except (OSError, ValueError, ImportError) as e:
         return {"success": False, "error": f"SVG to PNG conversion failed: {str(e)}"}
 
 
@@ -373,7 +373,7 @@ async def create_side_by_side_comparison(
         draw = ImageDraw.Draw(comparison)
         try:
             font = ImageFont.truetype("Arial", 24)
-        except Exception:
+        except (OSError, ImportError):
             font = ImageFont.load_default()
 
         before_label = f"Before: {os.path.basename(before_path)}"
@@ -399,7 +399,7 @@ async def create_side_by_side_comparison(
             "after_project": after_path,
         }
 
-    except Exception as e:
+    except (OSError, ValueError, ImportError) as e:
         return {"success": False, "error": f"Failed to create comparison image: {str(e)}"}
 
 
@@ -441,5 +441,5 @@ async def export_schematic_to_svg_mock(
         else:
             return {"success": False, "error": "Mock renderer failed to generate SVG"}
 
-    except Exception as e:
+    except (OSError, ValueError, ImportError) as e:
         return {"success": False, "error": f"Mock renderer error: {str(e)}"}

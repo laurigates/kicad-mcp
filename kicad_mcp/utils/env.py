@@ -74,9 +74,9 @@ def load_dotenv(env_file: str = ".env") -> dict[str, str]:
                     logging.warning(f"Skipping line {line_num} (no '=' found): {line}")
             logging.info(f"Finished processing {env_path}")
 
-    except Exception:
+    except (OSError, ValueError) as exc:
         # Use logging.exception to include traceback
-        logging.exception(f"Error loading .env file '{env_path}'")
+        logging.exception(f"Error loading .env file '{env_path}': {exc}")
 
     logging.info(f"load_dotenv returning keys: {list(env_vars.keys())}")
     return env_vars
