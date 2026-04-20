@@ -14,7 +14,7 @@ from kicad_mcp.utils.kicad_cli import KiCadCLIError, find_kicad_cli
 from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, get_subprocess_runner
 
 
-async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
+async def run_drc_via_cli(pcb_file: str, ctx: Context | None = None) -> dict[str, Any]:
     """Run DRC using KiCad command line tools.
 
     Args:
@@ -42,8 +42,9 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
                 return results
 
             # Report progress
-            await ctx.report_progress(50, 100)
-            await ctx.info("Running DRC using KiCad CLI...")
+            if ctx:
+                await ctx.report_progress(50, 100)
+                await ctx.info("Running DRC using KiCad CLI...")
 
             # Build the DRC command args (without kicad-cli executable)
             command_args = ["pcb", "drc", "--format", "json", "--output", output_file, pcb_file]
@@ -87,8 +88,9 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
             violations = drc_report.get("violations", [])
             violation_count = len(violations)
             print(f"DRC completed with {violation_count} violations")
-            await ctx.report_progress(70, 100)
-            await ctx.info(f"DRC completed with {violation_count} violations")
+            if ctx:
+                await ctx.report_progress(70, 100)
+                await ctx.info(f"DRC completed with {violation_count} violations")
 
             # Categorize violations by type
             error_types = {}
@@ -108,10 +110,11 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context) -> dict[str, Any]:
                 "violations": violations,
             }
 
-            await ctx.report_progress(90, 100)
+            if ctx:
+                await ctx.report_progress(90, 100)
             return results
 
     except Exception as e:
-        print(f"Error in CLI DRC: {str(e)}", exc_info=True)
+        print(f"Error in CLI DRC: {e!s}")
         results["error"] = f"Error in CLI DRC: {str(e)}"
         return results

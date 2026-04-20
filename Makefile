@@ -56,7 +56,7 @@ coverage:
 # Run linting
 lint:
 	uv run ruff check .
-	uv run ty check kicad_mcp/ || true  # baseline: 123 errors to be fixed in follow-up
+	uv run ty check kicad_mcp/
 
 # Detect unreachable / unused code
 dead-code:

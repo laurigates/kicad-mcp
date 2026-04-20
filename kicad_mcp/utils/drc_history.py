@@ -66,15 +66,13 @@ def save_drc_result(project_path: str, drc_result: dict[str, Any]) -> None:
     }
 
     # Load existing history or create new
+    history: dict[str, Any] = {"project_path": project_path, "entries": []}
     if os.path.exists(history_path):
         try:
             with open(history_path) as f:
                 history = json.load(f)
         except (OSError, json.JSONDecodeError) as e:
             print(f"Error loading DRC history: {str(e)}")
-            history = {"project_path": project_path, "entries": []}
-    else:
-        history = {"project_path": project_path, "entries": []}
 
     # Add new entry and save
     history["entries"].append(history_entry)

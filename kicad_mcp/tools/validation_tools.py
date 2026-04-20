@@ -16,7 +16,9 @@ from kicad_mcp.utils.component_utils import get_component_type
 from kicad_mcp.utils.file_utils import get_project_files
 
 
-async def validate_project_boundaries(project_path: str, ctx: Context = None) -> dict[str, Any]:
+async def validate_project_boundaries(
+    project_path: str, ctx: Context | None = None
+) -> dict[str, Any]:
     """
     Validate component boundaries for an entire KiCad project.
 
@@ -116,7 +118,7 @@ async def validate_project_boundaries(project_path: str, ctx: Context = None) ->
 
 
 async def generate_validation_report(
-    project_path: str, output_path: str = None, ctx: Context = None
+    project_path: str, output_path: str | None = None, ctx: Context | None = None
 ) -> dict[str, Any]:
     """
     Generate a comprehensive validation report for a KiCad project.
@@ -266,14 +268,14 @@ def register_validation_tools(mcp: FastMCP) -> None:
 
     @mcp.tool(name="validate_project_boundaries")
     async def validate_project_boundaries_tool(
-        project_path: str, ctx: Context = None
+        project_path: str, ctx: Context | None = None
     ) -> dict[str, Any]:
         """Validate component boundaries for an entire KiCad project."""
         return await validate_project_boundaries(project_path, ctx)
 
     @mcp.tool(name="generate_validation_report")
     async def generate_validation_report_tool(
-        project_path: str, output_path: str = None, ctx: Context = None
+        project_path: str, output_path: str | None = None, ctx: Context | None = None
     ) -> dict[str, Any]:
         """Generate a comprehensive validation report for a KiCad project."""
         return await generate_validation_report(project_path, output_path, ctx)

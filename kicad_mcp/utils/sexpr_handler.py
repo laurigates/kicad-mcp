@@ -188,7 +188,7 @@ class SExpressionHandler:
         # Generate a unique UUID for the sheet
         sheet_uuid = str(uuid.uuid4())
 
-        schematic = [
+        schematic: list[Any] = [
             sexpdata.Symbol("kicad_sch"),
             [sexpdata.Symbol("version"), KICAD_FILE_FORMAT_VERSION],
             [sexpdata.Symbol("generator"), "kicad-mcp"],
@@ -208,7 +208,7 @@ class SExpressionHandler:
         ]
 
         # Build symbol library table with unique symbol definitions
-        lib_symbols = [sexpdata.Symbol("lib_symbols")]
+        lib_symbols: list[Any] = [sexpdata.Symbol("lib_symbols")]
 
         # Collect unique symbol libraries from components
         unique_symbols = set()
@@ -275,7 +275,7 @@ class SExpressionHandler:
         # Generate a unique UUID for the sheet
         sheet_uuid = str(uuid.uuid4())
 
-        schematic = [
+        schematic: list[Any] = [
             sexpdata.Symbol("kicad_sch"),
             [sexpdata.Symbol("version"), KICAD_FILE_FORMAT_VERSION],
             [sexpdata.Symbol("generator"), "kicad-mcp"],
@@ -295,7 +295,7 @@ class SExpressionHandler:
         ]
 
         # Build symbol library table with unique symbol definitions
-        lib_symbols = [sexpdata.Symbol("lib_symbols")]
+        lib_symbols: list[Any] = [sexpdata.Symbol("lib_symbols")]
 
         # Collect unique symbol libraries from components
         unique_symbols = set()
@@ -385,7 +385,7 @@ class SExpressionHandler:
         # Track the UUID for this component reference
         self.component_uuid_map[reference] = symbol_uuid
 
-        symbol_expr = [
+        symbol_expr: list[Any] = [
             sexpdata.Symbol("symbol"),
             [sexpdata.Symbol("lib_id"), lib_id],
             [sexpdata.Symbol("at"), x, y, angle],
@@ -406,7 +406,7 @@ class SExpressionHandler:
         ]
 
         for prop_name, prop_value, prop_pos, hidden in properties:
-            prop_expr = [
+            prop_expr: list[Any] = [
                 sexpdata.Symbol("property"),
                 prop_name,
                 prop_value,
@@ -690,7 +690,7 @@ class SExpressionHandler:
         if not isinstance(sexpr, list) or len(sexpr) < 2:
             return {}
 
-        result = {"type": str(sexpr[0])}
+        result: dict[str, Any] = {"type": str(sexpr[0])}
 
         for item in sexpr[1:]:
             if isinstance(item, list) and len(item) >= 2:
@@ -1014,7 +1014,7 @@ class SExpressionHandler:
             # Unknown libraries default to Device:R behavior
             return [sexpdata.Symbol("symbol"), "Device:R"]
         elif library == "power":
-            symbol_expr = [sexpdata.Symbol("symbol"), f"power:{symbol}"]
+            symbol_expr: list[Any] = [sexpdata.Symbol("symbol"), f"power:{symbol}"]
             # Add power flag for power symbols
             symbol_expr.append([sexpdata.Symbol("power")])
             return symbol_expr
@@ -1027,7 +1027,7 @@ class SExpressionHandler:
 
     def _build_power_symbol_definition(self, power_type: str) -> list[Any]:
         """Return a power-library symbol definition (e.g., VCC, GND)."""
-        symbol_expr = [sexpdata.Symbol("symbol"), f"power:{power_type}"]
+        symbol_expr: list[Any] = [sexpdata.Symbol("symbol"), f"power:{power_type}"]
         # Add power flag for power symbols
         symbol_expr.append([sexpdata.Symbol("power")])
         return symbol_expr

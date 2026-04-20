@@ -917,8 +917,8 @@ def identify_microcontrollers(components: dict[str, Any]) -> list[dict[str, Any]
                     identified = True
 
                 # STM32 series
-                elif re.search(r"STM32F\d+", component_value, re.IGNORECASE):
-                    model = re.search(r"(STM32F\d+)", component_value, re.IGNORECASE).group(1)
+                elif stm_match := re.search(r"(STM32F\d+)", component_value, re.IGNORECASE):
+                    model = stm_match.group(1)
                     microcontrollers.append(
                         {
                             "type": "microcontroller",

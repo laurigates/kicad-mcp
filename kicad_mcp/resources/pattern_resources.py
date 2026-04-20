@@ -296,7 +296,7 @@ def register_pattern_resources(mcp: FastMCP) -> None:
             schematic_path = files["schematic"]
 
             # Use the existing resource handler to generate the report
-            return get_circuit_patterns_resource(schematic_path)
+            return get_circuit_patterns_resource(schematic_path)  # ty: ignore[call-non-callable]
 
         except Exception as e:
             return f"# Circuit Pattern Analysis Error\n\nError: {str(e)}"

@@ -136,7 +136,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             await ctx.report_progress(20, 100)
 
             # Call the schematic netlist extraction
-            result = await extract_schematic_netlist(schematic_path, ctx)
+            result = await extract_schematic_netlist(schematic_path, ctx)  # ty: ignore[call-non-callable]
 
             # Add project path to result
             if "success" in result and result["success"]:

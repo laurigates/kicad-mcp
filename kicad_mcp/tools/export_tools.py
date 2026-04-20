@@ -110,7 +110,7 @@ def register_export_tools(mcp: FastMCP) -> None:
             "generate_project_thumbnail called, redirecting to generate_pcb_thumbnail for %s",
             project_path,
         )
-        return await generate_pcb_thumbnail(project_path, ctx)
+        return await generate_pcb_thumbnail(project_path, ctx)  # ty: ignore[call-non-callable]
 
 
 # Helper functions for thumbnail generation

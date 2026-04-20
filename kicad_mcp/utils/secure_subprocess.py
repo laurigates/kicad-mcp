@@ -71,6 +71,7 @@ class SecureSubprocessRunner:
         """
         # Get and validate KiCad CLI path
         kicad_cli = get_kicad_cli_path(required=True)
+        assert kicad_cli is not None  # guaranteed by required=True
 
         # Validate input files
         if input_files:
@@ -246,7 +247,7 @@ class SecureSubprocessRunner:
                 }
             )
 
-        return subprocess.run(command, **kwargs)  # nosec B603 - input is validated
+        return subprocess.run(command, **kwargs)  # nosec B603 - input is validated  # ty: ignore[no-matching-overload]
 
 
 # Global secure subprocess runner instance

@@ -66,7 +66,7 @@ class SymbolLibraryManager:
                 lib_name = os.path.splitext(os.path.basename(symbol_file))[0]
 
                 # Get library metadata if available
-                lib_info = {
+                lib_info: dict[str, Any] = {
                     "name": lib_name,
                     "path": symbol_file,
                     "directory": lib_path,

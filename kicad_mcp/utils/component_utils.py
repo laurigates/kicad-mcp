@@ -343,7 +343,7 @@ def format_value(value: float, unit: str) -> str:
     Returns:
         A nicely formatted string.
     """
-    if value.is_integer():
+    if value.is_integer():  # ty: ignore[unresolved-attribute]
         return f"{int(value)}{unit}"
     return f"{value}{unit}"
 
