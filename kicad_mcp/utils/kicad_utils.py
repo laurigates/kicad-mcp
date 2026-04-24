@@ -8,13 +8,7 @@ import os
 import sys  # Add sys import
 from typing import Any
 
-from kicad_mcp.config import (
-    ADDITIONAL_SEARCH_PATHS,
-    KICAD_APP_PATH,
-    KICAD_EXTENSIONS,
-    KICAD_USER_DIR,
-    TIMEOUT_CONSTANTS,
-)
+from kicad_mcp import config
 
 from .path_validator import PathValidationError, validate_directory, validate_kicad_file
 from .secure_subprocess import SecureSubprocessError, SecureSubprocessRunner
@@ -32,9 +26,9 @@ def find_kicad_projects() -> list[dict[str, Any]]:
     projects = []
     logging.info("Attempting to find KiCad projects...")  # Log start
     # Search directories to look for KiCad projects
-    raw_search_dirs = [KICAD_USER_DIR] + ADDITIONAL_SEARCH_PATHS
-    logging.info(f"Raw KICAD_USER_DIR: '{KICAD_USER_DIR}'")
-    logging.info(f"Raw ADDITIONAL_SEARCH_PATHS: {ADDITIONAL_SEARCH_PATHS}")
+    raw_search_dirs = [config.KICAD_USER_DIR] + config.ADDITIONAL_SEARCH_PATHS
+    logging.info(f"Raw KICAD_USER_DIR: '{config.KICAD_USER_DIR}'")
+    logging.info(f"Raw ADDITIONAL_SEARCH_PATHS: {config.ADDITIONAL_SEARCH_PATHS}")
     logging.info(f"Raw search list before expansion: {raw_search_dirs}")
 
     expanded_search_dirs = []
@@ -59,7 +53,7 @@ def find_kicad_projects() -> list[dict[str, Any]]:
             # Use followlinks=True to follow symlinks if needed
             for root, _, files in os.walk(validated_dir, followlinks=True):
                 for file in files:
-                    if file.endswith(KICAD_EXTENSIONS["project"]):
+                    if file.endswith(config.KICAD_EXTENSIONS["project"]):
                         project_path = os.path.join(root, file)
                         # Check if it's a real file and not a broken symlink
                         if not os.path.isfile(project_path):
@@ -119,7 +113,7 @@ def find_kicad_projects_in_dirs(search_directories: list[str]) -> list[dict[str,
 
             for root, _, files in os.walk(validated_dir, followlinks=True):
                 for file in files:
-                    if file.endswith(KICAD_EXTENSIONS["project"]):
+                    if file.endswith(config.KICAD_EXTENSIONS["project"]):
                         project_path = os.path.join(root, file)
                         if not os.path.isfile(project_path):
                             continue
@@ -160,7 +154,7 @@ def get_project_name_from_path(project_path: str) -> str:
         Project name without extension
     """
     basename = os.path.basename(project_path)
-    return basename[: -len(KICAD_EXTENSIONS["project"])]
+    return basename[: -len(config.KICAD_EXTENSIONS["project"])]
 
 
 def open_kicad_project(project_path: str) -> dict[str, Any]:
@@ -185,7 +179,7 @@ def open_kicad_project(project_path: str) -> dict[str, Any]:
 
         if sys.platform == "darwin":  # macOS
             # On MacOS, use the 'open' command to open the project in KiCad
-            cmd = ["open", "-a", KICAD_APP_PATH, validated_project_path]
+            cmd = ["open", "-a", config.KICAD_APP_PATH, validated_project_path]
             allowed_commands = ["open"]
         elif sys.platform == "linux":  # Linux
             # On Linux, use 'xdg-open'
@@ -197,7 +191,9 @@ def open_kicad_project(project_path: str) -> dict[str, Any]:
 
         # Execute command using secure subprocess runner
         result = subprocess_runner.run_safe_command(
-            cmd, allowed_commands=allowed_commands, timeout=TIMEOUT_CONSTANTS["application_open"]
+            cmd,
+            allowed_commands=allowed_commands,
+            timeout=config.TIMEOUT_CONSTANTS["application_open"],
         )
 
         return {

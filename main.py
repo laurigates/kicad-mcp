@@ -8,7 +8,7 @@ import logging  # Import logging module
 import os
 
 # Must import config BEFORE env potentially overrides it via os.environ
-from kicad_mcp.config import ADDITIONAL_SEARCH_PATHS, KICAD_USER_DIR
+from kicad_mcp import config
 from kicad_mcp.server import create_server
 from kicad_mcp.utils.env import load_dotenv
 
@@ -25,8 +25,8 @@ logging.basicConfig(
 # ---------------------
 
 logging.info("--- Server Starting --- ")
-logging.info(f"Initial KICAD_USER_DIR from config.py: {KICAD_USER_DIR}")
-logging.info(f"Initial ADDITIONAL_SEARCH_PATHS from config.py: {ADDITIONAL_SEARCH_PATHS}")
+logging.info(f"Initial KICAD_USER_DIR from config.py: {config.KICAD_USER_DIR}")
+logging.info(f"Initial ADDITIONAL_SEARCH_PATHS from config.py: {config.ADDITIONAL_SEARCH_PATHS}")
 
 # Get PID for logging (already used by basicConfig)
 _PID = os.getpid()
@@ -51,8 +51,6 @@ logging.info(f"os.environ['KICAD_SEARCH_PATHS'] after load_dotenv: {effective_se
 try:
     import importlib
 
-    from kicad_mcp import config
-
     importlib.reload(config)  # Attempt to force re-reading config
     logging.info(f"Effective KICAD_USER_DIR from config.py after reload: {config.KICAD_USER_DIR}")
     logging.info(
@@ -60,9 +58,11 @@ try:
     )
 except Exception as e:
     logging.error(f"Could not reload config: {e}")
-    logging.info(f"Using potentially stale KICAD_USER_DIR from initial import: {KICAD_USER_DIR}")
     logging.info(
-        f"Using potentially stale ADDITIONAL_SEARCH_PATHS from initial import: {ADDITIONAL_SEARCH_PATHS}"
+        f"Using potentially stale KICAD_USER_DIR from initial import: {config.KICAD_USER_DIR}"
+    )
+    logging.info(
+        f"Using potentially stale ADDITIONAL_SEARCH_PATHS from initial import: {config.ADDITIONAL_SEARCH_PATHS}"
     )
 
 if __name__ == "__main__":
@@ -70,10 +70,12 @@ if __name__ == "__main__":
         logging.info("Starting KiCad MCP server process")
 
         # Print search paths from config
-        logging.info(f"Using KiCad user directory: {KICAD_USER_DIR}")  # Changed print to logging
-        if ADDITIONAL_SEARCH_PATHS:
+        logging.info(
+            f"Using KiCad user directory: {config.KICAD_USER_DIR}"
+        )  # Changed print to logging
+        if config.ADDITIONAL_SEARCH_PATHS:
             logging.info(
-                f"Additional search paths: {', '.join(ADDITIONAL_SEARCH_PATHS)}"
+                f"Additional search paths: {', '.join(config.ADDITIONAL_SEARCH_PATHS)}"
             )  # Changed print to logging
         else:
             logging.info("No additional search paths configured")  # Changed print to logging
