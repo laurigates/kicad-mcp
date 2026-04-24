@@ -3,6 +3,7 @@ id: ADR-003
 title: S-Expression Parsing Approach for KiCad File Formats
 status: accepted
 created: 2026-03-05
+updated: 2026-04-24
 ---
 
 # ADR-003: S-Expression Parsing Approach for KiCad File Formats
@@ -80,3 +81,8 @@ The KiCad Python API (`pcbnew`) and full `kicad-cli` delegation for all operatio
 
 - `defusedxml` is used for any XML parsing (some older KiCad export formats use XML) to guard against XML entity expansion attacks, consistent with the project's security guidelines.
 - The version management utility (`kicad_mcp/utils/version.py`) centralizes the KiCad file format version constants so that generated files declare the correct version token regardless of which tool module produces them.
+
+## Updates (2026-04-24)
+
+- **Wire connectivity tracing is now implemented.** The "Pin-level connectivity analysis is incomplete" item in the Negative consequences above is resolved. A dedicated `ConnectivityEngine` (`kicad_mcp/utils/connectivity.py`) walks schematic wire geometry, merges coincident endpoints, and produces a net dictionary consumed by the netlist builder (`kicad_mcp/utils/netlist_parser.py`). Bus entries and hierarchical labels remain follow-up work, but the common case — component pins connected through explicit wire segments and labels — is covered.
+- **Text-to-schematic parser hardening.** The shorthand-connection path now emits wires when one pin is omitted, and the YAML front-end tolerates list-of-lists `connections` forms. These are maintenance fixes to the approach described above, not a change of direction.
