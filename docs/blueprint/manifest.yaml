@@ -2,7 +2,8 @@ blueprint:
   project: kicad-mcp
   description: Model Context Protocol server for KiCad electronic design automation files
   created: "2026-03-05"
-  version: "0.1.0"
+  updated: "2026-04-24"
+  version: "0.2.0"
 
 artifacts:
   - id: PRD-001
@@ -11,6 +12,7 @@ artifacts:
     title: KiCad MCP Server Product Requirements
     status: accepted
     created: "2026-03-05"
+    updated: "2026-04-24"
 
   - id: ADR-001
     path: docs/blueprint/ADR-001-mcp-framework.md
@@ -25,6 +27,8 @@ artifacts:
     title: Python Toolchain Choices (uv, ruff, pytest, hatchling)
     status: accepted
     created: "2026-03-05"
+    updated: "2026-04-24"
+    superseded_in_part_by: ADR-004
 
   - id: ADR-003
     path: docs/blueprint/ADR-003-sexpr-parsing.md
@@ -32,3 +36,12 @@ artifacts:
     title: S-Expression Parsing Approach for KiCad File Formats
     status: accepted
     created: "2026-03-05"
+    updated: "2026-04-24"
+
+  - id: ADR-004
+    path: docs/blueprint/ADR-004-ty-type-checker.md
+    type: adr
+    title: Replace mypy with ty for Python Type Checking
+    status: accepted
+    created: "2026-04-24"
+    supersedes: ADR-002 (type checker selection only)

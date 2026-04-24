@@ -3,6 +3,8 @@ id: ADR-002
 title: Python Toolchain Choices (uv, ruff, pytest, hatchling)
 status: accepted
 created: 2026-03-05
+updated: 2026-04-24
+superseded_in_part_by: ADR-004
 ---
 
 # ADR-002: Python Toolchain Choices (uv, ruff, pytest, hatchling)
@@ -78,3 +80,14 @@ pytest is configured via `[tool.pytest.ini_options]` with strict markers, async 
 - mypy is included in the `dev` dependency group for optional static type checking. It is not enforced in CI at this time but is available for local use.
 - bandit is included for security linting and is run in CI as a separate job (`security-scan`).
 - The pre-commit configuration wires ruff, conventional commits validation (commitlint), trufflehog secret scanning, and actionlint for GitHub Actions workflow validation.
+
+## Updates (2026-04-24)
+
+Subsequent toolchain changes that refine but do not fundamentally alter this ADR:
+
+- **Type checker: mypy → `ty`.** The mypy row of the decision table is superseded by **ADR-004**. `mypy` has been removed from the `dev` dependency group; `ty` (Astral) is the active type checker.
+- **Dead-code detection: `vulture` added.** Added to the `dev` group (`vulture>=2.11`) and configured under `[tool.vulture]` in `pyproject.toml`. An allowlist lives at `vulture_allowlist.py` for decorators (`@mcp.tool`, `@pytest.fixture`, etc.) whose callers are external to static analysis. Run via `uv run vulture` or `make dead-code`.
+- **Dependency vulnerability scanning: `pip-audit` added to CI.** The `security` job in `.github/workflows/ci.yml` invokes `uv run --with pip-audit pip-audit`. Run with `continue-on-error: true` so advisories surface without blocking merges until triaged.
+- **Coverage floor raised 30% → 45%.** Both `[tool.pytest.ini_options] addopts` and the CI `--cov-fail-under` flag now require 45%. The 80%+ long-term target from the PRD is unchanged.
+- **Logging replaces `print()`.** The codebase no longer uses `print()` for diagnostic output; all modules emit through the standard `logging` module. This is a convention, not a tooling change, but is recorded here so future contributors know to follow it.
+- **Docstring style.** Google-style docstrings are the project convention across `kicad_mcp/`.

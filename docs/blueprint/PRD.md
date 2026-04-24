@@ -3,6 +3,7 @@ id: PRD-001
 title: KiCad MCP Server Product Requirements
 status: accepted
 created: 2026-03-05
+updated: 2026-04-24
 ---
 
 # PRD-001: KiCad MCP Server
@@ -105,7 +106,7 @@ The Model Context Protocol (MCP) defines a standard interface for giving AI assi
 
 - All new functionality must be developed following Test-Driven Development (TDD): write a failing test before implementing.
 - The test suite must be runnable with `uv run pytest tests/ -v`.
-- Coverage must not fall below 30% (enforced by CI); the target coverage is 80%+.
+- Coverage must not fall below 45% (enforced by CI); the target coverage is 80%+.
 - Tests must be organized into `tests/unit/`, `tests/integration/`, and `tests/fixtures/`.
 
 #### NFR-5: Configuration
