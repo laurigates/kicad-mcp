@@ -23,9 +23,17 @@ Run:
 ./.claude/skills/upstream-pr/scripts/check-eligibility.sh <sha>
 ```
 
-Exit code 0 = every file the commit touches exists upstream → safe to
-proceed. Exit code 1 = at least one fork-only file → stop and tell the
-user the change isn't standalone-PR-able.
+Exit codes:
+
+- **0** — every file the commit touches exists upstream and content is
+  novel → safe to proceed.
+- **1** — at least one fork-only file → stop and tell the user the
+  change isn't standalone-PR-able.
+- **3** — content already applied upstream under a different SHA →
+  nothing to PR. The script reports the matching upstream commit. This
+  catches re-applied content (e.g. maintainer re-merges or squashes)
+  via `git patch-id --stable` matching against every non-merge commit
+  on `upstream/main`.
 
 ## Prepare the branch
 

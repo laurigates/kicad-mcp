@@ -40,11 +40,21 @@ fi
 # --- Eligibility -----------------------------------------------------------
 
 echo "==> Checking eligibility..."
-if ! "$script_dir/check-eligibility.sh" "$sha"; then
-    echo
-    echo "Aborting — commit is not standalone-PR-able to upstream." >&2
-    exit 2
-fi
+elig_rc=0
+"$script_dir/check-eligibility.sh" "$sha" || elig_rc=$?
+case "$elig_rc" in
+    0) ;;
+    3)
+        echo
+        echo "Aborting — commit already applied upstream, nothing to PR." >&2
+        exit 2
+        ;;
+    *)
+        echo
+        echo "Aborting — commit is not standalone-PR-able to upstream." >&2
+        exit 2
+        ;;
+esac
 
 # --- Branch + cherry-pick --------------------------------------------------
 
