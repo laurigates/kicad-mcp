@@ -1,12 +1,16 @@
 """
 Netlist extraction and analysis tools for KiCad schematics.
 """
+import logging
 import os
 from typing import Dict, Any
 from mcp.server.fastmcp import FastMCP, Context
 
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.netlist_parser import extract_netlist, analyze_netlist
+
+logger = logging.getLogger(__name__)
+
 
 def register_netlist_tools(mcp: FastMCP) -> None:
     """Register netlist-related tools with the MCP server.
@@ -29,10 +33,10 @@ def register_netlist_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with netlist information
         """
-        print(f"Extracting netlist from schematic: {schematic_path}")
+        logger.info("Extracting netlist from schematic: %s", schematic_path)
         
         if not os.path.exists(schematic_path):
-            print(f"Schematic file not found: {schematic_path}")
+            logger.warning("Schematic file not found: %s", schematic_path)
             if ctx:
                 ctx.info(f"Schematic file not found: {schematic_path}")
             return {"success": False, "error": f"Schematic file not found: {schematic_path}"}
@@ -51,7 +55,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             netlist_data = extract_netlist(schematic_path)
             
             if "error" in netlist_data:
-                print(f"Error extracting netlist: {netlist_data['error']}")
+                logger.error("Error extracting netlist: %s", netlist_data["error"])
                 if ctx:
                     ctx.info(f"Error extracting netlist: {netlist_data['error']}")
                 return {"success": False, "error": netlist_data['error']}
@@ -89,7 +93,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             return result
             
         except Exception as e:
-            print(f"Error extracting netlist: {str(e)}")
+            logger.error("Error extracting netlist: %s", e, exc_info=True)
             if ctx:
                 ctx.info(f"Error extracting netlist: {str(e)}")
             return {"success": False, "error": str(e)}
@@ -108,10 +112,10 @@ def register_netlist_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with netlist information
         """
-        print(f"Extracting netlist for project: {project_path}")
+        logger.info("Extracting netlist for project: %s", project_path)
         
         if not os.path.exists(project_path):
-            print(f"Project not found: {project_path}")
+            logger.warning("Project not found: %s", project_path)
             if ctx:
                 ctx.info(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
@@ -125,13 +129,13 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             files = get_project_files(project_path)
             
             if "schematic" not in files:
-                print("Schematic file not found in project")
+                logger.warning("Schematic file not found in project")
                 if ctx:
                     ctx.info("Schematic file not found in project")
                 return {"success": False, "error": "Schematic file not found in project"}
             
             schematic_path = files["schematic"]
-            print(f"Found schematic file: {schematic_path}")
+            logger.info("Found schematic file: %s", schematic_path)
             if ctx:
                 ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
             
@@ -149,7 +153,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             return result
             
         except Exception as e:
-            print(f"Error extracting project netlist: {str(e)}")
+            logger.error("Error extracting project netlist: %s", e, exc_info=True)
             if ctx:
                 ctx.info(f"Error extracting project netlist: {str(e)}")
             return {"success": False, "error": str(e)}
@@ -168,10 +172,10 @@ def register_netlist_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with connection analysis
         """
-        print(f"Analyzing connections in schematic: {schematic_path}")
+        logger.info("Analyzing connections in schematic: %s", schematic_path)
         
         if not os.path.exists(schematic_path):
-            print(f"Schematic file not found: {schematic_path}")
+            logger.warning("Schematic file not found: %s", schematic_path)
             if ctx:
                 ctx.info(f"Schematic file not found: {schematic_path}")
             return {"success": False, "error": f"Schematic file not found: {schematic_path}"}
@@ -186,7 +190,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             netlist_data = extract_netlist(schematic_path)
             
             if "error" in netlist_data:
-                print(f"Error extracting netlist: {netlist_data['error']}")
+                logger.error("Error extracting netlist: %s", netlist_data["error"])
                 if ctx:
                     ctx.info(f"Error extracting netlist: {netlist_data['error']}")
                 return {"success": False, "error": netlist_data['error']}
@@ -270,7 +274,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             return result
             
         except Exception as e:
-            print(f"Error analyzing connections: {str(e)}")
+            logger.error("Error analyzing connections: %s", e, exc_info=True)
             if ctx:
                 ctx.info(f"Error analyzing connections: {str(e)}")
             return {"success": False, "error": str(e)}
@@ -290,10 +294,10 @@ def register_netlist_tools(mcp: FastMCP) -> None:
         Returns:
             Dictionary with component connection information
         """
-        print(f"Finding connections for component {component_ref} in project: {project_path}")
+        logger.info("Finding connections for component %s in project: %s", component_ref, project_path)
         
         if not os.path.exists(project_path):
-            print(f"Project not found: {project_path}")
+            logger.warning("Project not found: %s", project_path)
             if ctx:
                 ctx.info(f"Project not found: {project_path}")
             return {"success": False, "error": f"Project not found: {project_path}"}
@@ -307,13 +311,13 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             files = get_project_files(project_path)
             
             if "schematic" not in files:
-                print("Schematic file not found in project")
+                logger.warning("Schematic file not found in project")
                 if ctx:
                     ctx.info("Schematic file not found in project")
                 return {"success": False, "error": "Schematic file not found in project"}
             
             schematic_path = files["schematic"]
-            print(f"Found schematic file: {schematic_path}")
+            logger.info("Found schematic file: %s", schematic_path)
             if ctx:
                 ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
             
@@ -325,7 +329,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             netlist_data = extract_netlist(schematic_path)
             
             if "error" in netlist_data:
-                print(f"Failed to extract netlist: {netlist_data['error']}")
+                logger.error("Failed to extract netlist: %s", netlist_data["error"])
                 if ctx:
                     ctx.info(f"Failed to extract netlist: {netlist_data['error']}")
                 return {"success": False, "error": netlist_data['error']}
@@ -333,7 +337,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             # Check if component exists in the netlist
             components = netlist_data.get("components", {})
             if component_ref not in components:
-                print(f"Component {component_ref} not found in schematic")
+                logger.warning("Component %s not found in schematic", component_ref)
                 if ctx:
                     ctx.info(f"Component {component_ref} not found in schematic")
                 return {
@@ -436,7 +440,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             return result
             
         except Exception as e:
-            print(f"Error finding component connections: {str(e)}", exc_info=True)
+            logger.error("Error finding component connections: %s", e, exc_info=True)
             if ctx:
                 ctx.info(f"Error finding component connections: {str(e)}")
             return {"success": False, "error": str(e)}
