@@ -40,6 +40,7 @@
       "Bash(gh issue *)",
       "Bash(pre-commit *)",
       "Bash(gitleaks *)",
+      "Bash(.claude/skills/upstream-pr/scripts/*)",
       "mcp__context7",
       "mcp__sequential-thinking"
     ]
