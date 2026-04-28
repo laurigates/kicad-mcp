@@ -52,6 +52,34 @@ This:
 Resolve conflicts manually. Preserve **upstream's surrounding shape**,
 not ours — the goal is the smallest readable diff against upstream.
 
+## When cherry-pick fails: re-derive on upstream
+
+If the cherry-pick produces dozens of conflict blocks across multiple
+files (typical when upstream and fork have drifted heavily on shared
+modules), abort and re-derive instead of fighting hunks.
+
+```bash
+git cherry-pick --abort
+git checkout -b pr-upstream/<topic-slug> upstream/main
+# Re-apply the change against upstream's actual current files.
+```
+
+Re-derive is the right call when:
+
+- The fork commit performs a **mechanical, re-applicable transform**
+  (e.g. `print()` → logging, deprecation rename, lint-rule
+  auto-fixes) — the rules transfer cleanly even if line numbers don't.
+- Upstream's version of the file has **additional lines our fork
+  removed** — re-derive lets you cover them with the same heuristic
+  rather than rationalizing missing hunks.
+- The cherry-pick conflict count exceeds roughly **20 blocks across
+  >2 files**.
+
+Heuristic: extract the original commit's `before → after` map (e.g.
+`git show <sha> | grep -E '^[-+].*pattern'`) and use it as the rulebook
+when re-applying against upstream. The PR body should disclose the
+re-derive (see template below).
+
 ## Commit-message scrubbing
 
 Before pushing, amend the commit message to remove fork-local context:
@@ -80,12 +108,40 @@ otherwise refuses the commit.
 ## Diff hygiene
 
 - **Don't bundle formatter cleanups** with the fix. Keep upstream's
-  existing import order even if our linter would reformat.
+  existing import order even if our linter would reformat. (Upstream
+  may have unusual indentation — e.g. 21-space rather than 20-space
+  blocks. Preserve it; Edit-tool replacements that change leading
+  whitespace by even one character will break the parse.)
 - **One commit per PR.** If the cherry-pick produced multiple commits
   (rare), squash before pushing.
 - **Verify with `git diff upstream/main..HEAD`** before pushing — every
   hunk should be defensible to a maintainer who has never seen our
   fork.
+
+### Pre-flight: prove you didn't introduce regressions
+
+For refactor / cleanup PRs, verify lint and test parity against the
+**pristine upstream baseline**, not against our fork. Use a stash
+roundtrip to A/B compare:
+
+```bash
+# Baseline (pristine upstream/main):
+git stash push -- <changed-files>
+uv run ruff check --output-format=concise <changed-files> 2>&1 | tail -1   # error count
+uv run pytest tests/ -q 2>&1 | tail -1                                     # pass count
+git stash pop
+
+# After (with your changes): run the same two commands and compare.
+```
+
+Both numbers must match (or improve). The pre-flight catches: stray
+formatter touches, accidental import reordering, indentation drift
+from Edit-tool replacements. Quote both numbers in the PR body's
+"Testing Performed" section.
+
+Also run `python3 -c "import ast; ast.parse(open(F).read())"` on every
+edited Python file — catches indentation breaks that ruff might miss
+on already-warning-laden upstream code.
 
 ## Push and open the PR
 
@@ -130,5 +186,10 @@ it so it applies cleanly.
 
 ## Reference
 
-The first PR opened with this workflow:
-https://github.com/lamaalrajih/kicad-mcp/pull/53
+PRs opened with this workflow, by path:
+
+| PR | Path | Notes |
+|---|---|---|
+| [#53](https://github.com/lamaalrajih/kicad-mcp/pull/53) | cherry-pick | First PR; clean apply |
+| [#54](https://github.com/lamaalrajih/kicad-mcp/pull/54) | cherry-pick + 1 conflict | CI workflow; resolved by keeping upstream's shape |
+| [#55](https://github.com/lamaalrajih/kicad-mcp/pull/55) | re-derive | 5-file refactor; fork drift made cherry-pick infeasible |
