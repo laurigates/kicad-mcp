@@ -11,7 +11,8 @@ name: release-please
 
 jobs:
   release-please:
-    runs-on: ubuntu-latest
+    # Pure GitHub-API job (no build) — 1-CPU slim runner is 3x cheaper.
+    runs-on: ubuntu-slim
     steps:
       - uses: googleapis/release-please-action@v4
         with:
