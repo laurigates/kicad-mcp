@@ -3,7 +3,6 @@
   "release-type": "python",
   "packages": {
     ".": {
-      "package-name": "kicad-mcp",
       "changelog-path": "CHANGELOG.md",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
