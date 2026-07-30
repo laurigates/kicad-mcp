@@ -1,20 +1,27 @@
+name: "Release: release-please"
+
 on:
   push:
     branches:
       - main
+  # Allow manual triggering, e.g. after the gitops apply lands the App
+  # credentials, or after a stale release PR is closed.
+  workflow_dispatch: {}
+
+# Concurrency lives in the reusable workflow (group release-please-<repo>,
+# cancel-in-progress: false). Declaring the same group here would have this run
+# hold the group while the workflow it calls queues behind it.
 
 permissions:
   contents: write
   pull-requests: write
 
-name: release-please
-
 jobs:
   release-please:
-    # Pure GitHub-API job (no build) — 1-CPU slim runner is 3x cheaper.
-    runs-on: ubuntu-slim
-    steps:
-      - uses: googleapis/release-please-action@v4
-        with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-          release-type: python
+    uses: laurigates/.github/.github/workflows/reusable-release-please.yml@main
+    with:
+      # gitops provisions the numeric App ID; the reusable workflow forwards it
+      # to create-github-app-token, which accepts it as the JWT issuer.
+      app-id: ${{ vars.RELEASE_PLEASE_APP_ID }}
+    secrets:
+      APP_PRIVATE_KEY: ${{ secrets.RELEASE_PLEASE_PRIVATE_KEY }}

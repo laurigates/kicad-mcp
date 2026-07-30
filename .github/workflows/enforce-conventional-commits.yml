@@ -1,0 +1,22 @@
+name: "PR: Enforce conventional commits"
+
+# Auto-fixes PR titles to the conventional-commits spec. This directly guards
+# the release-please pipeline: a squash-merged PR whose title is not a
+# conventional commit contributes no releasable commit, so the release is
+# silently skipped.
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+# Explicit grant so the reusable workflow can edit PR titles even when the
+# repo's default workflow permissions are read-only.
+permissions:
+  pull-requests: write
+
+jobs:
+  conventional-commits:
+    uses: laurigates/.github/.github/workflows/reusable-enforce-conventional-commits.yml@main
