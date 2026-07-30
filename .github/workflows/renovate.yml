@@ -1,0 +1,51 @@
+name: Renovate
+
+# NOTE: deliberately NOT on a schedule. The account's dependency updates come
+# from the single centralized autodiscover runner in `gitops`
+# (renovate_runner = true), which scans `laurigates/*` every two hours with an
+# owner-wide App token. A scheduled caller here would be a second Renovate
+# instance over the same repo, racing the first for the Dependency Dashboard
+# issue and the renovate/* branches.
+#
+# This caller exists as an on-demand escape hatch: it passes no `app-id`, so
+# the reusable workflow falls back to GITHUB_TOKEN and scans only this repo —
+# useful for a one-off lookup/dry-run without waiting for the central pass, or
+# for diagnosing why the central runner has not onboarded this repo.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        description: 'Dry run mode'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'full'
+          - 'lookup'
+      logLevel:
+        description: 'Log level'
+        required: false
+        default: 'info'
+        type: choice
+        options:
+          - info
+          - debug
+          - warn
+
+# Explicit grant so the run works even when the repo's default workflow
+# permissions are read-only (the reusable workflow needs write to open
+# dependency PRs and the Dependency Dashboard issue).
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  packages: read
+
+jobs:
+  renovate:
+    uses: laurigates/.github/.github/workflows/reusable-renovate.yml@main
+    with:
+      dry-run: ${{ inputs.dryRun || 'false' }}
+      log-level: ${{ inputs.logLevel || 'info' }}

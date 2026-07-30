@@ -1,0 +1,49 @@
+name: Quality
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+# Each push to a PR supersedes the previous review; don't pay for reviews of
+# code that has already been replaced.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Explicit grant so the reusable workflows get the token scopes they declare
+# (incl. id-token: write for OIDC) even when the repo's default workflow
+# permissions are read-only.
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  code-smell:
+    # Two guards, both about jobs that would fail rather than tell us anything:
+    # these reusable workflows default `allowed-bots` to empty, so renovate and
+    # release-please PRs get rejected by claude-code-action; and a fork PR gets
+    # no secrets, so CLAUDE_CODE_OAUTH_TOKEN arrives empty.
+    if: >-
+      github.event.pull_request.user.type != 'Bot' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    uses: laurigates/.github/.github/workflows/reusable-quality-code-smell.yml@main
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+    with:
+      # Reusable default is JS/TS; this is a Python project.
+      file-patterns: '**/*.py'
+
+  # Every MCP tool here is an async function, and a dropped `await` is the
+  # repo's demonstrated bug class — two of the queued upstream fixes are
+  # missing `await ctx.info()` calls that passed CI and review unnoticed.
+  async-patterns:
+    if: >-
+      github.event.pull_request.user.type != 'Bot' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    uses: laurigates/.github/.github/workflows/reusable-quality-async.yml@main
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+    with:
+      file-patterns: '**/*.py'
