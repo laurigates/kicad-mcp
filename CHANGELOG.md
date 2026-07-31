@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.2.1](https://github.com/laurigates/kicad-mcp/compare/v0.2.0...v0.2.1) (2026-07-30)
+
+
+### Features
+
+* **claude:** add upstream-pr skill ([#86](https://github.com/laurigates/kicad-mcp/issues/86)) ([223e5b4](https://github.com/laurigates/kicad-mcp/commit/223e5b49685ec1a88b8beb019d746ac7a166f32b))
+* implement wire connectivity tracing in netlist builder ([#62](https://github.com/laurigates/kicad-mcp/issues/62)) ([9176b5e](https://github.com/laurigates/kicad-mcp/commit/9176b5e808a846aeabc3696d728097e7e7c2ba17))
+
+
+### Bug Fixes
+
+* clean up dead code in drc_tools and remove export_bom_with_python stub ([#65](https://github.com/laurigates/kicad-mcp/issues/65)) ([7af7214](https://github.com/laurigates/kicad-mcp/commit/7af721463f3384755a8f1ef926134acb4725e851))
+* **release:** unwedge release-please and stop component-prefixing tags ([#99](https://github.com/laurigates/kicad-mcp/issues/99)) ([3fa5891](https://github.com/laurigates/kicad-mcp/commit/3fa58917f04549a232bba369584fca7438dc508b))
+* resolve skipped tests, pytest collection warnings, and fragile coverage threshold ([#64](https://github.com/laurigates/kicad-mcp/issues/64)) ([38b31b0](https://github.com/laurigates/kicad-mcp/commit/38b31b008410b28bfaaa91584ffc62ad4b7600ce))
+* **sexpr:** emit wires for shorthand connections with missing pin (closes [#57](https://github.com/laurigates/kicad-mcp/issues/57)) ([#73](https://github.com/laurigates/kicad-mcp/issues/73)) ([4b08bcc](https://github.com/laurigates/kicad-mcp/commit/4b08bcc86cb08befd1d71f216d103462840d14dd))
+* **tests:** resolve skipped tests and collection warnings ([#77](https://github.com/laurigates/kicad-mcp/issues/77)) ([b11767d](https://github.com/laurigates/kicad-mcp/commit/b11767de939239a97481b34938c970d4699cd42c))
+* **text-to-schematic:** handle list-of-lists YAML connections and tolerant simple parser ([#66](https://github.com/laurigates/kicad-mcp/issues/66)) ([4d103aa](https://github.com/laurigates/kicad-mcp/commit/4d103aa4ac093b063a9d73b46cc745d5113c5f84))
+* **text-to-schematic:** handle parser edge cases ([#83](https://github.com/laurigates/kicad-mcp/issues/83)) ([08588e7](https://github.com/laurigates/kicad-mcp/commit/08588e765454192c215a048d51c90a1fda3b5f49))
+* **tools:** add missing await to ctx.info() calls ([#76](https://github.com/laurigates/kicad-mcp/issues/76)) ([0ad42d5](https://github.com/laurigates/kicad-mcp/commit/0ad42d566e0754365129d78414318dad4f25bf1f))
+* **types:** resolve ty type checker errors ([#80](https://github.com/laurigates/kicad-mcp/issues/80)) ([2e9d507](https://github.com/laurigates/kicad-mcp/commit/2e9d507e921a1b01270badda753729a06646089b))
+
+
+### Documentation
+
+* add Google-style docstrings to remaining modules ([#79](https://github.com/laurigates/kicad-mcp/issues/79)) ([406e7d2](https://github.com/laurigates/kicad-mcp/commit/406e7d2dd301a33fde2bb446ca3dda9f3ad5da95))
+* **user-stories:** map MCP tools to personas and close top-3 test gaps ([#87](https://github.com/laurigates/kicad-mcp/issues/87)) ([b592167](https://github.com/laurigates/kicad-mcp/commit/b592167fbc9930dd984cfacfbffebc14693e6c81))
+
 ## [0.2.0](https://github.com/laurigates/kicad-mcp/compare/v0.1.0...v0.2.0) (2025-08-05)
 
 
