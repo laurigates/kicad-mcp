@@ -29,7 +29,6 @@ def register_pattern_resources(mcp: FastMCP) -> None:
         mcp: The FastMCP server instance
     """
 
-    @mcp.resource("kicad://patterns/{schematic_path}")
     @confine_paths(on_error=str, schematic_path="schematic")
     def get_circuit_patterns_resource(schematic_path: str) -> str:
         """Get a formatted report of identified circuit patterns in a KiCad schematic.
@@ -275,6 +274,10 @@ def register_pattern_resources(mcp: FastMCP) -> None:
         except (OSError, ValueError, KeyError) as e:
             return f"# Circuit Pattern Analysis Error\n\nError: {str(e)}"
 
+    # Registered by call, not decorator: @mcp.resource() would rebind the name
+    # to a non-callable object, and get_project_patterns_resource calls it directly.
+    mcp.resource("kicad://patterns/{schematic_path}")(get_circuit_patterns_resource)
+
     @mcp.resource("kicad://patterns/project/{project_path}")
     @confine_paths(on_error=str, project_path="project")
     def get_project_patterns_resource(project_path: str) -> str:
@@ -299,7 +302,7 @@ def register_pattern_resources(mcp: FastMCP) -> None:
             schematic_path = files["schematic"]
 
             # Use the existing resource handler to generate the report
-            return get_circuit_patterns_resource(schematic_path)  # ty: ignore[call-non-callable]
+            return get_circuit_patterns_resource(schematic_path)
 
         except (OSError, ValueError, KeyError) as e:
             return f"# Circuit Pattern Analysis Error\n\nError: {str(e)}"

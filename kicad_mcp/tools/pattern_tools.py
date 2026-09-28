@@ -30,7 +30,6 @@ def register_pattern_tools(mcp: FastMCP) -> None:
         mcp: The FastMCP server instance
     """
 
-    @mcp.tool()
     @confine_paths(schematic_path="schematic")
     async def identify_circuit_patterns(schematic_path: str, ctx: Context | None) -> dict[str, Any]:
         """Identify common circuit patterns in a KiCad schematic.
@@ -162,6 +161,10 @@ def register_pattern_tools(mcp: FastMCP) -> None:
                 await ctx.info(f"Error identifying circuit patterns: {str(e)}")
             return {"success": False, "error": str(e)}
 
+    # Registered by call, not decorator: @mcp.tool() would rebind the name
+    # to a non-callable object, and analyze_project_circuit_patterns calls it directly.
+    mcp.tool(identify_circuit_patterns)
+
     @mcp.tool()
     @confine_paths(project_path="project")
     async def analyze_project_circuit_patterns(
@@ -199,7 +202,7 @@ def register_pattern_tools(mcp: FastMCP) -> None:
                 await ctx.info(f"Found schematic file: {os.path.basename(schematic_path)}")
 
             # Identify patterns in the schematic
-            result = await identify_circuit_patterns(schematic_path, ctx)  # ty: ignore[call-non-callable]
+            result = await identify_circuit_patterns(schematic_path, ctx)
 
             # Add project path to result
             if "success" in result and result["success"]:

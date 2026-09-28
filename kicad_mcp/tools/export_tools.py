@@ -30,7 +30,6 @@ def register_export_tools(mcp: FastMCP) -> None:
         mcp: The FastMCP server instance
     """
 
-    @mcp.tool()
     @confine_paths(on_error=lambda _: None, project_path="project")
     async def generate_pcb_thumbnail(project_path: str, ctx: Context | None):
         """Generate a thumbnail image of a KiCad PCB layout using kicad-cli.
@@ -116,6 +115,10 @@ def register_export_tools(mcp: FastMCP) -> None:
                 await ctx.info(f"Error: {str(e)}")
             return None
 
+    # Registered by call, not decorator: @mcp.tool() would rebind the name
+    # to a non-callable object, and generate_project_thumbnail calls it directly.
+    mcp.tool(generate_pcb_thumbnail)
+
     @mcp.tool()
     @confine_paths(on_error=lambda _: None, project_path="project")
     async def generate_project_thumbnail(project_path: str, ctx: Context | None):
@@ -125,7 +128,7 @@ def register_export_tools(mcp: FastMCP) -> None:
             "generate_project_thumbnail called, redirecting to generate_pcb_thumbnail for %s",
             project_path,
         )
-        return await generate_pcb_thumbnail(project_path, ctx)  # ty: ignore[call-non-callable]
+        return await generate_pcb_thumbnail(project_path, ctx)
 
 
 # Helper functions for thumbnail generation

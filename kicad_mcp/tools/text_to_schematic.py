@@ -541,7 +541,6 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
         mcp: The FastMCP server instance.
     """
 
-    @mcp.tool()
     @confine_paths(project_path="project")
     async def create_circuit_from_text(
         project_path: str,
@@ -673,6 +672,10 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
             if ctx:
                 await ctx.info(f"Error creating circuit: {str(e)}")
             return {"success": False, "error": str(e)}
+
+    # Registered by call, not decorator: @mcp.tool() would rebind the name
+    # to a non-callable object, and create_kicad_schematic_from_text calls it directly.
+    mcp.tool(create_circuit_from_text)
 
     @mcp.tool()
     async def validate_circuit_description(
@@ -1093,7 +1096,7 @@ circuit "I2C Sensor Interface":
 
             else:
                 # Use existing JSON-based approach
-                result = await create_circuit_from_text(  # ty: ignore[call-non-callable]
+                result = await create_circuit_from_text(
                     project_path=project_path,
                     circuit_description=circuit_description,
                     format_type=format_type,

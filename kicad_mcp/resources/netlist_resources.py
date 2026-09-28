@@ -23,7 +23,6 @@ def register_netlist_resources(mcp: FastMCP) -> None:
         mcp: The FastMCP server instance
     """
 
-    @mcp.resource("kicad://netlist/{schematic_path}")
     @confine_paths(on_error=str, schematic_path="schematic")
     def get_netlist_resource(schematic_path: str) -> str:
         """Get a formatted netlist report for a KiCad schematic.
@@ -130,6 +129,10 @@ def register_netlist_resources(mcp: FastMCP) -> None:
         except (OSError, ValueError, KeyError) as e:
             return f"# Netlist Extraction Error\n\nError: {str(e)}"
 
+    # Registered by call, not decorator: @mcp.resource() would rebind the name
+    # to a non-callable object, and get_project_netlist_resource calls it directly.
+    mcp.resource("kicad://netlist/{schematic_path}")(get_netlist_resource)
+
     @mcp.resource("kicad://project_netlist/{project_path}")
     @confine_paths(on_error=str, project_path="project")
     def get_project_netlist_resource(project_path: str) -> str:
@@ -157,7 +160,7 @@ def register_netlist_resources(mcp: FastMCP) -> None:
             logger.debug("Found schematic file: %s", schematic_path)
 
             # Get the netlist resource for this schematic
-            return get_netlist_resource(schematic_path)  # ty: ignore[call-non-callable]
+            return get_netlist_resource(schematic_path)
 
         except (OSError, ValueError, KeyError) as e:
             return f"# Netlist Extraction Error\n\nError: {str(e)}"
