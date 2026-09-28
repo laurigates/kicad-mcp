@@ -4,6 +4,7 @@ Backs user stories P1 (list_projects), P2 (get_project_structure),
 H6 (open_project), and P3 (validate_project) from docs/USER_STORIES.md.
 """
 
+import os
 from unittest.mock import patch
 
 from fastmcp import FastMCP
@@ -102,8 +103,9 @@ class TestGetProjectStructure:
         result = get_structure(project_path=sample_kicad_project["path"])
 
         assert result["name"] == sample_kicad_project["name"]
-        assert result["path"] == sample_kicad_project["path"]
-        assert result["directory"] == sample_kicad_project["directory"]
+        # Tools receive and echo the canonical (symlink-resolved) path from confine_paths.
+        assert result["path"] == os.path.realpath(sample_kicad_project["path"])
+        assert result["directory"] == os.path.realpath(sample_kicad_project["directory"])
         assert "files" in result
         # The fixture creates schematic + pcb + project files
         assert "project" in result["files"]

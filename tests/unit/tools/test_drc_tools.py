@@ -4,6 +4,7 @@ Backs user stories R1 (run_drc_check) and R2 (get_drc_history_tool)
 from docs/USER_STORIES.md.
 """
 
+import os
 from unittest.mock import AsyncMock, patch
 
 from fastmcp import FastMCP
@@ -159,7 +160,8 @@ class TestRunDrcCheck:
         # Underlying CLI was invoked with the discovered PCB path
         mock_cli.assert_awaited_once()
         called_pcb_arg = mock_cli.await_args.args[0]
-        assert called_pcb_arg == sample_kicad_project["pcb"]
+        # Tools receive the canonical (symlink-resolved) path from confine_paths.
+        assert called_pcb_arg == os.path.realpath(sample_kicad_project["pcb"])
         # Successful runs are persisted to history
         mock_save.assert_called_once()
         # Progress reported at start and end
