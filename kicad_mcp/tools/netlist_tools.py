@@ -23,7 +23,6 @@ def register_netlist_tools(mcp: FastMCP) -> None:
         mcp: The FastMCP server instance
     """
 
-    @mcp.tool()
     async def extract_schematic_netlist(schematic_path: str, ctx: Context | None) -> dict[str, Any]:
         """Extract netlist information from a KiCad schematic.
 
@@ -104,6 +103,10 @@ def register_netlist_tools(mcp: FastMCP) -> None:
                 await ctx.info(f"Error extracting netlist: {str(e)}")
             return {"success": False, "error": str(e)}
 
+    # Registered by call, not decorator: @mcp.tool() would rebind the name
+    # to a non-callable object, and extract_project_netlist calls it directly.
+    mcp.tool(extract_schematic_netlist)
+
     @mcp.tool()
     async def extract_project_netlist(project_path: str, ctx: Context | None) -> dict[str, Any]:
         """Extract netlist from a KiCad project's schematic.
@@ -150,7 +153,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
                 await ctx.report_progress(20, 100)
 
             # Call the schematic netlist extraction
-            result = await extract_schematic_netlist(schematic_path, ctx)  # ty: ignore[call-non-callable]
+            result = await extract_schematic_netlist(schematic_path, ctx)
 
             # Add project path to result
             if "success" in result and result["success"]:

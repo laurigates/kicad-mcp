@@ -18,6 +18,9 @@ class ToolRegistry:
             self.tools[kwargs.get("name", func.__name__)] = func
             return func
 
+        # Direct-call form: mcp.tool(func)
+        if args and callable(args[0]):
+            return decorator(args[0])
         return decorator
 
 

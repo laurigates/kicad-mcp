@@ -22,7 +22,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         mcp: The FastMCP server instance
     """
 
-    @mcp.tool()
     async def export_schematic_svg(project_path: str, ctx: Context) -> dict[str, Any]:
         """Export KiCad schematic to SVG format using kicad-cli.
 
@@ -70,7 +69,10 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             await ctx.info(error_msg)
             return {"success": False, "error": error_msg}
 
-    @mcp.tool()
+    # Registered by call, not decorator: @mcp.tool() would rebind the name
+    # to a non-callable object, and capture_schematic_screenshot calls it directly.
+    mcp.tool(export_schematic_svg)
+
     async def convert_svg_to_png(svg_path: str, ctx: Context) -> dict[str, Any]:
         """Convert SVG file to PNG format.
 
@@ -104,7 +106,10 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             await ctx.info(error_msg)
             return {"success": False, "error": error_msg}
 
-    @mcp.tool()
+    # Registered by call, not decorator: @mcp.tool() would rebind the name
+    # to a non-callable object, and capture_schematic_screenshot calls it directly.
+    mcp.tool(convert_svg_to_png)
+
     async def capture_schematic_screenshot(project_path: str, ctx: Context) -> Image | None:
         """Capture screenshot of KiCad schematic as PNG image.
 
@@ -119,13 +124,13 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             await ctx.info(f"Capturing schematic screenshot: {project_path}")
 
             # First export to SVG
-            svg_result = await export_schematic_svg(project_path, ctx)  # ty: ignore[call-non-callable]
+            svg_result = await export_schematic_svg(project_path, ctx)
             if not svg_result["success"]:
                 await ctx.info(f"SVG export failed: {svg_result['error']}")
                 return None
 
             # Then convert to PNG
-            png_result = await convert_svg_to_png(svg_result["svg_file"], ctx)  # ty: ignore[call-non-callable]
+            png_result = await convert_svg_to_png(svg_result["svg_file"], ctx)
             if not png_result["success"]:
                 await ctx.info(f"PNG conversion failed: {png_result['error']}")
                 return None
@@ -147,6 +152,10 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             await ctx.info(error_msg)
             return None
 
+    # Registered by call, not decorator: @mcp.tool() would rebind the name
+    # to a non-callable object, and create_visual_comparison calls it directly.
+    mcp.tool(capture_schematic_screenshot)
+
     @mcp.tool()
     async def create_visual_comparison(
         before_project: str, after_project: str, ctx: Context
@@ -165,8 +174,8 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             await ctx.info(f"Creating visual comparison: {before_project} vs {after_project}")
 
             # Capture screenshots of both projects
-            before_image = await capture_schematic_screenshot(before_project, ctx)  # ty: ignore[call-non-callable]
-            after_image = await capture_schematic_screenshot(after_project, ctx)  # ty: ignore[call-non-callable]
+            before_image = await capture_schematic_screenshot(before_project, ctx)
+            after_image = await capture_schematic_screenshot(after_project, ctx)
 
             if not before_image or not after_image:
                 return {"success": False, "error": "Failed to capture one or both screenshots"}
