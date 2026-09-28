@@ -15,6 +15,7 @@ import yaml
 
 from kicad_mcp.utils.boundary_validator import BoundaryValidator
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.path_validator import confine_paths
 from kicad_mcp.utils.sexpr_service import get_sexpr_service
 
 logger = logging.getLogger(__name__)
@@ -541,6 +542,7 @@ def register_text_to_schematic_tools(mcp: FastMCP) -> None:
     """
 
     @mcp.tool()
+    @confine_paths(project_path="project")
     async def create_circuit_from_text(
         project_path: str,
         circuit_description: str,
@@ -921,6 +923,7 @@ circuit "I2C Sensor Interface":
         }
 
     @mcp.tool()
+    @confine_paths(project_path="project")
     async def create_kicad_schematic_from_text(
         project_path: str,
         circuit_description: str,

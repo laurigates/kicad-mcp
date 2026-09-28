@@ -13,6 +13,7 @@ import pandas as pd
 # Import the helper functions from bom_tools.py to avoid code duplication
 from kicad_mcp.tools.bom_tools import analyze_bom_data, parse_bom_file
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.path_validator import confine_paths
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ def register_bom_resources(mcp: FastMCP) -> None:
     """
 
     @mcp.resource("kicad://bom/{project_path}")
+    @confine_paths(on_error=str, project_path="project")
     def get_bom_resource(project_path: str) -> str:
         """Get a formatted BOM report for a KiCad project.
 
@@ -178,6 +180,7 @@ def register_bom_resources(mcp: FastMCP) -> None:
         return report
 
     @mcp.resource("kicad://bom/{project_path}/csv")
+    @confine_paths(on_error=str, project_path="project")
     def get_bom_csv_resource(project_path: str) -> str:
         """Get a CSV representation of the BOM for a KiCad project.
 
@@ -231,6 +234,7 @@ def register_bom_resources(mcp: FastMCP) -> None:
             return f"Error generating CSV from BOM file: {str(e)}"
 
     @mcp.resource("kicad://bom/{project_path}/json")
+    @confine_paths(on_error=str, project_path="project")
     def get_bom_json_resource(project_path: str) -> str:
         """Get a JSON representation of the BOM for a KiCad project.
 

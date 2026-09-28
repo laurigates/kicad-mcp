@@ -23,7 +23,20 @@ except ImportError:
     Context = Mock
 
 # Import version constant
+from kicad_mcp.utils import path_validator
 from kicad_mcp.utils.version import KICAD_FILE_FORMAT_VERSION
+
+
+@pytest.fixture(autouse=True)
+def _unconfined_default_validator(monkeypatch):
+    """Trust the whole filesystem by default so tool-behaviour tests can use tmp dirs.
+
+    Tool tests exercise tool logic against temp directories and made-up paths,
+    none of which sit under the configured KiCad search paths. Path confinement
+    itself is covered in tests/unit/tools/test_path_confinement.py, which installs
+    its own restricted validator on top of this one.
+    """
+    monkeypatch.setattr(path_validator, "_default_validator", path_validator.PathValidator({"/"}))
 
 
 @pytest.fixture

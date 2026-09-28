@@ -10,6 +10,7 @@ from fastmcp import FastMCP
 
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.netlist_parser import extract_netlist
+from kicad_mcp.utils.path_validator import confine_paths
 from kicad_mcp.utils.pattern_recognition import (
     identify_amplifiers,
     identify_digital_interfaces,
@@ -29,6 +30,7 @@ def register_pattern_resources(mcp: FastMCP) -> None:
     """
 
     @mcp.resource("kicad://patterns/{schematic_path}")
+    @confine_paths(on_error=str, schematic_path="schematic")
     def get_circuit_patterns_resource(schematic_path: str) -> str:
         """Get a formatted report of identified circuit patterns in a KiCad schematic.
 
@@ -274,6 +276,7 @@ def register_pattern_resources(mcp: FastMCP) -> None:
             return f"# Circuit Pattern Analysis Error\n\nError: {str(e)}"
 
     @mcp.resource("kicad://patterns/project/{project_path}")
+    @confine_paths(on_error=str, project_path="project")
     def get_project_patterns_resource(project_path: str) -> str:
         """Get a formatted report of identified circuit patterns in a KiCad project.
 

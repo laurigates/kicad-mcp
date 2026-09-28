@@ -12,7 +12,8 @@ from typing import Any
 from fastmcp import Context
 
 from kicad_mcp.utils.kicad_cli import KiCadCLIError, find_kicad_cli
-from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, get_subprocess_runner
+from kicad_mcp.utils.path_validator import PathValidator, get_default_validator
+from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, SecureSubprocessRunner
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,10 @@ async def run_drc_via_cli(pcb_file: str, ctx: Context | None = None) -> dict[str
 
             logger.debug("Running DRC command via SecureSubprocessRunner")
             try:
-                runner = get_subprocess_runner()
+                # The report goes to our own private temp dir, which is not under
+                # the search paths; trust it for this run only.
+                validator = PathValidator(get_default_validator().trusted_roots | {temp_dir})
+                runner = SecureSubprocessRunner(path_validator=validator)
                 process = runner.run_kicad_command(
                     command_args=command_args,
                     input_files=[pcb_file],

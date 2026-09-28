@@ -14,6 +14,7 @@ from fastmcp import Context, FastMCP
 import pandas as pd
 
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.path_validator import confine_paths
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
     """
 
     @mcp.tool()
+    @confine_paths(project_path="project")
     async def analyze_bom(project_path: str, ctx: Context | None) -> dict[str, Any]:
         """Analyze a KiCad project's Bill of Materials.
 
@@ -170,6 +172,7 @@ def register_bom_tools(mcp: FastMCP) -> None:
         return results
 
     @mcp.tool()
+    @confine_paths(project_path="project")
     async def export_bom_csv(project_path: str, ctx: Context | None) -> dict[str, Any]:
         """Export a Bill of Materials for a KiCad project.
 

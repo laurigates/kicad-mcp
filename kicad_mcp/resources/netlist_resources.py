@@ -11,6 +11,7 @@ from fastmcp import FastMCP
 
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.netlist_parser import analyze_netlist, extract_netlist
+from kicad_mcp.utils.path_validator import confine_paths
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ def register_netlist_resources(mcp: FastMCP) -> None:
     """
 
     @mcp.resource("kicad://netlist/{schematic_path}")
+    @confine_paths(on_error=str, schematic_path="schematic")
     def get_netlist_resource(schematic_path: str) -> str:
         """Get a formatted netlist report for a KiCad schematic.
 
@@ -129,6 +131,7 @@ def register_netlist_resources(mcp: FastMCP) -> None:
             return f"# Netlist Extraction Error\n\nError: {str(e)}"
 
     @mcp.resource("kicad://project_netlist/{project_path}")
+    @confine_paths(on_error=str, project_path="project")
     def get_project_netlist_resource(project_path: str) -> str:
         """Get a formatted netlist report for a KiCad project.
 
@@ -160,6 +163,7 @@ def register_netlist_resources(mcp: FastMCP) -> None:
             return f"# Netlist Extraction Error\n\nError: {str(e)}"
 
     @mcp.resource("kicad://component/{schematic_path}/{component_ref}")
+    @confine_paths(on_error=str, schematic_path="schematic")
     def get_component_resource(schematic_path: str, component_ref: str) -> str:
         """Get detailed information about a specific component and its connections.
 

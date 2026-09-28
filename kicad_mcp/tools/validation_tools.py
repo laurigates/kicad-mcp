@@ -14,6 +14,7 @@ from fastmcp import Context, FastMCP
 from kicad_mcp.utils.boundary_validator import BoundaryValidator
 from kicad_mcp.utils.component_utils import get_component_type
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.path_validator import confine_paths
 
 
 async def validate_project_boundaries(
@@ -267,6 +268,7 @@ def register_validation_tools(mcp: FastMCP) -> None:
     """Register validation tools with the MCP server."""
 
     @mcp.tool(name="validate_project_boundaries")
+    @confine_paths(project_path="project")
     async def validate_project_boundaries_tool(
         project_path: str, ctx: Context | None = None
     ) -> dict[str, Any]:
@@ -274,6 +276,7 @@ def register_validation_tools(mcp: FastMCP) -> None:
         return await validate_project_boundaries(project_path, ctx)
 
     @mcp.tool(name="generate_validation_report")
+    @confine_paths(project_path="project", output_path="path")
     async def generate_validation_report_tool(
         project_path: str, output_path: str | None = None, ctx: Context | None = None
     ) -> dict[str, Any]:

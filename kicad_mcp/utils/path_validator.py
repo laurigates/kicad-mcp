@@ -5,10 +5,18 @@ Provides secure path validation to prevent path traversal attacks
 and ensure file operations are restricted to safe directories.
 """
 
+from collections.abc import Callable
+import functools
+import inspect
+import logging
 import os
 import pathlib
+from typing import Any
 
+from kicad_mcp import config
 from kicad_mcp.config import KICAD_EXTENSIONS
+
+logger = logging.getLogger(__name__)
 
 
 class PathValidationError(Exception):
@@ -203,12 +211,104 @@ class PathValidator:
 _default_validator = None
 
 
+def default_trusted_roots() -> set[str]:
+    """Return the directories the server is configured to work in.
+
+    These are the same locations ``find_kicad_projects`` searches: the KiCad user
+    directory plus ``config.ADDITIONAL_SEARCH_PATHS`` (``KICAD_SEARCH_PATHS`` and
+    the existing default project locations). Anything ``list_projects`` returns
+    therefore lies inside a trusted root.
+    """
+    return {config.KICAD_USER_DIR, *config.ADDITIONAL_SEARCH_PATHS}
+
+
 def get_default_validator() -> PathValidator:
     """Get the default global path validator instance."""
     global _default_validator
     if _default_validator is None:
-        _default_validator = PathValidator()
+        _default_validator = PathValidator(default_trusted_roots())
     return _default_validator
+
+
+def _default_error(message: str) -> dict[str, Any]:
+    return {"success": False, "error": message}
+
+
+def confine_paths(
+    on_error: Callable[[str], Any] = _default_error, **params: str
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    """Confine path arguments of an MCP tool/resource to the trusted roots.
+
+    Precondition enforced at the MCP boundary: each named argument, when not
+    ``None``, must resolve (after ``~`` expansion, ``..`` normalisation and
+    symlink resolution) to a location inside a trusted root. On success the
+    wrapped function receives the resolved path; on failure it is not called and
+    ``on_error(message)`` is returned instead, so each module keeps its own error
+    shape.
+
+    Args:
+        on_error: Builds the tool's error return value from the rejection message.
+        **params: Argument name -> kind. A key of ``KICAD_EXTENSIONS`` (e.g.
+            ``"project"``, ``"schematic"``) also enforces that file extension;
+            ``"path"`` accepts any file or directory.
+    """
+    for kind in params.values():
+        if kind != "path" and kind not in KICAD_EXTENSIONS:
+            raise ValueError(f"Unknown path kind: {kind}")
+
+    def resolve(name: str, value: Any) -> Any:
+        if value is None:
+            return None
+        validator = get_default_validator()
+        kind = params[name]
+        if kind == "path":
+            return validator.validate_path(value, must_exist=False)
+        return validator.validate_kicad_file(value, kind, must_exist=False)
+
+    def decorate(fn: Callable[..., Any]) -> Callable[..., Any]:
+        signature = inspect.signature(fn)
+        fn_name = getattr(fn, "__name__", repr(fn))
+        missing = set(params) - set(signature.parameters)
+        if missing:
+            raise ValueError(f"{fn_name} has no parameter(s) {sorted(missing)}")
+
+        def confine(args: tuple, kwargs: dict) -> inspect.BoundArguments | str:
+            bound = signature.bind(*args, **kwargs)
+            for name in params:
+                if name in bound.arguments:
+                    try:
+                        bound.arguments[name] = resolve(name, bound.arguments[name])
+                    except PathValidationError as e:
+                        logger.warning("Rejected %s for %s: %s", name, fn_name, e)
+                        return str(e)
+            return bound
+
+        if inspect.iscoroutinefunction(fn):
+
+            @functools.wraps(fn)
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+                bound = confine(args, kwargs)
+                if isinstance(bound, str):
+                    return on_error(bound)
+                return await fn(*bound.args, **bound.kwargs)
+
+            wrapper = async_wrapper
+        else:
+
+            @functools.wraps(fn)
+            def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+                bound = confine(args, kwargs)
+                if isinstance(bound, str):
+                    return on_error(bound)
+                return fn(*bound.args, **bound.kwargs)
+
+            wrapper = sync_wrapper
+
+        # Marker read by the regression test that every path parameter is guarded.
+        vars(wrapper)["__trusted_path_params__"] = dict(params)
+        return wrapper
+
+    return decorate
 
 
 def validate_path(file_path: str, must_exist: bool = False) -> str:

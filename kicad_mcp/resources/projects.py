@@ -8,6 +8,7 @@ import os
 from fastmcp import FastMCP
 
 from kicad_mcp.utils.file_utils import get_project_files, load_project_json
+from kicad_mcp.utils.path_validator import confine_paths
 
 
 def register_project_resources(mcp: FastMCP) -> None:
@@ -18,6 +19,7 @@ def register_project_resources(mcp: FastMCP) -> None:
     """
 
     @mcp.resource("kicad://project/{project_path}")
+    @confine_paths(on_error=str, project_path="project")
     def get_project_details(project_path: str) -> str:
         """Get details about a specific KiCad project."""
         if not os.path.exists(project_path):

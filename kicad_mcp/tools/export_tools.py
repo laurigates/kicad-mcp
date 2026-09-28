@@ -14,6 +14,7 @@ from kicad_mcp.config import PROGRESS_CONSTANTS, TIMEOUT_CONSTANTS
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.path_validator import (
     PathValidationError,
+    confine_paths,
     validate_directory,
     validate_kicad_file,
 )
@@ -30,6 +31,7 @@ def register_export_tools(mcp: FastMCP) -> None:
     """
 
     @mcp.tool()
+    @confine_paths(on_error=lambda _: None, project_path="project")
     async def generate_pcb_thumbnail(project_path: str, ctx: Context | None):
         """Generate a thumbnail image of a KiCad PCB layout using kicad-cli.
 
@@ -115,6 +117,7 @@ def register_export_tools(mcp: FastMCP) -> None:
             return None
 
     @mcp.tool()
+    @confine_paths(on_error=lambda _: None, project_path="project")
     async def generate_project_thumbnail(project_path: str, ctx: Context | None):
         """Generate a thumbnail of a KiCad project's PCB layout (Alias for generate_pcb_thumbnail)."""
         # This function now just calls the main CLI-based thumbnail generator

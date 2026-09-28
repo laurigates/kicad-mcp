@@ -12,6 +12,7 @@ from fastmcp import Context, FastMCP
 
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.netlist_parser import analyze_netlist, extract_netlist
+from kicad_mcp.utils.path_validator import confine_paths
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
     """
 
     @mcp.tool()
+    @confine_paths(schematic_path="schematic")
     async def extract_schematic_netlist(schematic_path: str, ctx: Context | None) -> dict[str, Any]:
         """Extract netlist information from a KiCad schematic.
 
@@ -105,6 +107,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             return {"success": False, "error": str(e)}
 
     @mcp.tool()
+    @confine_paths(project_path="project")
     async def extract_project_netlist(project_path: str, ctx: Context | None) -> dict[str, Any]:
         """Extract netlist from a KiCad project's schematic.
 
@@ -165,6 +168,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             return {"success": False, "error": str(e)}
 
     @mcp.tool()
+    @confine_paths(schematic_path="schematic")
     async def analyze_schematic_connections(
         schematic_path: str, ctx: Context | None
     ) -> dict[str, Any]:
@@ -287,6 +291,7 @@ def register_netlist_tools(mcp: FastMCP) -> None:
             return {"success": False, "error": str(e)}
 
     @mcp.tool()
+    @confine_paths(project_path="project")
     async def find_component_connections(
         project_path: str, component_ref: str, ctx: Context | None
     ) -> dict[str, Any]:

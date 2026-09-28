@@ -13,6 +13,7 @@ from fastmcp import Context, FastMCP
 from kicad_mcp.tools.drc_impl.cli_drc import run_drc_via_cli
 from kicad_mcp.utils.drc_history import compare_with_previous, get_drc_history, save_drc_result
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.path_validator import confine_paths
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ def register_drc_tools(mcp: FastMCP) -> None:
     """
 
     @mcp.tool()
+    @confine_paths(project_path="project")
     def get_drc_history_tool(project_path: str) -> dict[str, Any]:
         """Get the DRC check history for a KiCad project.
 
@@ -68,6 +70,7 @@ def register_drc_tools(mcp: FastMCP) -> None:
         }
 
     @mcp.tool()
+    @confine_paths(project_path="project")
     async def run_drc_check(project_path: str, ctx: Context | None) -> dict[str, Any]:
         """Run a Design Rule Check on a KiCad PCB file.
 

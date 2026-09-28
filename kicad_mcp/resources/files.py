@@ -7,6 +7,8 @@ import os
 
 from fastmcp import FastMCP
 
+from kicad_mcp.utils.path_validator import confine_paths
+
 
 def register_file_resources(mcp: FastMCP) -> None:
     """Register file-related resources with the MCP server.
@@ -16,6 +18,7 @@ def register_file_resources(mcp: FastMCP) -> None:
     """
 
     @mcp.resource("kicad://schematic/{schematic_path}")
+    @confine_paths(on_error=str, schematic_path="schematic")
     def get_schematic_info(schematic_path: str) -> str:
         """Extract information from a KiCad schematic file."""
         if not os.path.exists(schematic_path):

@@ -11,6 +11,7 @@ from fastmcp import FastMCP
 from kicad_mcp.tools.drc_impl.cli_drc import run_drc_via_cli
 from kicad_mcp.utils.drc_history import get_drc_history
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.path_validator import confine_paths
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ def register_drc_resources(mcp: FastMCP) -> None:
     """
 
     @mcp.resource("kicad://drc/history/{project_path}")
+    @confine_paths(on_error=str, project_path="project")
     def get_drc_history_report(project_path: str) -> str:
         """Get a formatted DRC history report for a KiCad project.
 
@@ -144,6 +146,7 @@ def register_drc_resources(mcp: FastMCP) -> None:
         return report
 
     @mcp.resource("kicad://drc/{project_path}")
+    @confine_paths(on_error=str, project_path="project")
     async def get_drc_report(project_path: str) -> str:
         """Get a formatted DRC report for a KiCad project.
 

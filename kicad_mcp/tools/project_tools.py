@@ -15,6 +15,7 @@ from kicad_mcp.utils.kicad_utils import (
     find_kicad_projects_in_dirs,
     open_kicad_project,
 )
+from kicad_mcp.utils.path_validator import confine_paths
 
 # Get PID for logging
 # _PID = os.getpid()
@@ -43,6 +44,7 @@ def register_project_tools(mcp: FastMCP) -> None:
         return projects
 
     @mcp.tool()
+    @confine_paths(on_error=lambda m: {"error": m}, project_path="project")
     def get_project_structure(project_path: str) -> dict[str, Any]:
         """Get the structure and files of a KiCad project."""
         if not os.path.exists(project_path):
@@ -69,6 +71,7 @@ def register_project_tools(mcp: FastMCP) -> None:
         }
 
     @mcp.tool()
+    @confine_paths(project_path="project")
     def open_project(project_path: str) -> dict[str, Any]:
         """Open a KiCad project in KiCad."""
         return open_kicad_project(project_path)

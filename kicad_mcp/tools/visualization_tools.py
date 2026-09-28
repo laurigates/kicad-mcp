@@ -12,6 +12,7 @@ from fastmcp.utilities.types import Image
 
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.kicad_cli import KiCadCLIError, find_kicad_cli
+from kicad_mcp.utils.path_validator import confine_paths
 from kicad_mcp.utils.secure_subprocess import SecureSubprocessError, get_subprocess_runner
 
 
@@ -23,6 +24,7 @@ def register_visualization_tools(mcp: FastMCP) -> None:
     """
 
     @mcp.tool()
+    @confine_paths(project_path="project")
     async def export_schematic_svg(project_path: str, ctx: Context) -> dict[str, Any]:
         """Export KiCad schematic to SVG format using kicad-cli.
 
@@ -71,6 +73,7 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             return {"success": False, "error": error_msg}
 
     @mcp.tool()
+    @confine_paths(svg_path="path")
     async def convert_svg_to_png(svg_path: str, ctx: Context) -> dict[str, Any]:
         """Convert SVG file to PNG format.
 
@@ -105,6 +108,7 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             return {"success": False, "error": error_msg}
 
     @mcp.tool()
+    @confine_paths(on_error=lambda _: None, project_path="project")
     async def capture_schematic_screenshot(project_path: str, ctx: Context) -> Image | None:
         """Capture screenshot of KiCad schematic as PNG image.
 
@@ -148,6 +152,7 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             return None
 
     @mcp.tool()
+    @confine_paths(before_project="project", after_project="project")
     async def create_visual_comparison(
         before_project: str, after_project: str, ctx: Context
     ) -> dict[str, Any]:

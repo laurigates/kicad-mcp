@@ -17,6 +17,11 @@ from kicad_mcp.config import KICAD_APP_PATH, system
 from kicad_mcp.utils.boundary_validator import BoundaryValidator
 from kicad_mcp.utils.component_layout import ComponentLayoutManager
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.path_validator import (
+    PathValidationError,
+    confine_paths,
+    validate_kicad_file,
+)
 from kicad_mcp.utils.sexpr_service import get_sexpr_service
 from kicad_mcp.utils.version import KICAD_FILE_FORMAT_VERSION
 
@@ -1057,13 +1062,22 @@ def register_circuit_tools(mcp: FastMCP) -> None:
     """
 
     @mcp.tool(name="create_new_project")
+    @confine_paths(project_path="path")
     async def create_new_project_tool(
         project_name: str, project_path: str, description: str = "", ctx: Context | None = None
     ) -> dict[str, Any]:
         """Create a new KiCad project with basic files."""
+        # project_name is joined onto project_path, so it can carry '..' or separators.
+        try:
+            validate_kicad_file(
+                os.path.join(project_path, f"{project_name}.kicad_pro"), "project", must_exist=False
+            )
+        except PathValidationError as e:
+            return {"success": False, "error": str(e)}
         return await create_new_project(project_name, project_path, description, ctx)
 
     @mcp.tool(name="add_component")
+    @confine_paths(project_path="project")
     async def add_component_tool(
         project_path: str,
         component_reference: str,
@@ -1087,6 +1101,7 @@ def register_circuit_tools(mcp: FastMCP) -> None:
         )
 
     @mcp.tool(name="create_wire_connection")
+    @confine_paths(project_path="project")
     async def create_wire_connection_tool(
         project_path: str,
         start_x: float,
@@ -1099,6 +1114,7 @@ def register_circuit_tools(mcp: FastMCP) -> None:
         return await create_wire_connection(project_path, start_x, start_y, end_x, end_y, ctx)
 
     @mcp.tool(name="add_power_symbol")
+    @confine_paths(project_path="project")
     async def add_power_symbol_tool(
         project_path: str,
         power_type: str,
@@ -1110,6 +1126,7 @@ def register_circuit_tools(mcp: FastMCP) -> None:
         return await add_power_symbol(project_path, power_type, x_position, y_position, ctx)
 
     @mcp.tool(name="validate_schematic")
+    @confine_paths(project_path="project")
     async def validate_schematic_tool(
         project_path: str, ctx: Context | None = None
     ) -> dict[str, Any]:

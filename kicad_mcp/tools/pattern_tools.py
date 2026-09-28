@@ -11,6 +11,7 @@ from fastmcp import Context, FastMCP
 
 from kicad_mcp.utils.file_utils import get_project_files
 from kicad_mcp.utils.netlist_parser import extract_netlist
+from kicad_mcp.utils.path_validator import confine_paths
 from kicad_mcp.utils.pattern_recognition import (
     identify_amplifiers,
     identify_digital_interfaces,
@@ -30,6 +31,7 @@ def register_pattern_tools(mcp: FastMCP) -> None:
     """
 
     @mcp.tool()
+    @confine_paths(schematic_path="schematic")
     async def identify_circuit_patterns(schematic_path: str, ctx: Context | None) -> dict[str, Any]:
         """Identify common circuit patterns in a KiCad schematic.
 
@@ -161,6 +163,7 @@ def register_pattern_tools(mcp: FastMCP) -> None:
             return {"success": False, "error": str(e)}
 
     @mcp.tool()
+    @confine_paths(project_path="project")
     async def analyze_project_circuit_patterns(
         project_path: str, ctx: Context | None
     ) -> dict[str, Any]:

@@ -72,6 +72,12 @@ The server automatically searches for KiCad projects in:
 
 Projects are identified by the `.kicad_pro` file extension. The server recursively searches all configured directories to find KiCad projects.
 
+### File access boundary
+
+The same directories are the server's **trusted roots**. Every tool and resource that takes a path (`project_path`, `schematic_path`, `svg_path`, `output_path`, ...) resolves it (expanding `~`, normalising `..`, following symlinks) and refuses it with an `outside trusted directories` error unless the result lies inside one of these roots. This applies to files the tools write as well as to files they read. The server's working directory is not a trusted root.
+
+To work on projects stored elsewhere, add their parent directory to `KICAD_SEARCH_PATHS`. Only directories that exist when the server starts are added.
+
 ## Client Configuration
 
 ### Claude Desktop Configuration

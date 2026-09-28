@@ -9,6 +9,7 @@ from typing import Any
 from fastmcp import FastMCP
 
 from kicad_mcp.utils.file_utils import get_project_files
+from kicad_mcp.utils.path_validator import confine_paths
 
 
 def register_analysis_tools(mcp: FastMCP) -> None:
@@ -23,6 +24,7 @@ def register_analysis_tools(mcp: FastMCP) -> None:
     """
 
     @mcp.tool()
+    @confine_paths(on_error=lambda m: {"valid": False, "error": m}, project_path="project")
     def validate_project(project_path: str) -> dict[str, Any]:
         """
         Perform basic validation of a KiCad project directory.
